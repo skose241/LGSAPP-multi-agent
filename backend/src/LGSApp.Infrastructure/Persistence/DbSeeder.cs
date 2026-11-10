@@ -23,22 +23,21 @@ public static class DbSeeder
 
         if (string.IsNullOrWhiteSpace(options.AdminUserName) || string.IsNullOrWhiteSpace(options.AdminPassword))
         {
-            logger.LogInformation("Seed:AdminUserName veya Seed:AdminPassword tanimli degil, mudur hesabi olusturulmadi.");
+            logger.LogInformation("Seed:AdminUserName veya Seed:AdminPassword tanımlı değil, müdür hesabı oluşturulmadı.");
             return;
         }
 
+        var userName = options.AdminUserName.Trim();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        if (await userManager.FindByNameAsync(options.AdminUserName) is not null)
+        if (await userManager.FindByNameAsync(userName) is not null)
         {
             return;
         }
 
         var admin = new ApplicationUser
         {
-            UserName = options.AdminUserName,
-            Email = options.AdminEmail,
-            EmailConfirmed = !string.IsNullOrWhiteSpace(options.AdminEmail),
+            UserName = userName,
             FirstName = options.AdminFirstName,
             LastName = options.AdminLastName,
             MustChangePassword = false,
@@ -48,11 +47,18 @@ public static class DbSeeder
         var created = await userManager.CreateAsync(admin, options.AdminPassword);
         if (!created.Succeeded)
         {
-            logger.LogError("Mudur hesabi olusturulamadi: {Errors}", string.Join("; ", created.Errors.Select(e => e.Description)));
+            logger.LogError("Müdür hesabı oluşturulamadı: {Errors}", string.Join("; ", created.Errors.Select(e => e.Description)));
             return;
         }
 
-        await userManager.AddToRoleAsync(admin, Roles.Mudur);
-        logger.LogInformation("Ilk mudur hesabi olusturuldu: {UserName}", options.AdminUserName);
+        var roleResult = await userManager.AddToRoleAsync(admin, Roles.Mudur);
+        if (!roleResult.Succeeded)
+        {
+            logger.LogError("Müdür rolü atanamadı, hesap geri alınıyor: {Errors}", string.Join("; ", roleResult.Errors.Select(e => e.Description)));
+            await userManager.DeleteAsync(admin);
+            return;
+        }
+
+        logger.LogInformation("İlk müdür hesabı oluşturuldu: {UserName}", userName);
     }
 }

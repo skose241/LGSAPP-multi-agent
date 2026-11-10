@@ -18,33 +18,36 @@ namespace LGSApp.Api.Controllers;
 public class AdminUsersController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly OneTimePasswordService _oneTimePasswords;
     private readonly AppDbContext _db;
 
-    public AdminUsersController(UserManager<ApplicationUser> userManager, AppDbContext db)
+    public AdminUsersController(UserManager<ApplicationUser> userManager, OneTimePasswordService oneTimePasswords, AppDbContext db)
     {
         _userManager = userManager;
+        _oneTimePasswords = oneTimePasswords;
         _db = db;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AdminUserDto>>> List([FromQuery] string? role, CancellationToken cancellationToken)
     {
-        var query =
-            from u in _db.Users.AsNoTracking()
-            join ur in _db.UserRoles on u.Id equals ur.UserId into urs
-            from ur in urs.DefaultIfEmpty()
-            join r in _db.Roles on ur.RoleId equals r.Id into rs
-            from r in rs.DefaultIfEmpty()
-            select new { User = u, RoleName = r.Name };
+        var query = UserRows();
 
         if (!string.IsNullOrWhiteSpace(role))
         {
-            var normalized = role.ToLowerInvariant();
+            var normalized = role.Trim().ToLowerInvariant();
             query = query.Where(x => x.RoleName == normalized);
         }
 
         var rows = await query.OrderBy(x => x.User.Id).ToListAsync(cancellationToken);
         return Ok(rows.Select(x => ToDto(x.User, x.RoleName)));
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<AdminUserDto>> Get(int id, CancellationToken cancellationToken)
+    {
+        var row = await UserRows().Where(x => x.User.Id == id).FirstOrDefaultAsync(cancellationToken);
+        return row is null ? NotFound() : Ok(ToDto(row.User, row.RoleName));
     }
 
     [HttpPost]
@@ -53,41 +56,79 @@ public class AdminUsersController : ControllerBase
         var role = request.Role.Trim().ToLowerInvariant();
         if (!Roles.All.Contains(role))
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Gecersiz rol.", detail: "Gecerli roller: " + string.Join(", ", Roles.All));
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Geçersiz rol.", detail: "Geçerli roller: " + string.Join(", ", Roles.All));
         }
 
-        if (await _userManager.FindByNameAsync(request.UserName) is not null)
+        var userName = request.UserName.Trim();
+        if (!UserNameRules.IsValid(userName))
         {
-            return Problem(statusCode: StatusCodes.Status409Conflict, title: "Bu kullanici adi zaten kayitli.");
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Geçersiz kullanıcı adı.",
+                detail: $"Kullanıcı adı {UserNameRules.MinLength}-{UserNameRules.MaxLength} karakter olmalı ve yalnızca harf, rakam, '.', '_' ve '-' içermelidir.");
+        }
+
+        if (await _userManager.FindByNameAsync(userName) is not null)
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, title: "Bu kullanıcı adı zaten kayıtlı.");
         }
 
         var password = PasswordGenerator.Generate();
-        var user = new ApplicationUser
-        {
-            UserName = request.UserName.Trim(),
-            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
-            ClassName = string.IsNullOrWhiteSpace(request.ClassName) ? null : request.ClassName.Trim(),
-            MustChangePassword = role != Roles.Ai,
-            CreatedAt = DateTime.UtcNow,
-            CreatedByUserId = CurrentUserId()
-        };
+        var createdBy = CurrentUserId();
+        ApplicationUser? user = null;
+        IdentityResult? failure = null;
 
-        var created = await _userManager.CreateAsync(user, password);
-        if (!created.Succeeded)
+        var strategy = _db.Database.CreateExecutionStrategy();
+        try
         {
-            return IdentityProblem(created);
+            await strategy.ExecuteAsync(async () =>
+            {
+                failure = null;
+                user = null;
+                _db.ChangeTracker.Clear();
+
+                await using var transaction = await _db.Database.BeginTransactionAsync();
+
+                var candidate = new ApplicationUser
+                {
+                    UserName = userName,
+                    FirstName = request.FirstName.Trim(),
+                    LastName = request.LastName.Trim(),
+                    ClassName = string.IsNullOrWhiteSpace(request.ClassName) ? null : request.ClassName.Trim(),
+                    MustChangePassword = role != Roles.Ai,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = createdBy
+                };
+
+                var created = await _userManager.CreateAsync(candidate, password);
+                if (!created.Succeeded)
+                {
+                    failure = created;
+                    return;
+                }
+
+                var added = await _userManager.AddToRoleAsync(candidate, role);
+                if (!added.Succeeded)
+                {
+                    failure = added;
+                    return;
+                }
+
+                await transaction.CommitAsync();
+                user = candidate;
+            });
+        }
+        catch (DbUpdateException)
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, title: "Bu kullanıcı adı zaten kayıtlı.");
         }
 
-        var added = await _userManager.AddToRoleAsync(user, role);
-        if (!added.Succeeded)
+        if (user is null)
         {
-            await _userManager.DeleteAsync(user);
-            return IdentityProblem(added);
+            return IdentityProblem(failure ?? IdentityResult.Failed());
         }
 
-        return CreatedAtAction(nameof(List), new CreatedUserResponse(ToDto(user, role), password));
+        return CreatedAtAction(nameof(Get), new { id = user.Id }, new CreatedUserResponse(ToDto(user, role), password));
     }
 
     [HttpPost("{id:int}/ban")]
@@ -106,26 +147,20 @@ public class AdminUsersController : ControllerBase
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        var password = PasswordGenerator.Generate();
-        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var result = await _userManager.ResetPasswordAsync(user, token, password);
-        if (!result.Succeeded)
+        var outcome = await _oneTimePasswords.ResetAsync(user, !roles.Contains(Roles.Ai));
+        if (!outcome.Result.Succeeded)
         {
-            return IdentityProblem(result);
+            return IdentityProblem(outcome.Result);
         }
 
-        user.MustChangePassword = !roles.Contains(Roles.Ai);
-        await _userManager.UpdateAsync(user);
-        await _userManager.ResetAccessFailedCountAsync(user);
-
-        return Ok(new OneTimePasswordResponse(user.Id, password, user.MustChangePassword));
+        return Ok(new OneTimePasswordResponse(user.Id, outcome.Password, user.MustChangePassword));
     }
 
     private async Task<IActionResult> SetBan(int id, bool banned)
     {
         if (banned && id == CurrentUserId())
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Kendi hesabinizi engelleyemezsiniz.");
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Kendi hesabınızı engelleyemezsiniz.");
         }
 
         var user = await _userManager.FindByIdAsync(id.ToString());
@@ -141,19 +176,38 @@ public class AdminUsersController : ControllerBase
             return IdentityProblem(result);
         }
 
-        await _userManager.UpdateSecurityStampAsync(user);
+        var stamp = await _userManager.UpdateSecurityStampAsync(user);
+        if (!stamp.Succeeded)
+        {
+            return IdentityProblem(stamp);
+        }
+
         return NoContent();
     }
+
+    private IQueryable<UserRow> UserRows() =>
+        from u in _db.Users.AsNoTracking()
+        join ur in _db.UserRoles on u.Id equals ur.UserId into urs
+        from ur in urs.DefaultIfEmpty()
+        join r in _db.Roles on ur.RoleId equals r.Id into rs
+        from r in rs.DefaultIfEmpty()
+        select new UserRow { User = u, RoleName = r.Name };
 
     private int? CurrentUserId() =>
         int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
 
     private static AdminUserDto ToDto(ApplicationUser u, string? role) =>
-        new(u.Id, u.UserName ?? string.Empty, u.FirstName, u.LastName, u.Email, u.ClassName, role, u.IsBanned, u.MustChangePassword, u.CreatedAt, u.CreatedByUserId);
+        new(u.Id, u.UserName ?? string.Empty, u.FirstName, u.LastName, u.ClassName, role, u.IsBanned, u.MustChangePassword, u.CreatedAt, u.LastLoginAt, u.CreatedByUserId);
 
     private ObjectResult IdentityProblem(IdentityResult result) =>
         Problem(
             statusCode: StatusCodes.Status400BadRequest,
-            title: "Islem basarisiz.",
+            title: "İşlem başarısız.",
             detail: string.Join(" ", result.Errors.Select(e => e.Description)));
+
+    private sealed class UserRow
+    {
+        public ApplicationUser User { get; set; } = null!;
+        public string? RoleName { get; set; }
+    }
 }

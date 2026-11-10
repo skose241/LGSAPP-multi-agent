@@ -1,4 +1,5 @@
 using AppRoles = LGSApp.Domain.Constants.Roles;
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     {
     }
 
+    public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -21,6 +24,26 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             b.Property(u => u.LastName).HasMaxLength(100).IsRequired();
             b.Property(u => u.ClassName).HasMaxLength(50);
             b.Property(u => u.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            b.Property(u => u.UserName).HasMaxLength(UserNameRules.MaxLength);
+            b.Property(u => u.NormalizedUserName).HasMaxLength(UserNameRules.MaxLength);
+            b.Ignore(u => u.Email);
+            b.Ignore(u => u.NormalizedEmail);
+            b.Ignore(u => u.EmailConfirmed);
+            b.Ignore(u => u.PhoneNumber);
+            b.Ignore(u => u.PhoneNumberConfirmed);
+        });
+
+        builder.Entity<PasswordResetRequest>(b =>
+        {
+            b.ToTable("PasswordResetRequests");
+            b.HasKey(r => r.Id);
+            b.Property(r => r.Status).HasConversion<byte>();
+            b.Property(r => r.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            b.Property(r => r.RowVersion).IsRowVersion();
+            b.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<ApplicationUser>().WithMany().HasForeignKey(r => r.ProcessedByUserId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(r => r.UserId).IsUnique().HasFilter("[Status] = 0").HasDatabaseName("UX_PasswordResetRequests_UserId_Pending");
+            b.HasIndex(r => new { r.Status, r.CreatedAt });
         });
 
         builder.Entity<ApplicationRole>().HasData(

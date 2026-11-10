@@ -48,6 +48,11 @@ Yukarıda tanıtımı yapılan proje mevcutta CFML/Lucee/MSSQL ile netpesinde.co
 - **Kod sonrası test için:** `reviewer-agent`
 - Mimarisi netleşmemiş sorularda öncelikle built-in Plan agent'i kullanılacak
 
+## Oturum Sürekliliği
+
+- Her yeni oturumun başında `.claude/oturum-notlari.md` okunacak ve kaldığımız yerden devam edilecek.
+- Kullanıcı oturumu kapatacağını söylediğinde o oturumda yapılanlar, alınan kararlar, açık sorular ve sıradaki adımlar bu dosyaya yeni bir bölüm olarak eklenecek.
+
 ## Kod kuralları
 
 - Kod içine açıklama/yorum satırı yazılmayacak.

@@ -1,7 +1,7 @@
 ---
 name: backend-agent
 description: ASP.NET Core API, Azure SQL entegrasyonu ve Semantic Kernel ile AI servisini yürütür
-tools: Read, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 ---
 

@@ -11,6 +11,7 @@ namespace LGSApp.Infrastructure.Services;
 public class TokenService : ITokenService
 {
     public const string MustChangePasswordClaim = "must_change_password";
+    public const string SecurityStampClaim = "security_stamp";
 
     private readonly JwtOptions _options;
 
@@ -27,7 +28,8 @@ public class TokenService : ITokenService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.UserName ?? string.Empty),
-            new(MustChangePasswordClaim, user.MustChangePassword ? "true" : "false")
+            new(MustChangePasswordClaim, user.MustChangePassword ? "true" : "false"),
+            new(SecurityStampClaim, user.SecurityStamp ?? string.Empty)
         };
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 

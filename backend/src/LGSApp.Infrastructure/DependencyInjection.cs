@@ -1,9 +1,11 @@
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Options;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,7 +21,8 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
-                sql => sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null)));
+                sql => sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null))
+                .ConfigureWarnings(w => w.Ignore(CoreEventId.MappedPropertyIgnoredWarning)));
 
         services.AddIdentityCore<ApplicationUser>(options =>
             {
@@ -29,6 +32,7 @@ public static class DependencyInjection
                 options.Password.RequireUppercase = true;
                 options.Password.RequireNonAlphanumeric = false;
                 options.User.RequireUniqueEmail = false;
+                options.User.AllowedUserNameCharacters = UserNameRules.AllowedCharacters;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
@@ -38,7 +42,8 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddSingleton<ITokenService, TokenService>();
-        services.AddSingleton<IAppEmailSender, LoggingEmailSender>();
+        services.AddSingleton<DummyPasswordVerifier>();
+        services.AddScoped<OneTimePasswordService>();
 
         return services;
     }

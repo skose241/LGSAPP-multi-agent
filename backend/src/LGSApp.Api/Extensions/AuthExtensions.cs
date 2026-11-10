@@ -4,6 +4,7 @@ using LGSApp.Api.Authorization;
 using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Options;
+using LGSApp.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -19,12 +20,12 @@ public static class AuthExtensions
 
         if (string.IsNullOrWhiteSpace(jwt.Key) || Encoding.UTF8.GetByteCount(jwt.Key) < 32)
         {
-            throw new InvalidOperationException("Jwt:Key en az 32 byte olmalidir.");
+            throw new InvalidOperationException("Jwt:Key en az 32 byte olmalıdır.");
         }
 
         if (!environment.IsDevelopment() && jwt.Key.StartsWith("DEV-ONLY", StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("Gelistirme Jwt:Key degeri uretimde kullanilamaz. Jwt__Key ortam degiskenini tanimlayin.");
+            throw new InvalidOperationException("Geliştirme Jwt:Key değeri üretimde kullanılamaz. Jwt__Key ortam değişkenini tanımlayın.");
         }
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -51,15 +52,22 @@ public static class AuthExtensions
                         var idValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
                         if (!int.TryParse(idValue, out var userId))
                         {
-                            context.Fail("Gecersiz kullanici.");
+                            context.Fail("Geçersiz kullanıcı.");
                             return;
                         }
 
+                        var tokenStamp = context.Principal?.FindFirstValue(TokenService.SecurityStampClaim);
                         var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
                         var user = await userManager.FindByIdAsync(userId.ToString());
                         if (user is null || user.IsBanned)
                         {
-                            context.Fail("Hesap kullanilamaz.");
+                            context.Fail("Hesap kullanılamaz.");
+                            return;
+                        }
+
+                        if (string.IsNullOrEmpty(tokenStamp) || !string.Equals(tokenStamp, user.SecurityStamp, StringComparison.Ordinal))
+                        {
+                            context.Fail("Oturum geçersiz.");
                         }
                     }
                 };

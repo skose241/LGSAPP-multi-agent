@@ -1,13 +1,15 @@
 using System.Security.Claims;
-using System.Text;
 using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
+using LGSApp.Api.Extensions;
 using LGSApp.Domain.Entities;
+using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace LGSApp.Api.Controllers;
 
@@ -15,41 +17,45 @@ namespace LGSApp.Api.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
+    private const string ForgotPasswordMessage = "Talebiniz okul yönetimine iletildi.";
+
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
-    private readonly IAppEmailSender _emailSender;
-    private readonly IConfiguration _configuration;
+    private readonly DummyPasswordVerifier _dummyVerifier;
+    private readonly AppDbContext _db;
+    private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
-        IAppEmailSender emailSender,
-        IConfiguration configuration)
+        DummyPasswordVerifier dummyVerifier,
+        AppDbContext db,
+        ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _tokenService = tokenService;
-        _emailSender = emailSender;
-        _configuration = configuration;
+        _dummyVerifier = dummyVerifier;
+        _db = db;
+        _logger = logger;
     }
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitingExtensions.LoginPolicy)]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
     {
-        var user = await _userManager.FindByNameAsync(request.UserName);
+        var userName = request.UserName.Trim();
+        var user = await _userManager.FindByNameAsync(userName);
         if (user is null)
         {
+            _dummyVerifier.Verify(request.Password);
             return InvalidCredentials();
-        }
-
-        if (user.IsBanned)
-        {
-            return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Hesap engellenmis.");
         }
 
         if (await _userManager.IsLockedOutAsync(user))
         {
-            return Problem(statusCode: StatusCodes.Status423Locked, title: "Hesap gecici olarak kilitlendi. Daha sonra tekrar deneyin.");
+            _dummyVerifier.Verify(request.Password);
+            return InvalidCredentials();
         }
 
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
@@ -58,7 +64,19 @@ public class AuthController : ControllerBase
             return InvalidCredentials();
         }
 
+        if (user.IsBanned)
+        {
+            return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Hesap engellenmiş.");
+        }
+
+        user.LastLoginAt = DateTime.UtcNow;
         await _userManager.ResetAccessFailedCountAsync(user);
+        var update = await _userManager.UpdateAsync(user);
+        if (!update.Succeeded)
+        {
+            return IdentityProblem(update);
+        }
+
         return Ok(await BuildLoginResponse(user));
     }
 
@@ -74,20 +92,20 @@ public class AuthController : ControllerBase
 
         if (request.CurrentPassword == request.NewPassword)
         {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Yeni sifre mevcut sifreden farkli olmali.");
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Yeni şifre mevcut şifreden farklı olmalı.");
         }
 
+        user.MustChangePassword = false;
         var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded)
         {
             return IdentityProblem(result);
         }
 
-        user.MustChangePassword = false;
-        var update = await _userManager.UpdateAsync(user);
-        if (!update.Succeeded)
+        var stamp = await _userManager.UpdateSecurityStampAsync(user);
+        if (!stamp.Succeeded)
         {
-            return IdentityProblem(update);
+            return IdentityProblem(stamp);
         }
 
         return Ok(await BuildLoginResponse(user));
@@ -95,52 +113,36 @@ public class AuthController : ControllerBase
 
     [HttpPost("forgot-password")]
     [AllowAnonymous]
-    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+    [EnableRateLimiting(RateLimitingExtensions.ForgotPasswordPolicy)]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var userName = request.UserName.Trim();
+        var user = await _userManager.FindByNameAsync(userName);
         if (user is not null && !user.IsBanned)
         {
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-            var baseUrl = _configuration["Frontend:ResetPasswordUrl"] ?? "http://localhost:3000/reset-password";
-            var link = $"{baseUrl}?email={Uri.EscapeDataString(request.Email)}&token={encoded}";
-            await _emailSender.SendAsync(request.Email, "Sifre sifirlama", $"Sifrenizi sifirlamak icin baglanti: {link}");
+            var hasPending = await _db.PasswordResetRequests
+                .AnyAsync(r => r.UserId == user.Id && r.Status == PasswordResetStatus.Pending, cancellationToken);
+            if (!hasPending)
+            {
+                _db.PasswordResetRequests.Add(new PasswordResetRequest
+                {
+                    UserId = user.Id,
+                    Status = PasswordResetStatus.Pending,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                try
+                {
+                    await _db.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogWarning(ex, "Şifre sıfırlama talebi kaydedilemedi (eşzamanlı talep olabilir).");
+                }
+            }
         }
 
-        return Ok(new { message = "E-posta kayitliysa sifirlama baglantisi gonderildi." });
-    }
-
-    [HttpPost("reset-password")]
-    [AllowAnonymous]
-    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
-    {
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user is null || user.IsBanned)
-        {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Gecersiz veya suresi dolmus sifirlama istegi.");
-        }
-
-        string token;
-        try
-        {
-            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Token));
-        }
-        catch (FormatException)
-        {
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Gecersiz veya suresi dolmus sifirlama istegi.");
-        }
-
-        var result = await _userManager.ResetPasswordAsync(user, token, request.NewPassword);
-        if (!result.Succeeded)
-        {
-            return IdentityProblem(result);
-        }
-
-        user.MustChangePassword = false;
-        await _userManager.UpdateAsync(user);
-        await _userManager.ResetAccessFailedCountAsync(user);
-
-        return Ok(new { message = "Sifre guncellendi." });
+        return Ok(new { message = ForgotPasswordMessage });
     }
 
     [HttpGet("me")]
@@ -170,7 +172,6 @@ public class AuthController : ControllerBase
             user.UserName ?? string.Empty,
             user.FirstName,
             user.LastName,
-            user.Email,
             user.ClassName,
             roles.FirstOrDefault() ?? string.Empty,
             user.MustChangePassword);
@@ -184,11 +185,11 @@ public class AuthController : ControllerBase
     }
 
     private ObjectResult InvalidCredentials() =>
-        Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Kullanici adi veya sifre hatali.");
+        Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Kullanıcı adı veya şifre hatalı. Çok sayıda hatalı denemede hesap 10 dakika kilitlenir.");
 
     private ObjectResult IdentityProblem(IdentityResult result) =>
         Problem(
             statusCode: StatusCodes.Status400BadRequest,
-            title: "Islem basarisiz.",
+            title: "İşlem başarısız.",
             detail: string.Join(" ", result.Errors.Select(e => e.Description)));
 }
