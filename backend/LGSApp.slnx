@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LGSApp.Api/LGSApp.Api.csproj" />
+    <Project Path="src/LGSApp.Domain/LGSApp.Domain.csproj" />
+    <Project Path="src/LGSApp.Infrastructure/LGSApp.Infrastructure.csproj" />
+  </Folder>
+</Solution>
