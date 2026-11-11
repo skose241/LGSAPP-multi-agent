@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using LGSApp.Api.Extensions;
 using LGSApp.Infrastructure;
 using LGSApp.Infrastructure.Persistence;
@@ -7,7 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAppForwardedHeaders(builder.Configuration, builder.Environment);
 
-builder.Services.AddControllers().AddTurkishModelBinding();
+builder.Services.AddControllers()
+    .AddTurkishModelBinding()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 builder.Services.AddTurkishProblemDetails();
 builder.Services.AddOpenApiWithJwt();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -39,9 +43,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("Frontend");
-app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
@@ -49,6 +53,7 @@ app.MapHealthChecks("/health").AllowAnonymous();
 try
 {
     await DbSeeder.SeedAdminAsync(app.Services);
+    await DbSeeder.SeedReferenceDataAsync(app.Services);
 }
 catch (Exception ex)
 {

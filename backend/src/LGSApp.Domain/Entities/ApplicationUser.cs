@@ -12,4 +12,6 @@ public class ApplicationUser : IdentityUser<int>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
     public int? CreatedByUserId { get; set; }
+    public int? BranchLessonId { get; set; }
+    public int Points { get; set; }
 }

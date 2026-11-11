@@ -3,11 +3,23 @@ using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Options;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
+using LGSApp.Infrastructure.Services.Access;
+using LGSApp.Infrastructure.Services.Answers;
+using LGSApp.Infrastructure.Services.Comments;
+using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Lessons;
+using LGSApp.Infrastructure.Services.Notifications;
+using LGSApp.Infrastructure.Services.Points;
+using LGSApp.Infrastructure.Services.Questions;
+using LGSApp.Infrastructure.Services.Reports;
+using LGSApp.Infrastructure.Services.Settings;
+using LGSApp.Infrastructure.Services.Solutions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace LGSApp.Infrastructure;
 
@@ -45,6 +57,21 @@ public static class DependencyInjection
         services.AddSingleton<ITokenService, TokenService>();
         services.AddSingleton<DummyPasswordVerifier>();
         services.AddScoped<OneTimePasswordService>();
+
+        services.AddMemoryCache();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<TurkeyTime>();
+        services.AddScoped<UserLookupService>();
+        services.AddScoped<ISettingsService, SettingsService>();
+        services.AddScoped<IQuestionAccessService, QuestionAccessService>();
+        services.AddScoped<ILessonService, LessonService>();
+        services.AddScoped<IQuestionService, QuestionService>();
+        services.AddScoped<IPointService, PointService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IAnswerService, AnswerService>();
+        services.AddScoped<ISolutionService, SolutionService>();
+        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<ICommentService, CommentService>();
 
         return services;
     }

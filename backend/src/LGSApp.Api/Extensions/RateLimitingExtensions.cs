@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using LGSApp.Api.Options;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,9 @@ public static class RateLimitingExtensions
 {
     public const string LoginPolicy = "login";
     public const string ForgotPasswordPolicy = "forgot-password";
+    public const string CommentWritePolicy = "comment-write";
+    public const string AnswerSubmitPolicy = "answer-submit";
+    public const string ReportCreatePolicy = "report-create";
 
     public static IServiceCollection AddAppRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
@@ -19,6 +23,9 @@ public static class RateLimitingExtensions
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.AddPolicy(LoginPolicy, context => IpPartition(context, settings.Login));
             options.AddPolicy(ForgotPasswordPolicy, context => IpPartition(context, settings.ForgotPassword));
+            options.AddPolicy(CommentWritePolicy, context => UserPartition(context, CommentWritePolicy, settings.CommentWrite));
+            options.AddPolicy(AnswerSubmitPolicy, context => UserPartition(context, AnswerSubmitPolicy, settings.AnswerSubmit));
+            options.AddPolicy(ReportCreatePolicy, context => UserPartition(context, ReportCreatePolicy, settings.ReportCreate));
             options.OnRejected = async (context, cancellationToken) =>
             {
                 var response = context.HttpContext.Response;
@@ -44,6 +51,25 @@ public static class RateLimitingExtensions
         });
 
         return services;
+    }
+
+    private static RateLimitPartition<string> UserPartition(HttpContext context, string policy, RateLimitRule rule)
+    {
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var key = userId is not null
+            ? $"{policy}:user:{userId}"
+            : $"{policy}:ip:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+        var permits = Math.Max(1, rule.PermitLimit);
+        var windowSeconds = Math.Max(1, rule.WindowSeconds);
+        var period = TimeSpan.FromSeconds(Math.Max(1.0, (double)windowSeconds / permits));
+        return RateLimitPartition.GetTokenBucketLimiter(key, _ => new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = permits,
+            TokensPerPeriod = 1,
+            ReplenishmentPeriod = period,
+            QueueLimit = 0,
+            AutoReplenishment = true
+        });
     }
 
     private static RateLimitPartition<string> IpPartition(HttpContext context, RateLimitRule rule)

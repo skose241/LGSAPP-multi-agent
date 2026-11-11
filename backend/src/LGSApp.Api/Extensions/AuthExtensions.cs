@@ -80,6 +80,10 @@ public static class AuthExtensions
                 .RequireAuthenticatedUser()
                 .AddRequirements(new MustChangePasswordRequirement())
                 .Build())
+            .AddPolicy(Policies.Kullanici, p => p
+                .RequireAuthenticatedUser()
+                .AddRequirements(new MustChangePasswordRequirement())
+                .RequireRole(Roles.Mudur, Roles.Ogretmen, Roles.Ogrenci))
             .AddPolicy(Policies.MudurOnly, p => p
                 .RequireAuthenticatedUser()
                 .AddRequirements(new MustChangePasswordRequirement())

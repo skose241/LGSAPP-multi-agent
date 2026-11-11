@@ -158,3 +158,63 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 2. Düzeltmelerden sonra reviewer-agent ile tekrar test (özellikle X-Forwarded-For bypass ve mesaj dili).
 3. Backend'in commit edilmesi (kullanıcı onayıyla).
 4. Ardından Oturum 1'deki sıradaki adımlar: Plan agent ile domain tasarımı, zamanlayıcı (Azure Functions), Semantic Kernel + Gemini.
+
+---
+
+## Oturum 3 — 2026-11-11
+
+### Yapılanlar
+- backend-agent ile Oturum 2'deki düzeltmeler yapıldı. Kullanıcı commit'ledi.
+  - **ForwardedHeaders:**
+    - Development'ta middleware hiç eklenmiyor.
+    - Development dışında `ForwardedHeaders` bölümünden okunuyor: `Enabled` (varsayılan false), `KnownProxies`, `KnownNetworks` (CIDR), `ForwardLimit` (varsayılan 1).
+    - `Enabled=true` iken liste boşsa, IP/CIDR geçersizse veya `ForwardLimit<1` ise uygulama Türkçe hatayla başlamıyor.
+    - Dosyalar: `Options/ForwardedHeadersSettings.cs`, `Extensions/ForwardedHeadersExtensions.cs`.
+  - **Türkçe mesajlar:**
+    - `TurkishIdentityErrorDescriber` (Infrastructure/Services).
+    - DTO attribute mesajları.
+    - `LocalizationExtensions.cs`: ProblemDetails başlıkları, ModelBinding mesajları, `InvalidModelStateResponseFactory` + `Sanitize`.
+    - Bozuk/yanlış tipli JSON'da İngilizce System.Text.Json metni ve tip adı sızmıyor. Yerine "'alan' alanının değeri geçersiz." veya "İstek gövdesi geçerli bir JSON değil." dönüyor.
+  - **Login 401:** Mesaj tek: "Kullanıcı adı veya şifre hatalı." "10 dakika kilitlenir" ifadesi kaldırıldı.
+  - **429 yanıtı:** Gövdeye `type` eklendi (`RateLimitingExtensions.cs`).
+- reviewer-agent ile tekrar test (ayrı DB `LGSApp_ReviewTest2`, sonra silindi):
+  - XFF bypass kapandı.
+  - Production ForwardedHeaders senaryoları geçti.
+  - 401 yanıtları birebir aynı.
+  - Regresyon temiz.
+  - Tek kusur JSON hata sızıntısıydı, sonradan düzeltildi. 3 istekle elle doğrulandı.
+- Build 0 uyarı 0 hata.
+
+### Alınan kararlar
+- Geliştirme ortamında ForwardedHeaders kapalı.
+- Buluta taşınırken `ForwardedHeaders:Enabled=true` yapılacak ve `KnownProxies`'e o an yayındaki proxy IP'si (veya `KnownNetworks`'e CIDR) yazılacak.
+
+### Açık sorular / notlar
+1. Kullanıcı adında Türkçe harf (Oturum 1'den, hâlâ açık).
+2. AI rolünün regenerate-password davranışı (zamanlayıcı mimarisiyle netleşecek).
+3. Bozuk JSON'da `errors` anahtarı boş string (`""`). Frontend bunu genel form hatası olarak göstermeli.
+4. Test edilmedi:
+   - 429 `type` alanı canlı denenmedi.
+   - Gerçek Azure proxy arkasında X-Forwarded-Proto/HTTPS yönlendirmesi denenmedi.
+   - Mevcut `LGSApp` LocalDB'si `sys.databases`'te görünmüyordu; gerektiğinde `dotnet ef database update` ile oluşturulmalı.
+
+### Sıradaki adımlar
+1. Plan agent ile domain tasarımı (canlı şema temel alınarak):
+   - Ders/Konu, Soru, Cevap
+   - Çözüm (zorunlu açıklama)
+   - Yorum (ağaç için ParentId)
+   - Beğeni, Şikayet
+   - Ödev (planlı/gün kısıtlı)
+   - Günlük Konu Planı, Üretim Log'u, Ayarlar, Bildirim
+   - Liderlik tablosu (haftalık/aylık)
+2. Zamanlayıcı:
+   - Azure Functions Timer Trigger: 17:30 üretim, 18:15 tamamlama, 19:00 yayın + ödev kapatma.
+   - Kimlik doğrulama Managed Identity veya API anahtarı ile.
+   - Müdürün manuel tetiklemesi aynı servisi çağırmalı.
+3. AI: Semantic Kernel + Gemini (`GEMINI_API_KEY_Soru`, `GEMINI_API_KEY_Cozum`).
+4. Daha sonra:
+   - Refresh token (mobil)
+   - Test projesi
+   - Key Vault
+   - MSSQL'den veri taşıma
+   - iPhone toplu yükleme (istemcide küçültme, SAS ile Blob, HEIC dönüştürme)
