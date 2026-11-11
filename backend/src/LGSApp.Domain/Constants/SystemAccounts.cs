@@ -7,3 +7,5 @@ public static class SystemAccounts
     public const string AiLastName = "Zekâ";
     public const string ManagedMessage = "Yapay zekâ hesabı sistem tarafından yönetilir.";
 }
+
+public sealed class SystemAccountIntegrityException(string message) : InvalidOperationException(message);

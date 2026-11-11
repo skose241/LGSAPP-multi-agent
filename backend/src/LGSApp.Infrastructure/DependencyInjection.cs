@@ -51,6 +51,7 @@ public static class DependencyInjection
             })
             .AddErrorDescriber<TurkishIdentityErrorDescriber>()
             .AddRoles<ApplicationRole>()
+            .AddUserManager<AppUserManager>()
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
 

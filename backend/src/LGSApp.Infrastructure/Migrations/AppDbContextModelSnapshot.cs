@@ -396,8 +396,10 @@ namespace LGSApp.Infrastructure.Migrations
 
                     b.Property<string>("BodyFingerprint")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .HasDefaultValue("");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()

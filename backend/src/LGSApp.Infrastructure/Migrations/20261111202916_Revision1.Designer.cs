@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LGSApp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261111191144_Revision1")]
+    [Migration("20261111202916_Revision1")]
     partial class Revision1
     {
         /// <inheritdoc />
@@ -399,8 +399,10 @@ namespace LGSApp.Infrastructure.Migrations
 
                     b.Property<string>("BodyFingerprint")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .HasDefaultValue("");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()

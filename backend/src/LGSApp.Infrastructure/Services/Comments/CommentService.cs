@@ -180,6 +180,7 @@ public sealed class CommentService(
 
         var tree = CommentTreeBuilder.Build(roots, descendants, includeRemoved);
         CommentTreeBuilder.Truncate(tree, visibleDepth);
+        CommentTreeBuilder.LimitTotal(tree, CommentRules.MaxResponseNodes);
 
         var userIds = new HashSet<int>();
         CollectUserIds(tree, userIds);
@@ -211,11 +212,6 @@ public sealed class CommentService(
         }
 
         var comment = found.Value!;
-        if (comment.SolutionId is int sid && !await IsUsableSolutionAsync(comment.QuestionId, sid, actor, cancellationToken))
-        {
-            return Fail.NotFound(SolutionNotFound);
-        }
-
         var effectiveIncludeRemoved = includeRemoved && actor.IsModerator;
         var maxDepth = await GetMaxDepthAsync(cancellationToken);
         var visibleDepth = await GetVisibleDepthAsync(maxDepth, cancellationToken);
@@ -246,6 +242,7 @@ public sealed class CommentService(
 
         var focus = path[^1];
         CommentTreeBuilder.Truncate([focus], visibleDepth);
+        CommentTreeBuilder.LimitTotal([focus], CommentRules.MaxResponseNodes);
 
         var userIds = new HashSet<int>();
         CollectUserIds(path, userIds);
@@ -676,6 +673,12 @@ public sealed class CommentService(
             {
                 return Fail.NotFound(CommentNotFound);
             }
+        }
+
+        if (comment.SolutionId is int solutionId
+            && !await IsUsableSolutionAsync(comment.QuestionId, solutionId, actor, cancellationToken))
+        {
+            return Fail.NotFound(CommentNotFound);
         }
 
         return ServiceResult<Comment>.Ok(comment);

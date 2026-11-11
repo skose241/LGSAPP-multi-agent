@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LGSApp.Api.Extensions;
+using LGSApp.Domain.Constants;
 using LGSApp.Infrastructure;
 using LGSApp.Infrastructure.Persistence;
 using Scalar.AspNetCore;
@@ -32,6 +33,7 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.UseAppForwardedHeaders(builder.Configuration, app.Environment);
+app.UseProblemJsonCharset();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
@@ -52,14 +54,44 @@ app.MapHealthChecks("/health").AllowAnonymous();
 
 try
 {
+    CommentRules.VerifyGlobalization();
+}
+catch (InvalidOperationException ex)
+{
+    app.Logger.LogCritical("{Message}", ex.Message);
+    Environment.ExitCode = 1;
+    return;
+}
+
+try
+{
     await DbSeeder.EnsureAiAccountAsync(app.Services);
-    await DbSeeder.SeedAdminAsync(app.Services);
-    await DbSeeder.BackfillCommentFingerprintsAsync(app.Services);
-    await DbSeeder.SeedReferenceDataAsync(app.Services);
+}
+catch (SystemAccountIntegrityException ex)
+{
+    app.Logger.LogCritical("{Message}", ex.Message);
+    Environment.ExitCode = 1;
+    return;
 }
 catch (Exception ex)
 {
-    app.Logger.LogError(ex, "Başlangıç seed işlemi başarısız oldu.");
+    app.Logger.LogError(ex, "Yapay zekâ sistem hesabı doğrulanamadı.");
 }
 
+await RunSeedStepAsync("Müdür hesabı", LogLevel.Error, () => DbSeeder.SeedAdminAsync(app.Services));
+await RunSeedStepAsync("Yorum parmak izi doldurma", LogLevel.Warning, () => DbSeeder.BackfillCommentFingerprintsAsync(app.Services));
+await RunSeedStepAsync("Örnek ders ve konu", LogLevel.Error, () => DbSeeder.SeedReferenceDataAsync(app.Services));
+
 app.Run();
+
+async Task RunSeedStepAsync(string name, LogLevel failureLevel, Func<Task> step)
+{
+    try
+    {
+        await step();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.Log(failureLevel, ex, "Başlangıç adımı tamamlanamadı: {Step}", name);
+    }
+}

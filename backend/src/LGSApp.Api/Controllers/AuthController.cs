@@ -51,12 +51,14 @@ public class AuthController : ControllerBase
         if (user is null || isSystemAccount || user.PasswordHash is null)
         {
             _dummyVerifier.Verify(request.Password);
+            await PadFailureWriteAsync();
             return InvalidCredentials();
         }
 
         if (await _userManager.IsLockedOutAsync(user))
         {
             _dummyVerifier.Verify(request.Password);
+            await PadFailureWriteAsync();
             return InvalidCredentials();
         }
 
@@ -120,12 +122,16 @@ public class AuthController : ControllerBase
     {
         var userName = request.UserName.Trim();
         var user = await _userManager.FindByNameAsync(userName);
+        var written = false;
+        var queried = false;
         if (user is not null && !user.IsBanned && !await IsSystemAccountAsync(user.Id))
         {
+            queried = true;
             var hasPending = await _db.PasswordResetRequests
                 .AnyAsync(r => r.UserId == user.Id && r.Status == PasswordResetStatus.Pending, cancellationToken);
             if (!hasPending)
             {
+                written = true;
                 _db.PasswordResetRequests.Add(new PasswordResetRequest
                 {
                     UserId = user.Id,
@@ -144,6 +150,19 @@ public class AuthController : ControllerBase
             }
         }
 
+        if (!queried)
+        {
+            await _db.PasswordResetRequests
+                .AnyAsync(r => r.UserId == 0 && r.Status == PasswordResetStatus.Pending, cancellationToken);
+        }
+
+        if (!written)
+        {
+            await _db.PasswordResetRequests
+                .Where(r => r.Id == 0)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, PasswordResetStatus.Pending), cancellationToken);
+        }
+
         return Ok(new { message = ForgotPasswordMessage });
     }
 
@@ -159,6 +178,9 @@ public class AuthController : ControllerBase
 
         return Ok(await ToUserInfo(user));
     }
+
+    private Task<int> PadFailureWriteAsync() =>
+        _db.Users.Where(u => u.Id == 0).ExecuteUpdateAsync(s => s.SetProperty(u => u.AccessFailedCount, 0));
 
     private Task<bool> IsSystemAccountAsync(int userId) =>
         _db.UserRoles.AnyAsync(ur => ur.UserId == userId && ur.RoleId == Roles.AiId);

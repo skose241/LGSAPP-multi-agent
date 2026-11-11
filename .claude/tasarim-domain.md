@@ -173,3 +173,21 @@ CommentDto { id, parentId?, depth, solutionId?, status: "active"|"deleted"|"remo
 ### Ödev sorusu görünürlüğü
 - Bir soru (silinmemiş) bir ödeve bağlıysa havuzdan görünmez: görünürlük yalnız ödev durumuna bağlıdır (Published/Closed), `PublishedAt` dikkate alınmaz. Taslak/Planlandı ödevdeki soru öğrenciye 404. Moderatör muaf.
 - Sonraki oturum (AssignmentService) notu: havuzda cevaplanmış bir soru ödeve eklenemez.
+
+---
+
+## Revizyon 2 (Oturum 4, Revizyon 1 test bulguları) — çelişirse bu bölüm geçerlidir
+
+- **AI token:** `OnTokenValidated`, token'ın `sub` kullanıcısının rollerini her istekte DB'den okur (security stamp kontrolüyle aynı sorguda). Kullanıcı DB'de AI rolündeyse veya token'daki rol claim'i DB'deki rolle eşleşmiyorsa 401. Claim karşılaştırmaları `OrdinalIgnoreCase`. Rol değişikliği security stamp'i yeniler.
+- **AI hesabı bütünlüğü:** `yapay.zeka` AI dışı role sahipse, AI rolünde birden fazla kullanıcı varsa veya AI hesabı AI dışı ek rol taşıyorsa uygulama başlangıçta Türkçe hata ile durur. Sistem hesabına benzeyen kullanıcı adları rezervedir: `.`, `_`, `-` silinip küçük harfe çevrildiğinde `yapayzeka`, `ai`, `sistem`, `system` olan adlar ile oluşturma 400.
+- **Migration:** `Revision1` 2411ce4'te commit edildi ama hiçbir kalıcı DB'ye uygulanmadı; ayrı migration yerine yeniden üretilir (yeni kimlik `20261111202916_Revision1`). Eski `yorumMaxDerinlik` değeri (≤10) `yorumGorunurDerinlik`'e kopyalanır, `yorumMaxDerinlik` 10 yapılır. `BodyFingerprint` için isimsiz DEFAULT kısıtı kalmaz (adlandırılmış ve modelle uyumlu ya da backfill sonrası kaldırılır).
+- **Boş yorum:** Normalize; Cf kategorisindeki tüm karakterleri (ZWJ/ZWNJ hariç, yalnız iki görünür karakter arasında kaldıklarında korunur), U+3164, U+115F, U+1160, U+FFA0, U+2800, U+180E, tag karakterlerini (U+E0000–U+E007F) temizler. Normalizasyon sonrası en az bir harf/rakam/noktalama/sembol (L, N, P, S kategorisi) yoksa 400 "Yorum boş olamaz.".
+- **Fingerprint:** `i̇` ve `İ` dizileri `i`'ye katlanır (İ ile eşdeğer).
+- **Globalization öz-testi:** Başlangıçta `"ç".Normalize(FormC) == "ç"` ve `tr-TR` kültürü çözümlenebiliyor mu; değilse Türkçe hata ile durur. `InvariantGlobalization` kapalı tutulur.
+- **Çözüm kapsamı:** Yorum id'li tüm uçlar (`PATCH`, `DELETE`, `reports`, `thread`, `remove`, `restore`) ve şikayet: yorum bir çözüme bağlıysa çözüm kullanılabilir olmalı (silinmemiş; moderatör değilse gizli değil), değilse 404 "Yorum bulunamadı.".
+- **remove/restore:** erişimsiz veya yetkisiz aktör için politika katmanında 403 kalır (rol yetkisi); yetkili rolde var olmayan id 404.
+- **Backfill:** başlangıç seed adımları birbirinden bağımsız try/catch ile çalışır; backfill eşzamanlılık çakışmasında satırı atlar; çakışma yarışında kaybeden örnek `fail` değil `warn`/`information` loglar (EF komut hata logu gürültüsü bastırılır veya önce varlık kontrolü yapılır).
+- **Kaynak kod:** `CommentRules.cs` içindeki görünmez karakterler `\uXXXX` kaçışlarıyla yazılır. Değişen dosyalar CRLF.
+- **Yanıt boyutu:** `yorumGorunurDerinlik` ne olursa olsun bir liste yanıtındaki toplam düğüm sayısı üst sınırlıdır (örn. 500); aşılırsa en derin seviyeler kesilip `hasMoreReplies` ile işaretlenir.
+- **404/405 charset:** problem+json yanıtları `charset=utf-8` içerir.
+- **Login zamanlaması (var olan kullanıcı + yanlış şifre):** mümkünse `AccessFailedAsync` yazımının maliyeti olmayan kullanıcı yoluna da eşitlenir (sahte yazım veya sabit gecikme); uygulanamazsa gerekçesiyle rapor edilir.

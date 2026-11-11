@@ -218,3 +218,75 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
    - Key Vault
    - MSSQL'den veri taşıma
    - iPhone toplu yükleme (istemcide küçültme, SAS ile Blob, HEIC dönüştürme)
+
+---
+
+## Oturum 4 — 2026-11-11 / 2026-11-12
+
+### Yapılanlar
+- Canlı repo scratchpad'e klonlandı (geçici). Plan agent ile domain tasarımı çıkarıldı. Tasarım `.claude/tasarim-domain.md` dosyasında: temel tasarım + "Revizyon 1" + "Revizyon 2" bölümleri. Çelişkide en son revizyon geçerli.
+- Canlıda şema kayması tespit edildi: kod `Yorumlar.cozumID`, `Sorular.cevapSupheli`, `DersProgrami` tablosu, `soruCarpani` ayarı ve ödev `planlandi` durumunu kullanıyor ama `LGSApp.sql`'de yoklar. Ayrıca yorumun bağlandığı çözümün aynı soruya ait olduğu doğrulanmıyor (canlı bug).
+- backend-agent:
+  - 19 entity + 19 enum, `Persistence/Configurations/*`.
+  - Migration'lar: `20261111180242_DomainModel` ve `20261111202916_Revision1`. 2411ce4'teki `20261111191144_Revision1` silinip aynı kapsamla yeniden üretildi. Hiçbir kalıcı DB'ye uygulanmadı.
+  - Servisler: QuestionAccess, Lesson, Question, Answer, Solution, Comment + CommentTreeBuilder, Point (ledger), Notification, Report, Settings, TurkeyTime, AppUserManager.
+  - Uçlar: lessons, questions/{id}, answers, solutions (öğretmen çözümü + PATCH), yorumların tamamı (liste, oluşturma, PATCH, DELETE, remove, restore, reports, `GET /api/comments/{id}/thread`).
+- reviewer-agent 3 tur test etti (ReviewTest3/4/5). Son turda kritik, yüksek veya orta bulgu kalmadı. Build 0 uyarı, 0 hata.
+
+### Alınan kararlar
+- **Yorum ağacı:** ParentId + RootId + Depth (adjacency list). Composite FK'ler `(ParentId|RootId|SolutionId, QuestionId)`.
+  - Gerçek derinlik saklanır, mutlak sınır 10. Yalnız bu sınırda kardeşe bağlanır ve `ReplyToUserId` dolar.
+  - Liste `yorumGorunurDerinlik=3` seviye döner. Daha derin dallar "Devamını göster" (`hasMoreReplies`, `hiddenReplyCount`) ile `/thread` ucundan açılır. Yanıt başına en fazla 500 düğüm.
+  - Silme soft. Görünür torunu olan silinmiş düğüm "[silindi]" yer tutucusu olur, olmayan budanır.
+  - Düzenleme yazara açık, 15 dk içinde.
+- **Görünürlük:** Yalnız soruyu cevaplayan, soru sahibi, öğretmen/müdür veya kapalı ödev. Soru detayı, çözümler ve yorumlar aynı `CanSeeDiscussion` fonksiyonunu kullanır.
+- **Ödev sorusu:** Ödevdeki soru havuzdan görünmez, görünürlüğü yalnız ödev durumuna bağlıdır.
+- **Cevaplar:** Havuz ve ödev cevapları tek `Answers` tablosunda. Bir soru en fazla bir ödevde olabilir.
+- **Puan:** `PointTransactions` ledger'ı tutulur, `Users.Points` onun önbelleğidir. Cevap anahtarı düzeltmesinde puan eksiye düşebilir.
+- **AI sistem hesabı (`yapay.zeka`):**
+  - Şifresi yok, giriş imkânsız, kilitlenmez, banlanamaz.
+  - Her açılışta (`Seed:Enabled`'dan bağımsız) garanti edilir ve onarılır.
+  - Bütünlük bozuksa uygulama açılmaz: başka rolde olması, ikinci AI hesabı, AI hesabında ek rol.
+  - Token rolü her istekte DB'den doğrulanır. Rezerve adlar: yapayzeka, ai, sistem, system (`.`, `_`, `-` yok sayılarak).
+- **IP kısıtı:** Ek katman olarak yalnız zamanlayıcının tetikleme ucunda kullanılacak. Asıl koruma kodda (DB rol kontrolü).
+- **UTC:** Tüm DateTime alanları UTC converter'dan geçer, JSON her zaman `Z` ile döner. Türkiye günü yalnız `TurkeyTime` ile hesaplanır. Functions cron UTC'dir: 17:30 TR = 14:30 UTC.
+- **Türkçe metin:** NFC ile saklanır, bidi ve görünmez karakterler temizlenir. Tekrar algılama `BodyFingerprint` ile yapılır (NFKC, tr-TR küçük harf, ı/İ/i̇ → i). Açılışta globalization öz-testi var; ICU yoksa uygulama açılmaz (`InvariantGlobalization` kapalı kalmalı).
+- **Varsayılan kabul edilenler (değiştirilebilir):**
+  - tam ban, yorum susturma yok
+  - öğrenciler kullanıcı adı görür, ad soyad yalnız öğretmen/müdür
+  - ödevler tüm öğrencilere gider
+  - yorum oylaması yok
+  - `uretimSikligi` taşınmaz
+- **JSON:** Enum'lar camelCase string, `rowVersion` base64. Bu frontend sözleşmesi.
+
+### Açık bulgular (düşük, Revizyon 2 test raporu)
+1. Login'de var olan kullanıcı + yanlış şifre ~3.4 ms, forgot-password'da ~1 ms yavaş. Gerekirse her başarısız yanıta sabit gecikme.
+2. İki örnek aynı anda boş DB'ye açılırsa müdür ve ders seed'lerinde `fail` seviyesinde log gürültüsü oluşuyor (`Program.cs` RunSeedStepAsync, `DbSeeder`).
+3. `CommentRules.cs` satır 41/145/148/149'da ham U+0307/U+0327 var. `\u` kaçışıyla yazılmalı.
+4. Boşluk-yalnız yorumda "Yorum metni zorunludur.", görünmez karakterli yorumda "Yorum boş olamaz." dönüyor. Tek mesaja indirilmeli.
+5. Alt bölge bayrak emojileri (İskoçya/Galler) tag temizliği yüzünden siyah bayrağa dönüşüyor.
+6. Fingerprint NFKC yanlış pozitifleri (x²≡x2, H₂O≡H2O). Yalnız aynı kullanıcı, aynı soru, 60 sn içinde etkili.
+7. `Comments.CreatedAt` DEFAULT kısıtı isimsiz (EF'in DomainModel'den kalan adı).
+
+### Açık sorular
+1. Kullanıcı adında Türkçe harf (Oturum 1'den, hâlâ açık).
+2. Başka bir makinede/DB'de eski `20261111191144_Revision1` uygulandıysa `__EFMigrationsHistory` düzeltilmeli. LocalDB'de `LGSApp` DB'si yok.
+3. Zamanlayıcının kimlik doğrulaması: API anahtarı mı, Managed Identity mi (+ App Service Access Restrictions)?
+
+### Sıradaki adımlar
+1. İstenirse açık düşük bulgular 2, 3 ve 4'ün kapatılması.
+2. Sonraki modüller (backend-agent, tasarım belgesine göre):
+   - şikayet yönetimi + cevap anahtarı düzeltme (ledger AnswerKeyCorrection, UPDLOCK)
+   - soru yükleme + beğeni
+   - ödev (AssignmentService: havuzda cevaplanmış soru ödeve eklenemez)
+   - liderlik tablosu (haftalık Pazartesi 00:00 TR ve aylık ledger üzerinden)
+   - bildirim listesi
+3. Zamanlayıcı:
+   - `SchedulerService` + `GenerationRun` kilidi
+   - Azure Functions Timer (UTC cron)
+   - müdürün manuel tetiklemesi aynı servisi çağıracak
+   - AI hesabı sunucu içinden `AuthorUserId` olarak kullanılacak
+4. AI: Semantic Kernel + Gemini (`GEMINI_API_KEY_Soru`, `GEMINI_API_KEY_Cozum`), `AiLog` ile günlük limit.
+5. Dosya: StoredFile + Azure Blob SAS (Azurite), iPhone toplu yükleme (istemcide küçültme, HEIC dönüştürme).
+6. Frontend'e başlarken sözleşme notları: enum camelCase, `Z`'li UTC, `rowVersion` base64, bozuk JSON'da `errors` anahtarı `""`, yorum DTO'ları ve `hasMoreReplies`.
+7. Daha sonra: refresh token, test projesi (CommentTreeBuilder saf, ilk aday), Key Vault, MSSQL'den veri taşıma (ders/konu IDENTITY_INSERT, `DersProgrami.gunNo` Pazar=1 → ISO dönüşümü).

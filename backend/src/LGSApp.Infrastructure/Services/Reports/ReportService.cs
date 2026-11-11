@@ -53,7 +53,7 @@ public sealed class ReportService(
 
         var comment = await db.Comments.AsNoTracking()
             .Where(c => c.Id == commentId)
-            .Select(c => new { c.Id, c.QuestionId, c.AuthorUserId, c.Body, c.Status })
+            .Select(c => new { c.Id, c.QuestionId, c.SolutionId, c.AuthorUserId, c.Body, c.Status })
             .FirstOrDefaultAsync(cancellationToken);
         if (comment is null)
         {
@@ -64,6 +64,17 @@ public sealed class ReportService(
         if (decision is null || !decision.CanSeeDiscussion)
         {
             return Fail.NotFound("Yorum bulunamadı.");
+        }
+
+        if (comment.SolutionId is int solutionId)
+        {
+            var solutionUsable = await db.Solutions.AsNoTracking().AnyAsync(
+                s => s.Id == solutionId && s.QuestionId == comment.QuestionId && !s.IsDeleted && (actor.IsModerator || !s.IsHidden),
+                cancellationToken);
+            if (!solutionUsable)
+            {
+                return Fail.NotFound("Yorum bulunamadı.");
+            }
         }
 
         if (comment.AuthorUserId == actor.UserId)

@@ -97,6 +97,49 @@ public static class CommentTreeBuilder
         }
     }
 
+    public static void LimitTotal(IReadOnlyList<CommentTreeNode> nodes, int maxNodes)
+    {
+        var perLevel = new List<int>();
+        foreach (var node in nodes)
+        {
+            CountLevels(node, 0, perLevel);
+        }
+
+        var cumulative = 0;
+        var allowedLevel = -1;
+        for (var level = 0; level < perLevel.Count; level++)
+        {
+            cumulative += perLevel[level];
+            if (cumulative > maxNodes)
+            {
+                break;
+            }
+
+            allowedLevel = level;
+        }
+
+        if (allowedLevel == perLevel.Count - 1)
+        {
+            return;
+        }
+
+        Truncate(nodes, Math.Max(allowedLevel, 0));
+    }
+
+    private static void CountLevels(CommentTreeNode node, int level, List<int> perLevel)
+    {
+        while (perLevel.Count <= level)
+        {
+            perLevel.Add(0);
+        }
+
+        perLevel[level]++;
+        foreach (var child in node.Replies)
+        {
+            CountLevels(child, level + 1, perLevel);
+        }
+    }
+
     public static IReadOnlyList<CommentTreeNode>? FindPath(IReadOnlyList<CommentTreeNode> roots, int id)
     {
         foreach (var root in roots)

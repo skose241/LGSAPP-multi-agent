@@ -74,6 +74,11 @@ public class AdminUsersController : ControllerBase
                 detail: $"Kullanıcı adı {UserNameRules.MinLength}-{UserNameRules.MaxLength} karakter olmalı ve yalnızca harf, rakam, '.', '_' ve '-' içermelidir.");
         }
 
+        if (UserNameRules.IsReserved(userName))
+        {
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Geçersiz kullanıcı adı.", detail: UserNameRules.ReservedMessage);
+        }
+
         if (await _userManager.FindByNameAsync(userName) is not null)
         {
             return Problem(statusCode: StatusCodes.Status409Conflict, title: "Bu kullanıcı adı zaten kayıtlı.");

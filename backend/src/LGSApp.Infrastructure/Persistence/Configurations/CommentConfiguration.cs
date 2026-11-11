@@ -15,7 +15,7 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
         });
         b.HasKey(x => x.Id);
         b.Property(x => x.Body).HasMaxLength(800).IsRequired();
-        b.Property(x => x.BodyFingerprint).HasMaxLength(64).IsRequired();
+        b.Property(x => x.BodyFingerprint).HasMaxLength(64).IsRequired().HasDefaultValue(string.Empty);
         b.Property(x => x.Status).HasConversion<byte>();
         b.Property(x => x.ModerationReason).HasMaxLength(300);
         b.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");

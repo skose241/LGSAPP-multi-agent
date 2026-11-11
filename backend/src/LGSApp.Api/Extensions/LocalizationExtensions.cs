@@ -77,6 +77,26 @@ public static class LocalizationExtensions
         return services;
     }
 
+    public static IApplicationBuilder UseProblemJsonCharset(this IApplicationBuilder app) =>
+        app.Use(async (context, next) =>
+        {
+            context.Response.OnStarting(static state =>
+            {
+                var response = (HttpResponse)state;
+                var contentType = response.ContentType;
+                if (contentType is not null
+                    && contentType.StartsWith("application/problem+json", StringComparison.OrdinalIgnoreCase)
+                    && !contentType.Contains("charset", StringComparison.OrdinalIgnoreCase))
+                {
+                    response.ContentType = contentType + "; charset=utf-8";
+                }
+
+                return Task.CompletedTask;
+            }, context.Response);
+
+            await next();
+        });
+
     public static IMvcBuilder AddTurkishModelBinding(this IMvcBuilder builder) =>
         builder.AddMvcOptions(options =>
         {

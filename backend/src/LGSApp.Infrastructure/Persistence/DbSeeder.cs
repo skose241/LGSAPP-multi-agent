@@ -103,6 +103,7 @@ public static class DbSeeder
         var normalizedName = userManager.NormalizeName(SystemAccounts.AiUserName);
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.NormalizedUserName == normalizedName, cancellationToken);
+        await VerifyAiIntegrityAsync(db, user?.Id, cancellationToken);
 
         if (user is null)
         {
@@ -135,17 +136,13 @@ public static class DbSeeder
                 {
                     throw;
                 }
+
+                await VerifyAiIntegrityAsync(db, user.Id, cancellationToken);
             }
         }
 
-        var roleIds = await db.UserRoles.Where(ur => ur.UserId == user.Id).Select(ur => ur.RoleId).ToListAsync(cancellationToken);
-        if (roleIds.Any(id => id != Roles.AiId))
-        {
-            logger.LogError("'{UserName}' kullanıcı adı yapay zekâ dışında bir rolle kayıtlı; sistem hesabı garanti edilemedi.", SystemAccounts.AiUserName);
-            return;
-        }
-
-        if (!roleIds.Contains(Roles.AiId))
+        var hasAiRole = await db.UserRoles.AnyAsync(ur => ur.UserId == user.Id && ur.RoleId == Roles.AiId, cancellationToken);
+        if (!hasAiRole)
         {
             db.UserRoles.Add(new IdentityUserRole<int> { UserId = user.Id, RoleId = Roles.AiId });
         }
@@ -180,14 +177,31 @@ public static class DbSeeder
         }
 
         await db.SaveChangesAsync(cancellationToken);
+    }
 
-        var aiUserIds = await db.UserRoles
-            .Where(ur => ur.RoleId == Roles.AiId)
+    private static async Task VerifyAiIntegrityAsync(AppDbContext db, int? aiUserId, CancellationToken cancellationToken)
+    {
+        if (aiUserId is int id)
+        {
+            var extraRoleIds = await db.UserRoles
+                .Where(ur => ur.UserId == id && ur.RoleId != Roles.AiId)
+                .Select(ur => ur.RoleId)
+                .ToListAsync(cancellationToken);
+            if (extraRoleIds.Count > 0)
+            {
+                throw new SystemAccountIntegrityException(
+                    $"'{SystemAccounts.AiUserName}' sistem hesabı yapay zekâ dışında bir role sahip (rol kimlikleri: {string.Join(", ", extraRoleIds)}). Başlangıç durduruldu; veritabanındaki kullanıcı-rol kayıtlarını düzeltin.");
+            }
+        }
+
+        var otherAiUserIds = await db.UserRoles
+            .Where(ur => ur.RoleId == Roles.AiId && ur.UserId != (aiUserId ?? 0))
             .Select(ur => ur.UserId)
             .ToListAsync(cancellationToken);
-        if (aiUserIds.Any(id => id != user.Id))
+        if (otherAiUserIds.Count > 0)
         {
-            logger.LogError("Birden fazla yapay zekâ rolünde kullanıcı bulundu; yalnızca '{UserName}' hesabı sistem hesabı sayılır.", SystemAccounts.AiUserName);
+            throw new SystemAccountIntegrityException(
+                $"Yapay zekâ rolünde '{SystemAccounts.AiUserName}' dışında kullanıcı(lar) bulundu (kimlikler: {string.Join(", ", otherAiUserIds)}). Yalnızca tek bir sistem hesabı olabilir. Başlangıç durduruldu; fazla hesapları veritabanından kaldırın.");
         }
     }
 
@@ -198,12 +212,15 @@ public static class DbSeeder
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder");
 
         var total = 0;
+        var skipped = 0;
+        var lastSeenId = 0;
         while (true)
         {
-            db.ChangeTracker.Clear();
             var batch = await db.Comments
-                .Where(c => c.BodyFingerprint == "")
+                .AsNoTracking()
+                .Where(c => c.BodyFingerprint == "" && c.Id > lastSeenId)
                 .OrderBy(c => c.Id)
+                .Select(c => new { c.Id, c.Body })
                 .Take(500)
                 .ToListAsync(cancellationToken);
             if (batch.Count == 0)
@@ -211,18 +228,34 @@ public static class DbSeeder
                 break;
             }
 
-            foreach (var comment in batch)
+            foreach (var item in batch)
             {
-                comment.BodyFingerprint = CommentRules.Fingerprint(comment.Body);
+                var fingerprint = CommentRules.Fingerprint(item.Body);
+                var id = item.Id;
+                var affected = await db.Comments
+                    .Where(c => c.Id == id && c.BodyFingerprint == "")
+                    .ExecuteUpdateAsync(s => s.SetProperty(c => c.BodyFingerprint, fingerprint), cancellationToken);
+                if (affected == 0)
+                {
+                    skipped++;
+                }
+                else
+                {
+                    total++;
+                }
             }
 
-            await db.SaveChangesAsync(cancellationToken);
-            total += batch.Count;
+            lastSeenId = batch[^1].Id;
         }
 
         if (total > 0)
         {
             logger.LogInformation("{Count} yorum için içerik parmak izi dolduruldu.", total);
+        }
+
+        if (skipped > 0)
+        {
+            logger.LogInformation("{Count} yorum başka bir örnek tarafından güncellendiği için atlandı.", skipped);
         }
     }
 
@@ -244,6 +277,12 @@ public static class DbSeeder
         }
 
         var userName = options.AdminUserName.Trim();
+        if (UserNameRules.IsReserved(userName))
+        {
+            logger.LogError("Seed:AdminUserName sistem hesapları için ayrılmış bir ad olduğundan müdür hesabı oluşturulmadı.");
+            return;
+        }
+
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
         if (await userManager.FindByNameAsync(userName) is not null)
