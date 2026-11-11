@@ -34,6 +34,7 @@ public static class RateLimitingExtensions
                     HttpContext = context.HttpContext,
                     ProblemDetails = new ProblemDetails
                     {
+                        Type = "https://tools.ietf.org/html/rfc6585#section-4",
                         Status = StatusCodes.Status429TooManyRequests,
                         Title = "Çok fazla istek gönderildi.",
                         Detail = "Lütfen bir süre bekleyip tekrar deneyin."

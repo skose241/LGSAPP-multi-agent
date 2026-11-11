@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations;
 namespace LGSApp.Api.Dtos;
 
 public record LoginRequest(
-    [Required, StringLength(100)] string UserName,
-    [Required, StringLength(128)] string Password);
+    [Required(ErrorMessage = "Kullanıcı adı zorunludur."), StringLength(100, ErrorMessage = "Kullanıcı adı en fazla {1} karakter olabilir.")] string UserName,
+    [Required(ErrorMessage = "Şifre zorunludur."), StringLength(128, ErrorMessage = "Şifre en fazla {1} karakter olabilir.")] string Password);
 
 public record UserInfoDto(
     int Id,
@@ -22,8 +22,8 @@ public record LoginResponse(
     UserInfoDto User);
 
 public record ChangePasswordRequest(
-    [Required, StringLength(128)] string CurrentPassword,
-    [Required, StringLength(128)] string NewPassword);
+    [Required(ErrorMessage = "Mevcut şifre zorunludur."), StringLength(128, ErrorMessage = "Mevcut şifre en fazla {1} karakter olabilir.")] string CurrentPassword,
+    [Required(ErrorMessage = "Yeni şifre zorunludur."), StringLength(128, ErrorMessage = "Yeni şifre en fazla {1} karakter olabilir.")] string NewPassword);
 
 public record ForgotPasswordRequest(
-    [Required, StringLength(100)] string UserName);
+    [Required(ErrorMessage = "Kullanıcı adı zorunludur."), StringLength(100, ErrorMessage = "Kullanıcı adı en fazla {1} karakter olabilir.")] string UserName);

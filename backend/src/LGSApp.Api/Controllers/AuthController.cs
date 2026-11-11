@@ -185,7 +185,7 @@ public class AuthController : ControllerBase
     }
 
     private ObjectResult InvalidCredentials() =>
-        Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Kullanıcı adı veya şifre hatalı. Çok sayıda hatalı denemede hesap 10 dakika kilitlenir.");
+        Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Kullanıcı adı veya şifre hatalı.");
 
     private ObjectResult IdentityProblem(IdentityResult result) =>
         Problem(

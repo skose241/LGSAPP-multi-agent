@@ -3,11 +3,11 @@ using System.ComponentModel.DataAnnotations;
 namespace LGSApp.Api.Dtos;
 
 public record CreateUserRequest(
-    [Required, StringLength(100)] string UserName,
-    [Required, StringLength(100)] string FirstName,
-    [Required, StringLength(100)] string LastName,
-    [Required] string Role,
-    [StringLength(50)] string? ClassName);
+    [Required(ErrorMessage = "Kullanıcı adı zorunludur."), StringLength(100, ErrorMessage = "Kullanıcı adı en fazla {1} karakter olabilir.")] string UserName,
+    [Required(ErrorMessage = "Ad zorunludur."), StringLength(100, ErrorMessage = "Ad en fazla {1} karakter olabilir.")] string FirstName,
+    [Required(ErrorMessage = "Soyad zorunludur."), StringLength(100, ErrorMessage = "Soyad en fazla {1} karakter olabilir.")] string LastName,
+    [Required(ErrorMessage = "Rol zorunludur.")] string Role,
+    [StringLength(50, ErrorMessage = "Sınıf en fazla {1} karakter olabilir.")] string? ClassName);
 
 public record AdminUserDto(
     int Id,

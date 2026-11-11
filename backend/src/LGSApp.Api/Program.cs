@@ -1,21 +1,14 @@
 using LGSApp.Api.Extensions;
 using LGSApp.Infrastructure;
 using LGSApp.Infrastructure.Persistence;
-using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-    options.ForwardLimit = 1;
-});
+builder.Services.AddAppForwardedHeaders(builder.Configuration, builder.Environment);
 
-builder.Services.AddControllers();
-builder.Services.AddProblemDetails();
+builder.Services.AddControllers().AddTurkishModelBinding();
+builder.Services.AddTurkishProblemDetails();
 builder.Services.AddOpenApiWithJwt();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
@@ -34,7 +27,7 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-app.UseForwardedHeaders();
+app.UseAppForwardedHeaders(builder.Configuration, app.Environment);
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
