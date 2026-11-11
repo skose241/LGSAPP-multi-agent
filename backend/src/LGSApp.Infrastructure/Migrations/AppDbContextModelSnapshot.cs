@@ -394,6 +394,11 @@ namespace LGSApp.Infrastructure.Migrations
                         .HasMaxLength(800)
                         .HasColumnType("nvarchar(800)");
 
+                    b.Property<string>("BodyFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -463,7 +468,12 @@ namespace LGSApp.Infrastructure.Migrations
                         .HasDatabaseName("IX_Comments_Root_CreatedAt")
                         .HasFilter("[RootId] IS NOT NULL");
 
+                    b.HasIndex("RootId", "QuestionId");
+
                     b.HasIndex("SolutionId", "QuestionId");
+
+                    b.HasIndex("AuthorUserId", "QuestionId", "BodyFingerprint", "CreatedAt")
+                        .HasDatabaseName("IX_Comments_Duplicate");
 
                     b.HasIndex("QuestionId", "SolutionId", "CreatedAt", "Id")
                         .HasDatabaseName("IX_Comments_Roots")
@@ -1245,7 +1255,13 @@ namespace LGSApp.Infrastructure.Migrations
                         new
                         {
                             Key = "yorumMaxDerinlik",
-                            Description = "Yorum ağacının kökten sonraki azami derinliği.",
+                            Description = "Yorum ağacının mutlak azami derinliği (en fazla 10).",
+                            Value = "10"
+                        },
+                        new
+                        {
+                            Key = "yorumGorunurDerinlik",
+                            Description = "Listede bir kökün altında gösterilen yorum seviyesi sayısı.",
                             Value = "3"
                         },
                         new
@@ -1651,12 +1667,13 @@ namespace LGSApp.Infrastructure.Migrations
 
                     b.HasOne("LGSApp.Domain.Entities.Comment", null)
                         .WithMany()
-                        .HasForeignKey("RootId")
+                        .HasForeignKey("ParentId", "QuestionId")
+                        .HasPrincipalKey("Id", "QuestionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LGSApp.Domain.Entities.Comment", null)
                         .WithMany()
-                        .HasForeignKey("ParentId", "QuestionId")
+                        .HasForeignKey("RootId", "QuestionId")
                         .HasPrincipalKey("Id", "QuestionId")
                         .OnDelete(DeleteBehavior.Restrict);
 

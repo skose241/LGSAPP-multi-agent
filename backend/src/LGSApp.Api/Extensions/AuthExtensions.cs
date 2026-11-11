@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using LGSApp.Api.Authorization;
@@ -50,15 +51,21 @@ public static class AuthExtensions
                     OnTokenValidated = async context =>
                     {
                         var idValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-                        if (!int.TryParse(idValue, out var userId))
+                        if (!int.TryParse(idValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId))
                         {
                             context.Fail("Geçersiz kullanıcı.");
                             return;
                         }
 
+                        if (context.Principal?.IsInRole(Roles.Ai) == true)
+                        {
+                            context.Fail("Sistem hesabı ile oturum açılamaz.");
+                            return;
+                        }
+
                         var tokenStamp = context.Principal?.FindFirstValue(TokenService.SecurityStampClaim);
                         var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
-                        var user = await userManager.FindByIdAsync(userId.ToString());
+                        var user = await userManager.FindByIdAsync(userId.ToString(CultureInfo.InvariantCulture));
                         if (user is null || user.IsBanned)
                         {
                             context.Fail("Hesap kullanılamaz.");
@@ -96,10 +103,6 @@ public static class AuthExtensions
                 .RequireAuthenticatedUser()
                 .AddRequirements(new MustChangePasswordRequirement())
                 .RequireRole(Roles.Ogrenci))
-            .AddPolicy(Policies.AiService, p => p
-                .RequireAuthenticatedUser()
-                .AddRequirements(new MustChangePasswordRequirement())
-                .RequireRole(Roles.Ai))
             .AddPolicy(Policies.AuthenticatedAllowPasswordChange, p => p
                 .RequireAuthenticatedUser());
 

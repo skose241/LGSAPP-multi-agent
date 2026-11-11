@@ -32,7 +32,7 @@ public static class RateLimitingExtensions
                 response.StatusCode = StatusCodes.Status429TooManyRequests;
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
                 {
-                    response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
+                    response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
                 }
 
                 var problemDetails = context.HttpContext.RequestServices.GetRequiredService<IProblemDetailsService>();

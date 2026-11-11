@@ -12,6 +12,7 @@ public class Comment
     public ApplicationUser Author { get; set; } = null!;
     public int? ReplyToUserId { get; set; }
     public string Body { get; set; } = string.Empty;
+    public string BodyFingerprint { get; set; } = string.Empty;
     public CommentStatus Status { get; set; } = CommentStatus.Active;
     public string? ModerationReason { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

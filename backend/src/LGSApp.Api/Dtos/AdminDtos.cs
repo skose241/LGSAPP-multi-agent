@@ -20,7 +20,8 @@ public record AdminUserDto(
     bool MustChangePassword,
     DateTime CreatedAt,
     DateTime? LastLoginAt,
-    int? CreatedByUserId);
+    int? CreatedByUserId,
+    bool IsSystemAccount);
 
 public record CreatedUserResponse(AdminUserDto User, string OneTimePassword);
 

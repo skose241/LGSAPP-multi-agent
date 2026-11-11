@@ -130,3 +130,46 @@ CommentDto { id, parentId?, depth, solutionId?, status: "active"|"deleted"|"remo
 4. Tarih kayması: İstanbul dönüşümü tek yerde (TurkeyTime).
 5. Veri taşıma: ders/konu HasData ile değil, Development seed + taşımada IDENTITY_INSERT.
 6. Ledger/önbellek ayrışması: ileride "yeniden hesapla" ucu.
+
+---
+
+## Revizyon 1 (Oturum 4, kullanıcı kararları) — önceki maddelerle çelişirse bu bölüm geçerlidir
+
+### AI sistem hesabı
+- AI (rol 4) bir **sistem hesabıdır**, kimse onunla oturum açamaz. Şifresi yoktur (`PasswordHash = null`), `LockoutEnabled = false`, `MustChangePassword = false`, `IsBanned` her zaman false.
+- Hesap uygulama başlangıcında (tüm ortamlarda, `Seed:Enabled`'dan bağımsız) idempotent olarak garanti edilir: tek AI kullanıcısı, sabit kullanıcı adı (`yapay.zeka`). Birden fazla AI kullanıcısı oluşturulamaz.
+- Login: AI rolündeki hesap için sahte hash doğrulaması yapılır ve olmayan kullanıcıyla birebir aynı 401 döner; başarısız deneme sayacı artmaz, kilitlenme olmaz.
+- `forgot-password`: aynı jenerik yanıt, talep oluşturulmaz.
+- Admin: AI rolüyle kullanıcı oluşturma, `regenerate-password`, `ban`/`unban`, şifre sıfırlama talebi tamamlama AI hesabı için reddedilir (400 "Yapay zekâ hesabı sistem tarafından yönetilir."). Listede `isSystemAccount=true` ile görünür.
+- JWT: `OnTokenValidated` AI rolü taşıyan her token'ı reddeder. AI'ya özel policy (varsa) kaldırılır.
+- Zamanlayıcı/AI servisi bu hesabı JWT ile değil, sunucu içinde `AuthorUserId` olarak kullanır (sonraki oturumda API anahtarı / Managed Identity).
+
+### Yorum derinliği: "Devamını göster"
+- Kardeşe bağlama kaldırıldı. Yanıtlar gerçek derinliğinde saklanır. Mutlak sınır `CommentRules.AbsoluteMaxDepth = 10` (CK ile aynı); yalnızca bu sınıra ulaşıldığında eski davranış (parent'ın kardeşi + `ReplyToUserId`) devreye girer.
+- Yeni ayar `yorumGorunurDerinlik = 3`: liste bir kökün altında en fazla 3 seviye döner. 3. seviyedeki bir düğümün görünür torunu varsa `replies=[]`, `hasMoreReplies=true`, `hiddenReplyCount=N` döner; istemci "Devamını göster (N yanıt)" gösterir.
+- `yorumMaxDerinlik` ayarı mutlak sınır anlamına gelir, varsayılan 10, en fazla 10.
+- Yeni uç: `GET /api/comments/{id}/thread?includeRemoved=false` → `CommentSubthreadView { questionId, solutionId?, focus: CommentDto, ancestors: CommentAncestorDto[] (kökten parent'a: id, status, author userName, kısaltılmış body), visibleDepth }`. `focus` göreli olarak yine `yorumGorunurDerinlik` seviye açılır, daha derini yine `hasMoreReplies` ile işaretlenir. Erişim kuralı listeyle aynıdır.
+- Budama ve yer tutucu kararı tüm alt ağaç üzerinden verilir, kesme (truncate) budamadan sonra yapılır; böylece silinmiş 3. seviye düğümün yalnız derin torunları varsa yer tutucu + "Devamını göster" görünür.
+- `replyCount`: alt ağaçtaki toplam görünür düğüm (kesilenler dahil). `hiddenReplyCount`: kesilen görünür düğüm sayısı.
+- DB: `(RootId, QuestionId)` → `Comments(Id, QuestionId)` composite FK eklenir.
+
+### Metin normalizasyonu ve Türkçe karakter
+- Saklanan gövde: Unicode NFC; kontrol karakterleri temizlenir; bidi kontrol karakterleri (U+202A–U+202E, U+2066–U+2069, U+200E, U+200F, U+061C) ve U+200B, U+2060, U+FEFF temizlenir (U+200C/U+200D emoji dizileri için korunur); satır sonu boşlukları kırpılır, yalnız boşluk içeren satır boş satır sayılır; 3'ten fazla ardışık boş satır 3'e iner.
+- Tekrar algılama: `BodyFingerprint` (nvarchar(64), SHA-256 hex) = NFKC + tüm Cf kategorisi karakterler silinmiş + tüm boşluk dizileri tek boşluk + `tr-TR` küçük harf + `ı→i` katlaması. Collation'dan bağımsız. İndeks `(AuthorUserId, QuestionId, BodyFingerprint, CreatedAt)`.
+- Kodda kültüre duyarlı string işlemleri (`ToLower()`, `ToUpper()`, `StartsWith(string)` vb.) açık kültürle yazılır.
+
+### UTC
+- Tüm `DateTime`/`DateTime?` alanlar DbContext konvansiyonuyla UTC'ye dönüştürülür: yazarken Local → UTC, Unspecified → UTC kabul; okurken `DateTimeKind.Utc`. JSON çıktısı her zaman `Z` ile biter.
+
+### Diğer düzeltmeler
+- Sayfalama: offset `long` ile hesaplanır; toplamı aşan sayfa boş liste döner (500 olmaz).
+- Yanıt verilirken parent'ın `SolutionId`'si doluysa çözümün kullanılabilir (silinmemiş, moderatör değilse gizli değil) olduğu doğrulanır; değilse 404 "Çözüm bulunamadı.".
+- Yorum oluşturma tek transaction içinde, soru satırı `UPDLOCK, ROWLOCK` ile kilitlenerek: tekrar kontrolü ve soru başı sınır yarışsız.
+- Yorum id'li uçlar (`PATCH`, `DELETE`, `reports`, `thread`, `remove`, `restore`): aktör moderatör değilse ve soruya `CanSeeDiscussion` erişimi yoksa 404 "Yorum bulunamadı." (varlık sızıntısı yok). Erişimi varsa yazar olmayana 403.
+- Moderatör (öğretmen/müdür) şikayet oluşturamaz: 403.
+- Bildirim birleştirme: mevcut okunmamış bildirimin `Message`, `CommentId`, `CreatedAt` alanları güncellenir.
+- `includeRemoved=true` görünümünde `totalCount` listede dönen düğüm sayısıyla tutarlı: moderatör + includeRemoved ise tüm durumlar sayılır.
+
+### Ödev sorusu görünürlüğü
+- Bir soru (silinmemiş) bir ödeve bağlıysa havuzdan görünmez: görünürlük yalnız ödev durumuna bağlıdır (Published/Closed), `PublishedAt` dikkate alınmaz. Taslak/Planlandı ödevdeki soru öğrenciye 404. Moderatör muaf.
+- Sonraki oturum (AssignmentService) notu: havuzda cevaplanmış bir soru ödeve eklenemez.

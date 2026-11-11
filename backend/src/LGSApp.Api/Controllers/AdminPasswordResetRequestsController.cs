@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Security.Claims;
 using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
@@ -18,11 +20,13 @@ public class AdminPasswordResetRequestsController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly OneTimePasswordService _oneTimePasswords;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public AdminPasswordResetRequestsController(AppDbContext db, OneTimePasswordService oneTimePasswords)
+    public AdminPasswordResetRequestsController(AppDbContext db, OneTimePasswordService oneTimePasswords, UserManager<ApplicationUser> userManager)
     {
         _db = db;
         _oneTimePasswords = oneTimePasswords;
+        _userManager = userManager;
     }
 
     [HttpGet]
@@ -75,6 +79,12 @@ public class AdminPasswordResetRequestsController : ControllerBase
                 if (request.Status != PasswordResetStatus.Pending)
                 {
                     error = Problem(statusCode: StatusCodes.Status409Conflict, title: "Talep zaten işlenmiş.");
+                    return;
+                }
+
+                if (await _userManager.IsInRoleAsync(request.User, Roles.Ai))
+                {
+                    error = Problem(statusCode: StatusCodes.Status400BadRequest, title: SystemAccounts.ManagedMessage);
                     return;
                 }
 
@@ -147,5 +157,5 @@ public class AdminPasswordResetRequestsController : ControllerBase
     }
 
     private int? CurrentUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? id : null;
 }

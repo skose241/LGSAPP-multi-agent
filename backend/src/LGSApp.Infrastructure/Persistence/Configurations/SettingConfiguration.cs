@@ -18,7 +18,7 @@ public class SettingConfiguration : IEntityTypeConfiguration<Setting>
         b.HasData(SettingKeys.Defaults.Select(d => new Setting
         {
             Key = d.Key,
-            Value = d.Value.ToString(),
+            Value = d.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Description = d.Description
         }));
     }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using LGSApp.Domain.Constants;
 using LGSApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,7 @@ public sealed class SettingsService(AppDbContext db, IMemoryCache cache) : ISett
     public async Task<int> GetIntAsync(string key, CancellationToken cancellationToken = default)
     {
         var all = await LoadAsync(cancellationToken);
-        if (all.TryGetValue(key, out var raw) && int.TryParse(raw, out var value))
+        if (all.TryGetValue(key, out var raw) && int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
         {
             return value;
         }

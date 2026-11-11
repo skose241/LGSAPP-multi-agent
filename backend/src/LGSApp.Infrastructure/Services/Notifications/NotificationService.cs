@@ -48,7 +48,17 @@ public sealed class NotificationService(AppDbContext db, TurkeyTime clock) : INo
 
             if (existing is not null)
             {
+                existing.Message = draft.Message;
                 existing.CreatedAt = clock.UtcNow;
+                if (draft.CommentEntity is not null)
+                {
+                    existing.Comment = draft.CommentEntity;
+                }
+                else if (draft.CommentId is not null)
+                {
+                    existing.CommentId = draft.CommentId;
+                }
+
                 return true;
             }
         }

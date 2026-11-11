@@ -14,6 +14,7 @@ public static class SettingKeys
     public const string AiGunlukCozumLimit = "aiGunlukCozumLimit";
     public const string YorumMaxKarakter = "yorumMaxKarakter";
     public const string YorumMaxDerinlik = "yorumMaxDerinlik";
+    public const string YorumGorunurDerinlik = "yorumGorunurDerinlik";
     public const string YorumDuzenlemeDk = "yorumDuzenlemeDk";
     public const string YorumSoruBasinaMax = "yorumSoruBasinaMax";
     public const string CozumMaxKarakter = "cozumMaxKarakter";
@@ -32,7 +33,8 @@ public static class SettingKeys
         (SoruCarpani, 1, "Günlük soru sayısı çarpanı."),
         (AiGunlukCozumLimit, 5, "Öğrenci başına günlük yapay zeka çözüm hakkı."),
         (YorumMaxKarakter, 800, "Yorumun azami karakter sayısı."),
-        (YorumMaxDerinlik, 3, "Yorum ağacının kökten sonraki azami derinliği."),
+        (YorumMaxDerinlik, 10, "Yorum ağacının mutlak azami derinliği (en fazla 10)."),
+        (YorumGorunurDerinlik, 3, "Listede bir kökün altında gösterilen yorum seviyesi sayısı."),
         (YorumDuzenlemeDk, 15, "Yorum düzenleme süresi (dakika)."),
         (YorumSoruBasinaMax, 1000, "Bir soruya yazılabilecek azami yorum sayısı."),
         (CozumMaxKarakter, 4000, "İnsan tarafından yazılan çözümün azami karakter sayısı."),

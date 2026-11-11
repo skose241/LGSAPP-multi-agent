@@ -52,7 +52,9 @@ app.MapHealthChecks("/health").AllowAnonymous();
 
 try
 {
+    await DbSeeder.EnsureAiAccountAsync(app.Services);
     await DbSeeder.SeedAdminAsync(app.Services);
+    await DbSeeder.BackfillCommentFingerprintsAsync(app.Services);
     await DbSeeder.SeedReferenceDataAsync(app.Services);
 }
 catch (Exception ex)

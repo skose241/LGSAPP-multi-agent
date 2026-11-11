@@ -33,8 +33,9 @@ public sealed class QuestionAccessService(AppDbContext db) : IQuestionAccessServ
 {
     public static QuestionAccess Evaluate(QuestionAccessFacts facts, Actor actor)
     {
-        var isPublished = facts.PublishedAt is not null
-            || facts.AssignmentStatus is AssignmentStatus.Published or AssignmentStatus.Closed;
+        var isPublished = facts.AssignmentStatus is null
+            ? facts.PublishedAt is not null
+            : facts.AssignmentStatus is AssignmentStatus.Published or AssignmentStatus.Closed;
         var isVisible = actor.IsModerator || (isPublished && !facts.IsHidden);
         var isOwner = facts.AuthorUserId == actor.UserId;
         var canSeeDiscussion = isVisible

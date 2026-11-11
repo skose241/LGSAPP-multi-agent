@@ -2,6 +2,7 @@ using System.Security.Claims;
 using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
 using LGSApp.Api.Extensions;
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
@@ -46,7 +47,8 @@ public class AuthController : ControllerBase
     {
         var userName = request.UserName.Trim();
         var user = await _userManager.FindByNameAsync(userName);
-        if (user is null)
+        var isSystemAccount = await IsSystemAccountAsync(user?.Id ?? 0);
+        if (user is null || isSystemAccount || user.PasswordHash is null)
         {
             _dummyVerifier.Verify(request.Password);
             return InvalidCredentials();
@@ -118,7 +120,7 @@ public class AuthController : ControllerBase
     {
         var userName = request.UserName.Trim();
         var user = await _userManager.FindByNameAsync(userName);
-        if (user is not null && !user.IsBanned)
+        if (user is not null && !user.IsBanned && !await IsSystemAccountAsync(user.Id))
         {
             var hasPending = await _db.PasswordResetRequests
                 .AnyAsync(r => r.UserId == user.Id && r.Status == PasswordResetStatus.Pending, cancellationToken);
@@ -157,6 +159,9 @@ public class AuthController : ControllerBase
 
         return Ok(await ToUserInfo(user));
     }
+
+    private Task<bool> IsSystemAccountAsync(int userId) =>
+        _db.UserRoles.AnyAsync(ur => ur.UserId == userId && ur.RoleId == Roles.AiId);
 
     private async Task<ApplicationUser?> GetCurrentUser()
     {

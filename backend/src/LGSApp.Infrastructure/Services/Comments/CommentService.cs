@@ -41,12 +41,24 @@ public sealed record CommentView(
     DateTime? EditableUntil,
     byte[]? RowVersion,
     int ReplyCount,
+    bool HasMoreReplies,
+    int HiddenReplyCount,
     IReadOnlyList<CommentView> Replies);
+
+public sealed record CommentAncestorView(int Id, string Status, string? UserName, string? Body);
+
+public sealed record CommentSubthreadView(
+    int QuestionId,
+    int? SolutionId,
+    CommentView Focus,
+    IReadOnlyList<CommentAncestorView> Ancestors,
+    int VisibleDepth);
 
 public sealed record CommentThreadView(
     int QuestionId,
     int? SolutionId,
     int MaxDepth,
+    int VisibleDepth,
     bool CanComment,
     int TotalRootCount,
     int TotalCount,
@@ -57,6 +69,7 @@ public sealed record CommentThreadView(
 public interface ICommentService
 {
     Task<ServiceResult<CommentThreadView>> GetThreadAsync(Actor actor, int questionId, CommentListQuery query, CancellationToken cancellationToken = default);
+    Task<ServiceResult<CommentSubthreadView>> GetSubthreadAsync(Actor actor, int commentId, bool includeRemoved, CancellationToken cancellationToken = default);
     Task<ServiceResult<CommentView>> CreateAsync(Actor actor, int questionId, CreateCommentCommand command, CancellationToken cancellationToken = default);
     Task<ServiceResult<CommentView>> EditAsync(Actor actor, int commentId, EditCommentCommand command, CancellationToken cancellationToken = default);
     Task<ServiceResult> DeleteAsync(Actor actor, int commentId, CancellationToken cancellationToken = default);
@@ -73,6 +86,8 @@ public sealed class CommentService(
     TurkeyTime clock) : ICommentService
 {
     private const string DiscussionDenied = "Yorumları görmek için önce soruyu cevaplamalısınız.";
+    private const string CommentNotFound = "Yorum bulunamadı.";
+    private const string SolutionNotFound = "Çözüm bulunamadı.";
     private const int MaxPageSize = 50;
 
     private static readonly Expression<Func<Comment, CommentNode>> NodeProjection = c => new CommentNode(
@@ -114,11 +129,12 @@ public sealed class CommentService(
             var solutionOk = await IsUsableSolutionAsync(questionId, sid, actor, cancellationToken);
             if (!solutionOk)
             {
-                return Fail.NotFound("Çözüm bulunamadı.");
+                return Fail.NotFound(SolutionNotFound);
             }
         }
 
-        var maxDepth = Math.Clamp(await settings.GetIntAsync(SettingKeys.YorumMaxDerinlik, cancellationToken), 1, CommentRules.AbsoluteMaxDepth);
+        var maxDepth = await GetMaxDepthAsync(cancellationToken);
+        var visibleDepth = await GetVisibleDepthAsync(maxDepth, cancellationToken);
         var editMinutes = await settings.GetIntAsync(SettingKeys.YorumDuzenlemeDk, cancellationToken);
         var perQuestionMax = await settings.GetIntAsync(SettingKeys.YorumSoruBasinaMax, cancellationToken);
 
@@ -135,18 +151,23 @@ public sealed class CommentService(
         }
 
         var totalRoots = await rootQuery.CountAsync(cancellationToken);
-        var totalActive = await scope.CountAsync(c => c.Status == CommentStatus.Active, cancellationToken);
+        var totalCount = includeRemoved
+            ? await scope.CountAsync(cancellationToken)
+            : await scope.CountAsync(c => c.Status == CommentStatus.Active, cancellationToken);
         var questionTotal = await db.Comments.AsNoTracking().CountAsync(c => c.QuestionId == questionId, cancellationToken);
 
         var ordered = query.Sort == CommentSort.Newest
             ? rootQuery.OrderByDescending(c => c.CreatedAt).ThenByDescending(c => c.Id)
             : rootQuery.OrderBy(c => c.CreatedAt).ThenBy(c => c.Id);
 
-        var roots = await ordered
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .Select(NodeProjection)
-            .ToListAsync(cancellationToken);
+        var offset = (long)(query.Page - 1) * query.PageSize;
+        var roots = offset >= totalRoots
+            ? new List<CommentNode>()
+            : await ordered
+                .Skip((int)offset)
+                .Take(query.PageSize)
+                .Select(NodeProjection)
+                .ToListAsync(cancellationToken);
 
         var rootIds = roots.Select(r => r.Id).ToList();
         var descendants = rootIds.Count == 0
@@ -158,6 +179,7 @@ public sealed class CommentService(
                 .ToListAsync(cancellationToken);
 
         var tree = CommentTreeBuilder.Build(roots, descendants, includeRemoved);
+        CommentTreeBuilder.Truncate(tree, visibleDepth);
 
         var userIds = new HashSet<int>();
         CollectUserIds(tree, userIds);
@@ -171,12 +193,74 @@ public sealed class CommentService(
             questionId,
             solutionId,
             maxDepth,
+            visibleDepth,
             canComment,
             totalRoots,
-            totalActive,
+            totalCount,
             query.Page,
             query.PageSize,
             items));
+    }
+
+    public async Task<ServiceResult<CommentSubthreadView>> GetSubthreadAsync(Actor actor, int commentId, bool includeRemoved, CancellationToken cancellationToken = default)
+    {
+        var found = await FindAccessibleAsync(actor, commentId, false, cancellationToken);
+        if (!found.Succeeded)
+        {
+            return ServiceResult<CommentSubthreadView>.From(found);
+        }
+
+        var comment = found.Value!;
+        if (comment.SolutionId is int sid && !await IsUsableSolutionAsync(comment.QuestionId, sid, actor, cancellationToken))
+        {
+            return Fail.NotFound(SolutionNotFound);
+        }
+
+        var effectiveIncludeRemoved = includeRemoved && actor.IsModerator;
+        var maxDepth = await GetMaxDepthAsync(cancellationToken);
+        var visibleDepth = await GetVisibleDepthAsync(maxDepth, cancellationToken);
+        var editMinutes = await settings.GetIntAsync(SettingKeys.YorumDuzenlemeDk, cancellationToken);
+
+        var rootId = comment.RootId ?? comment.Id;
+        var rootNode = await db.Comments.AsNoTracking()
+            .Where(c => c.Id == rootId)
+            .Select(NodeProjection)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (rootNode is null)
+        {
+            return Fail.NotFound(CommentNotFound);
+        }
+
+        var descendants = await db.Comments.AsNoTracking()
+            .Where(c => c.RootId == rootId)
+            .OrderBy(c => c.CreatedAt).ThenBy(c => c.Id)
+            .Select(NodeProjection)
+            .ToListAsync(cancellationToken);
+
+        var tree = CommentTreeBuilder.Build([rootNode], descendants, effectiveIncludeRemoved);
+        var path = CommentTreeBuilder.FindPath(tree, commentId);
+        if (path is null)
+        {
+            return Fail.NotFound(CommentNotFound);
+        }
+
+        var focus = path[^1];
+        CommentTreeBuilder.Truncate([focus], visibleDepth);
+
+        var userIds = new HashSet<int>();
+        CollectUserIds(path, userIds);
+        CollectUserIds(focus.Replies, userIds);
+        var people = await users.GetAsync(userIds, actor.IsModerator, cancellationToken);
+
+        var context = new ViewContext(actor, people, clock.UtcNow, editMinutes);
+        var ancestors = path.Take(path.Count - 1).Select(n => ToAncestor(n, people)).ToList();
+
+        return ServiceResult<CommentSubthreadView>.Ok(new CommentSubthreadView(
+            comment.QuestionId,
+            comment.SolutionId,
+            ToView(focus, context),
+            ancestors,
+            visibleDepth));
     }
 
     public async Task<ServiceResult<CommentView>> CreateAsync(Actor actor, int questionId, CreateCommentCommand command, CancellationToken cancellationToken = default)
@@ -193,15 +277,42 @@ public sealed class CommentService(
             return Fail.Validation($"Yorum en fazla {maxLength} karakter olabilir.");
         }
 
-        var gate = await access.RequireDiscussionAsync(questionId, actor, DiscussionDenied, cancellationToken);
+        var fingerprint = CommentRules.Fingerprint(body);
+        var maxDepth = await GetMaxDepthAsync(cancellationToken);
+        var editMinutes = await settings.GetIntAsync(SettingKeys.YorumDuzenlemeDk, cancellationToken);
+        var perQuestionMax = await settings.GetIntAsync(SettingKeys.YorumSoruBasinaMax, cancellationToken);
+
+        return await db.ExecuteInTransactionAsync<ServiceResult<CommentView>>(
+            token => CreateCoreAsync(actor, questionId, command, body, fingerprint, maxDepth, editMinutes, perQuestionMax, token),
+            cancellationToken);
+    }
+
+    private async Task<ServiceResult<CommentView>> CreateCoreAsync(
+        Actor actor,
+        int questionId,
+        CreateCommentCommand command,
+        string body,
+        string fingerprint,
+        int maxDepth,
+        int editMinutes,
+        int perQuestionMax,
+        CancellationToken token)
+    {
+        var lockedId = await db.Questions
+            .FromSqlInterpolated($"SELECT * FROM [Questions] WITH (UPDLOCK, ROWLOCK) WHERE [Id] = {questionId}")
+            .AsNoTracking()
+            .Select(q => (int?)q.Id)
+            .FirstOrDefaultAsync(token);
+        if (lockedId is null)
+        {
+            return Fail.NotFound("Soru bulunamadı.");
+        }
+
+        var gate = await access.RequireDiscussionAsync(questionId, actor, DiscussionDenied, token);
         if (!gate.Succeeded)
         {
             return ServiceResult<CommentView>.From(gate);
         }
-
-        var maxDepth = Math.Clamp(await settings.GetIntAsync(SettingKeys.YorumMaxDerinlik, cancellationToken), 1, CommentRules.AbsoluteMaxDepth);
-        var editMinutes = await settings.GetIntAsync(SettingKeys.YorumDuzenlemeDk, cancellationToken);
-        var perQuestionMax = await settings.GetIntAsync(SettingKeys.YorumSoruBasinaMax, cancellationToken);
 
         Comment? parent = null;
         int? solutionId = null;
@@ -209,7 +320,7 @@ public sealed class CommentService(
 
         if (command.ParentId is int parentId)
         {
-            parent = await db.Comments.AsNoTracking().FirstOrDefaultAsync(c => c.Id == parentId && c.QuestionId == questionId, cancellationToken);
+            parent = await db.Comments.AsNoTracking().FirstOrDefaultAsync(c => c.Id == parentId && c.QuestionId == questionId, token);
             if (parent is null)
             {
                 return Fail.NotFound("Yanıtlanan yorum bulunamadı.");
@@ -221,23 +332,27 @@ public sealed class CommentService(
             }
 
             solutionId = parent.SolutionId;
+            if (solutionId is int parentSolutionId && !await IsUsableSolutionAsync(questionId, parentSolutionId, actor, token))
+            {
+                return Fail.NotFound(SolutionNotFound);
+            }
         }
         else if (command.SolutionId is int sid)
         {
             var solution = await db.Solutions.AsNoTracking()
                 .Where(s => s.Id == sid && s.QuestionId == questionId && !s.IsDeleted && (actor.IsModerator || !s.IsHidden))
                 .Select(s => new { s.Id, s.AuthorUserId })
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(token);
             if (solution is null)
             {
-                return Fail.NotFound("Çözüm bulunamadı.");
+                return Fail.NotFound(SolutionNotFound);
             }
 
             solutionId = solution.Id;
             solutionAuthorId = solution.AuthorUserId;
         }
 
-        var questionTotal = await db.Comments.CountAsync(c => c.QuestionId == questionId, cancellationToken);
+        var questionTotal = await db.Comments.CountAsync(c => c.QuestionId == questionId, token);
         if (questionTotal >= perQuestionMax)
         {
             return Fail.Conflict("Bu soruya daha fazla yorum eklenemez.");
@@ -246,8 +361,11 @@ public sealed class CommentService(
         var now = clock.UtcNow;
         var windowStart = now.AddSeconds(-CommentRules.DuplicateWindowSeconds);
         var duplicate = await db.Comments.AnyAsync(
-            c => c.AuthorUserId == actor.UserId && c.QuestionId == questionId && c.Body == body && c.CreatedAt >= windowStart,
-            cancellationToken);
+            c => c.AuthorUserId == actor.UserId
+                && c.QuestionId == questionId
+                && c.BodyFingerprint == fingerprint
+                && c.CreatedAt >= windowStart,
+            token);
         if (duplicate)
         {
             return Fail.Conflict("Aynı yorumu kısa süre içinde tekrar gönderdiniz.");
@@ -259,6 +377,7 @@ public sealed class CommentService(
             SolutionId = solutionId,
             AuthorUserId = actor.UserId,
             Body = body,
+            BodyFingerprint = fingerprint,
             Status = CommentStatus.Active,
             CreatedAt = now
         };
@@ -266,7 +385,7 @@ public sealed class CommentService(
         int? notifyUserId;
         NotificationType notifyType;
         string notifyText;
-        var people = await users.GetAsync([actor.UserId], actor.IsModerator, cancellationToken);
+        var people = await users.GetAsync([actor.UserId], actor.IsModerator, token);
         var actorName = people.TryGetValue(actor.UserId, out var me) ? me.UserName : "Bir kullanıcı";
 
         if (parent is null)
@@ -319,10 +438,10 @@ public sealed class CommentService(
                     CommentEntity: comment,
                     SenderUserId: actor.UserId),
                 true,
-                cancellationToken);
+                token);
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(token);
 
         var userIds = new HashSet<int> { actor.UserId };
         if (comment.ReplyToUserId is int replyTo)
@@ -330,28 +449,23 @@ public sealed class CommentService(
             userIds.Add(replyTo);
         }
 
-        var viewUsers = await users.GetAsync(userIds, actor.IsModerator, cancellationToken);
+        var viewUsers = await users.GetAsync(userIds, actor.IsModerator, token);
         var node = new CommentTreeNode(ToNode(comment), false);
         return ServiceResult<CommentView>.Ok(ToView(node, new ViewContext(actor, viewUsers, now, editMinutes)));
     }
 
     public async Task<ServiceResult<CommentView>> EditAsync(Actor actor, int commentId, EditCommentCommand command, CancellationToken cancellationToken = default)
     {
-        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == commentId, cancellationToken);
-        if (comment is null)
+        var found = await FindAccessibleAsync(actor, commentId, true, cancellationToken);
+        if (!found.Succeeded)
         {
-            return Fail.NotFound("Yorum bulunamadı.");
+            return ServiceResult<CommentView>.From(found);
         }
 
+        var comment = found.Value!;
         if (comment.AuthorUserId != actor.UserId)
         {
             return Fail.Forbidden("Yalnızca kendi yorumunuzu düzenleyebilirsiniz.");
-        }
-
-        var gate = await access.RequireDiscussionAsync(comment.QuestionId, actor, DiscussionDenied, cancellationToken);
-        if (!gate.Succeeded)
-        {
-            return ServiceResult<CommentView>.From(gate);
         }
 
         if (comment.Status != CommentStatus.Active)
@@ -387,6 +501,7 @@ public sealed class CommentService(
         {
             db.Entry(comment).Property(c => c.RowVersion).OriginalValue = command.RowVersion;
             comment.Body = body;
+            comment.BodyFingerprint = CommentRules.Fingerprint(body);
             comment.EditedAt = now;
             comment.EditCount = (byte)Math.Min(comment.EditCount + 1, CommentRules.MaxEditCount);
 
@@ -413,12 +528,13 @@ public sealed class CommentService(
 
     public async Task<ServiceResult> DeleteAsync(Actor actor, int commentId, CancellationToken cancellationToken = default)
     {
-        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == commentId, cancellationToken);
-        if (comment is null)
+        var found = await FindAccessibleAsync(actor, commentId, true, cancellationToken);
+        if (!found.Succeeded)
         {
-            return Fail.NotFound("Yorum bulunamadı.");
+            return Fail.NotFound(CommentNotFound);
         }
 
+        var comment = found.Value!;
         if (comment.AuthorUserId != actor.UserId)
         {
             return Fail.Forbidden("Yalnızca kendi yorumunuzu silebilirsiniz.");
@@ -468,12 +584,13 @@ public sealed class CommentService(
             return Fail.Validation($"Kaldırma nedeni en fazla {CommentRules.ModerationReasonMaxLength} karakter olabilir.");
         }
 
-        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == commentId, cancellationToken);
-        if (comment is null)
+        var found = await FindAccessibleAsync(actor, commentId, true, cancellationToken);
+        if (!found.Succeeded)
         {
-            return Fail.NotFound("Yorum bulunamadı.");
+            return Fail.NotFound(CommentNotFound);
         }
 
+        var comment = found.Value!;
         if (comment.Status != CommentStatus.Active)
         {
             return Fail.Conflict("Bu yorum zaten yayından kaldırılmış.");
@@ -514,12 +631,13 @@ public sealed class CommentService(
             return Fail.Forbidden("Yalnızca müdür yorumu geri yükleyebilir.");
         }
 
-        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == commentId, cancellationToken);
-        if (comment is null)
+        var found = await FindAccessibleAsync(actor, commentId, true, cancellationToken);
+        if (!found.Succeeded)
         {
-            return Fail.NotFound("Yorum bulunamadı.");
+            return Fail.NotFound(CommentNotFound);
         }
 
+        var comment = found.Value!;
         if (comment.Status != CommentStatus.RemovedByModerator)
         {
             return Fail.Conflict("Yalnızca yönetici tarafından kaldırılan yorumlar geri yüklenebilir.");
@@ -541,6 +659,33 @@ public sealed class CommentService(
 
         return ServiceResult.Ok();
     }
+
+    private async Task<ServiceResult<Comment>> FindAccessibleAsync(Actor actor, int commentId, bool tracking, CancellationToken cancellationToken)
+    {
+        var source = tracking ? db.Comments : db.Comments.AsNoTracking();
+        var comment = await source.FirstOrDefaultAsync(c => c.Id == commentId, cancellationToken);
+        if (comment is null)
+        {
+            return Fail.NotFound(CommentNotFound);
+        }
+
+        if (!actor.IsModerator)
+        {
+            var decision = await access.GetAsync(comment.QuestionId, actor, cancellationToken);
+            if (decision is null || !decision.CanSeeDiscussion)
+            {
+                return Fail.NotFound(CommentNotFound);
+            }
+        }
+
+        return ServiceResult<Comment>.Ok(comment);
+    }
+
+    private async Task<int> GetMaxDepthAsync(CancellationToken cancellationToken) =>
+        Math.Clamp(await settings.GetIntAsync(SettingKeys.YorumMaxDerinlik, cancellationToken), 1, CommentRules.AbsoluteMaxDepth);
+
+    private async Task<int> GetVisibleDepthAsync(int maxDepth, CancellationToken cancellationToken) =>
+        Math.Clamp(await settings.GetIntAsync(SettingKeys.YorumGorunurDerinlik, cancellationToken), 1, maxDepth);
 
     private Task<bool> IsUsableSolutionAsync(int questionId, int solutionId, Actor actor, CancellationToken cancellationToken) =>
         db.Solutions.AsNoTracking().AnyAsync(
@@ -579,6 +724,42 @@ public sealed class CommentService(
 
     private sealed record ViewContext(Actor Actor, IReadOnlyDictionary<int, UserRefView> Users, DateTime Now, int EditMinutes);
 
+    private static string StatusName(CommentStatus status) => status switch
+    {
+        CommentStatus.Active => "active",
+        CommentStatus.DeletedByAuthor => "deleted",
+        _ => "removed"
+    };
+
+    private static CommentAncestorView ToAncestor(CommentTreeNode node, IReadOnlyDictionary<int, UserRefView> people)
+    {
+        var source = node.Source;
+        if (node.IsPlaceholder)
+        {
+            return new CommentAncestorView(source.Id, StatusName(source.Status), null, null);
+        }
+
+        people.TryGetValue(source.AuthorUserId, out var author);
+        return new CommentAncestorView(source.Id, StatusName(source.Status), author?.UserName, Preview(source.Body));
+    }
+
+    private static string Preview(string body)
+    {
+        var flat = string.Join(' ', body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (flat.Length <= CommentRules.AncestorPreviewLength)
+        {
+            return flat;
+        }
+
+        var cut = CommentRules.AncestorPreviewLength;
+        if (char.IsHighSurrogate(flat[cut - 1]))
+        {
+            cut--;
+        }
+
+        return flat[..cut] + "…";
+    }
+
     private static CommentView ToView(CommentTreeNode node, ViewContext ctx)
     {
         var source = node.Source;
@@ -590,7 +771,7 @@ public sealed class CommentService(
         var canDelete = live && isMine && active;
         var canModerate = live
             && ((ctx.Actor.IsModerator && active) || (ctx.Actor.IsMudur && source.Status == CommentStatus.RemovedByModerator));
-        var canReport = live && !isMine && active;
+        var canReport = live && !isMine && active && !ctx.Actor.IsModerator;
 
         UserRefView? author = null;
         string? replyToName = null;
@@ -603,19 +784,12 @@ public sealed class CommentService(
             }
         }
 
-        var status = source.Status switch
-        {
-            CommentStatus.Active => "active",
-            CommentStatus.DeletedByAuthor => "deleted",
-            _ => "removed"
-        };
-
         return new CommentView(
             source.Id,
             source.ParentId,
             source.Depth,
             source.SolutionId,
-            status,
+            StatusName(source.Status),
             live ? source.Body : null,
             author,
             replyToName,
@@ -629,6 +803,8 @@ public sealed class CommentService(
             live && isMine && active ? editableUntil : null,
             live && isMine ? source.RowVersion : null,
             node.ReplyCount,
+            node.HasMoreReplies,
+            node.HiddenReplyCount,
             node.Replies.Select(r => ToView(r, ctx)).ToList());
     }
 }

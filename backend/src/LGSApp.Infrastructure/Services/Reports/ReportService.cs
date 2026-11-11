@@ -34,6 +34,11 @@ public sealed class ReportService(
             return Fail.Validation("Yorum şikayeti için geçerli nedenler: uygunsuz içerik, spam veya diğer.");
         }
 
+        if (actor.IsModerator)
+        {
+            return Fail.Forbidden("Öğretmen ve müdür şikayet oluşturamaz; yorumu doğrudan kaldırabilir.");
+        }
+
         var minLength = await settings.GetIntAsync(SettingKeys.SikayetMinKarakter, cancellationToken);
         var description = (command.Description ?? string.Empty).Trim();
         if (description.Length < minLength)
@@ -55,10 +60,10 @@ public sealed class ReportService(
             return Fail.NotFound("Yorum bulunamadı.");
         }
 
-        var gate = await access.RequireDiscussionAsync(comment.QuestionId, actor, "Yorumları görmek için önce soruyu cevaplamalısınız.", cancellationToken);
-        if (!gate.Succeeded)
+        var decision = await access.GetAsync(comment.QuestionId, actor, cancellationToken);
+        if (decision is null || !decision.CanSeeDiscussion)
         {
-            return ServiceResult<ReportCreatedView>.From(gate);
+            return Fail.NotFound("Yorum bulunamadı.");
         }
 
         if (comment.AuthorUserId == actor.UserId)

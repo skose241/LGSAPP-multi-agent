@@ -41,6 +41,10 @@ public class CommentsController(ICommentService comments, IReportService reports
         return (await comments.GetThreadAsync(User.ToActor(), questionId, query, cancellationToken)).ToActionResult(this);
     }
 
+    [HttpGet("api/comments/{id:int}/thread")]
+    public async Task<IActionResult> Thread(int id, [FromQuery] bool includeRemoved = false, CancellationToken cancellationToken = default) =>
+        (await comments.GetSubthreadAsync(User.ToActor(), id, includeRemoved, cancellationToken)).ToActionResult(this);
+
     [HttpPost("api/questions/{questionId:int}/comments")]
     [EnableRateLimiting(RateLimitingExtensions.CommentWritePolicy)]
     public async Task<IActionResult> Create(int questionId, CreateCommentRequest request, CancellationToken cancellationToken)

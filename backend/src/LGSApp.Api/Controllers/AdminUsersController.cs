@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
@@ -59,6 +60,11 @@ public class AdminUsersController : ControllerBase
             return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Geçersiz rol.", detail: "Geçerli roller: " + string.Join(", ", Roles.All));
         }
 
+        if (role == Roles.Ai)
+        {
+            return SystemAccountProblem();
+        }
+
         var userName = request.UserName.Trim();
         if (!UserNameRules.IsValid(userName))
         {
@@ -95,7 +101,7 @@ public class AdminUsersController : ControllerBase
                     FirstName = request.FirstName.Trim(),
                     LastName = request.LastName.Trim(),
                     ClassName = string.IsNullOrWhiteSpace(request.ClassName) ? null : request.ClassName.Trim(),
-                    MustChangePassword = role != Roles.Ai,
+                    MustChangePassword = true,
                     CreatedAt = DateTime.UtcNow,
                     CreatedByUserId = createdBy
                 };
@@ -140,14 +146,18 @@ public class AdminUsersController : ControllerBase
     [HttpPost("{id:int}/regenerate-password")]
     public async Task<ActionResult<OneTimePasswordResponse>> RegeneratePassword(int id)
     {
-        var user = await _userManager.FindByIdAsync(id.ToString());
+        var user = await _userManager.FindByIdAsync(id.ToString(CultureInfo.InvariantCulture));
         if (user is null)
         {
             return NotFound();
         }
 
-        var roles = await _userManager.GetRolesAsync(user);
-        var outcome = await _oneTimePasswords.ResetAsync(user, !roles.Contains(Roles.Ai));
+        if (await _userManager.IsInRoleAsync(user, Roles.Ai))
+        {
+            return SystemAccountProblem();
+        }
+
+        var outcome = await _oneTimePasswords.ResetAsync(user, true);
         if (!outcome.Result.Succeeded)
         {
             return IdentityProblem(outcome.Result);
@@ -163,10 +173,15 @@ public class AdminUsersController : ControllerBase
             return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Kendi hesabınızı engelleyemezsiniz.");
         }
 
-        var user = await _userManager.FindByIdAsync(id.ToString());
+        var user = await _userManager.FindByIdAsync(id.ToString(CultureInfo.InvariantCulture));
         if (user is null)
         {
             return NotFound();
+        }
+
+        if (await _userManager.IsInRoleAsync(user, Roles.Ai))
+        {
+            return SystemAccountProblem();
         }
 
         user.IsBanned = banned;
@@ -194,10 +209,13 @@ public class AdminUsersController : ControllerBase
         select new UserRow { User = u, RoleName = r.Name };
 
     private int? CurrentUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? id : null;
 
     private static AdminUserDto ToDto(ApplicationUser u, string? role) =>
-        new(u.Id, u.UserName ?? string.Empty, u.FirstName, u.LastName, u.ClassName, role, u.IsBanned, u.MustChangePassword, u.CreatedAt, u.LastLoginAt, u.CreatedByUserId);
+        new(u.Id, u.UserName ?? string.Empty, u.FirstName, u.LastName, u.ClassName, role, u.IsBanned, u.MustChangePassword, u.CreatedAt, u.LastLoginAt, u.CreatedByUserId, role == Roles.Ai);
+
+    private ObjectResult SystemAccountProblem() =>
+        Problem(statusCode: StatusCodes.Status400BadRequest, title: SystemAccounts.ManagedMessage);
 
     private ObjectResult IdentityProblem(IdentityResult result) =>
         Problem(

@@ -21,6 +21,8 @@ public sealed class CommentTreeNode(CommentNode source, bool isPlaceholder)
     public bool IsPlaceholder { get; } = isPlaceholder;
     public List<CommentTreeNode> Replies { get; internal set; } = [];
     public int ReplyCount { get; internal set; }
+    public bool HasMoreReplies { get; internal set; }
+    public int HiddenReplyCount { get; internal set; }
 }
 
 public static class CommentTreeBuilder
@@ -85,5 +87,67 @@ public static class CommentTreeBuilder
         node.Replies = kept;
         node.ReplyCount = count;
         return includeRemoved || node.Source.Status == CommentStatus.Active || kept.Count > 0;
+    }
+
+    public static void Truncate(IReadOnlyList<CommentTreeNode> nodes, int visibleDepth)
+    {
+        foreach (var node in nodes)
+        {
+            TruncateNode(node, 0, visibleDepth);
+        }
+    }
+
+    public static IReadOnlyList<CommentTreeNode>? FindPath(IReadOnlyList<CommentTreeNode> roots, int id)
+    {
+        foreach (var root in roots)
+        {
+            var path = new List<CommentTreeNode>();
+            if (TryFindPath(root, id, path))
+            {
+                return path;
+            }
+        }
+
+        return null;
+    }
+
+    private static void TruncateNode(CommentTreeNode node, int level, int visibleDepth)
+    {
+        if (level >= visibleDepth)
+        {
+            if (node.Replies.Count > 0)
+            {
+                node.Replies = [];
+                node.HasMoreReplies = true;
+                node.HiddenReplyCount = node.ReplyCount;
+            }
+
+            return;
+        }
+
+        foreach (var child in node.Replies)
+        {
+            TruncateNode(child, level + 1, visibleDepth);
+        }
+    }
+
+    private static bool TryFindPath(CommentTreeNode node, int id, List<CommentTreeNode> path)
+    {
+        path.Add(node);
+        if (node.Source.Id == id)
+        {
+            return true;
+        }
+
+        foreach (var child in node.Replies)
+        {
+            if (TryFindPath(child, id, path))
+            {
+                return true;
+            }
+        }
+
+        path.RemoveAt(path.Count - 1);
+        return false;
     }
 }

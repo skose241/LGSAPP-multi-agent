@@ -1,3 +1,4 @@
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -17,6 +18,13 @@ public class OneTimePasswordService
     public async Task<OneTimePasswordResult> ResetAsync(ApplicationUser user, bool mustChangePassword)
     {
         var password = PasswordGenerator.Generate();
+        if (await _userManager.IsInRoleAsync(user, Roles.Ai))
+        {
+            return new OneTimePasswordResult(
+                IdentityResult.Failed(new IdentityError { Description = SystemAccounts.ManagedMessage }),
+                string.Empty);
+        }
+
         user.MustChangePassword = mustChangePassword;
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);

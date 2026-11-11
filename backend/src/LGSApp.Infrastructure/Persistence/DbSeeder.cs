@@ -2,6 +2,7 @@ using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Options;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -89,6 +90,139 @@ public static class DbSeeder
         {
             await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Geliştirme ortamı için {Count} örnek konu eklendi.", added);
+        }
+    }
+
+    public static async Task EnsureAiAccountAsync(IServiceProvider services, CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder");
+
+        var normalizedName = userManager.NormalizeName(SystemAccounts.AiUserName);
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.NormalizedUserName == normalizedName, cancellationToken);
+
+        if (user is null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = SystemAccounts.AiUserName,
+                NormalizedUserName = normalizedName,
+                FirstName = SystemAccounts.AiFirstName,
+                LastName = SystemAccounts.AiLastName,
+                PasswordHash = null,
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+                ConcurrencyStamp = Guid.NewGuid().ToString("N"),
+                LockoutEnabled = false,
+                MustChangePassword = false,
+                IsBanned = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.Users.Add(user);
+            try
+            {
+                await db.SaveChangesAsync(cancellationToken);
+                logger.LogInformation("Yapay zekâ sistem hesabı oluşturuldu: {UserName}", SystemAccounts.AiUserName);
+            }
+            catch (DbUpdateException ex)
+            {
+                logger.LogWarning(ex, "Yapay zekâ hesabı oluşturulamadı, mevcut kayıt kontrol ediliyor.");
+                db.ChangeTracker.Clear();
+                user = await db.Users.FirstOrDefaultAsync(u => u.NormalizedUserName == normalizedName, cancellationToken);
+                if (user is null)
+                {
+                    throw;
+                }
+            }
+        }
+
+        var roleIds = await db.UserRoles.Where(ur => ur.UserId == user.Id).Select(ur => ur.RoleId).ToListAsync(cancellationToken);
+        if (roleIds.Any(id => id != Roles.AiId))
+        {
+            logger.LogError("'{UserName}' kullanıcı adı yapay zekâ dışında bir rolle kayıtlı; sistem hesabı garanti edilemedi.", SystemAccounts.AiUserName);
+            return;
+        }
+
+        if (!roleIds.Contains(Roles.AiId))
+        {
+            db.UserRoles.Add(new IdentityUserRole<int> { UserId = user.Id, RoleId = Roles.AiId });
+        }
+
+        var repaired = false;
+        if (user.PasswordHash is not null)
+        {
+            user.PasswordHash = null;
+            repaired = true;
+        }
+
+        if (user.LockoutEnabled || user.LockoutEnd is not null || user.AccessFailedCount != 0)
+        {
+            user.LockoutEnabled = false;
+            user.LockoutEnd = null;
+            user.AccessFailedCount = 0;
+            repaired = true;
+        }
+
+        if (user.MustChangePassword || user.IsBanned)
+        {
+            user.MustChangePassword = false;
+            user.IsBanned = false;
+            repaired = true;
+        }
+
+        if (repaired)
+        {
+            user.SecurityStamp = Guid.NewGuid().ToString("N");
+            user.ConcurrencyStamp = Guid.NewGuid().ToString("N");
+            logger.LogWarning("Yapay zekâ sistem hesabı sistem kurallarına göre onarıldı.");
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        var aiUserIds = await db.UserRoles
+            .Where(ur => ur.RoleId == Roles.AiId)
+            .Select(ur => ur.UserId)
+            .ToListAsync(cancellationToken);
+        if (aiUserIds.Any(id => id != user.Id))
+        {
+            logger.LogError("Birden fazla yapay zekâ rolünde kullanıcı bulundu; yalnızca '{UserName}' hesabı sistem hesabı sayılır.", SystemAccounts.AiUserName);
+        }
+    }
+
+    public static async Task BackfillCommentFingerprintsAsync(IServiceProvider services, CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder");
+
+        var total = 0;
+        while (true)
+        {
+            db.ChangeTracker.Clear();
+            var batch = await db.Comments
+                .Where(c => c.BodyFingerprint == "")
+                .OrderBy(c => c.Id)
+                .Take(500)
+                .ToListAsync(cancellationToken);
+            if (batch.Count == 0)
+            {
+                break;
+            }
+
+            foreach (var comment in batch)
+            {
+                comment.BodyFingerprint = CommentRules.Fingerprint(comment.Body);
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+            total += batch.Count;
+        }
+
+        if (total > 0)
+        {
+            logger.LogInformation("{Count} yorum için içerik parmak izi dolduruldu.", total);
         }
     }
 

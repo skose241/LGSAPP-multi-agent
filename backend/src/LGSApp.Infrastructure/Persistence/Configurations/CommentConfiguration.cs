@@ -15,6 +15,7 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
         });
         b.HasKey(x => x.Id);
         b.Property(x => x.Body).HasMaxLength(800).IsRequired();
+        b.Property(x => x.BodyFingerprint).HasMaxLength(64).IsRequired();
         b.Property(x => x.Status).HasConversion<byte>();
         b.Property(x => x.ModerationReason).HasMaxLength(300);
         b.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
@@ -24,7 +25,7 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
         b.RestrictTo<Comment, Question>(x => x.QuestionId);
         b.HasOne<Solution>().WithMany().HasForeignKey(x => new { x.SolutionId, x.QuestionId }).HasPrincipalKey(s => new { s.Id, s.QuestionId }).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Comment>().WithMany().HasForeignKey(x => new { x.ParentId, x.QuestionId }).HasPrincipalKey(c => new { c.Id, c.QuestionId }).OnDelete(DeleteBehavior.Restrict);
-        b.RestrictTo<Comment, Comment>(x => x.RootId);
+        b.HasOne<Comment>().WithMany().HasForeignKey(x => new { x.RootId, x.QuestionId }).HasPrincipalKey(c => new { c.Id, c.QuestionId }).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Author).WithMany().HasForeignKey(x => x.AuthorUserId).OnDelete(DeleteBehavior.Restrict);
         b.RestrictToUser<Comment>(x => x.ReplyToUserId);
         b.RestrictToUser<Comment>(x => x.DeletedByUserId);
@@ -33,6 +34,7 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
         b.HasIndex(x => new { x.RootId, x.CreatedAt }).HasFilter("[RootId] IS NOT NULL").HasDatabaseName("IX_Comments_Root_CreatedAt");
         b.HasIndex(x => x.ParentId).HasDatabaseName("IX_Comments_ParentId");
         b.HasIndex(x => new { x.AuthorUserId, x.CreatedAt }).HasDatabaseName("IX_Comments_Author_CreatedAt");
+        b.HasIndex(x => new { x.AuthorUserId, x.QuestionId, x.BodyFingerprint, x.CreatedAt }).HasDatabaseName("IX_Comments_Duplicate");
 
     }
 }
