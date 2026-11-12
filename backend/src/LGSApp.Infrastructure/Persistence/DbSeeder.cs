@@ -2,6 +2,8 @@ using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Options;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
+using System.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,6 +92,95 @@ public static class DbSeeder
         {
             await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Geliştirme ortamı için {Count} örnek konu eklendi.", added);
+        }
+    }
+
+    public static async Task RunExclusiveAsync(IServiceProvider services, string resource, Func<Task> step, CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        try
+        {
+            var result = new SqlParameter("@result", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            await db.Database.ExecuteSqlRawAsync(
+                "EXEC @result = sp_getapplock @Resource = @resource, @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = 120000",
+                [result, new SqlParameter("@resource", resource)],
+                cancellationToken);
+            if (result.Value is not int code || code < 0)
+            {
+                throw new InvalidOperationException($"Başlangıç kilidi alınamadı ({resource}); başka bir örnek hâlâ başlangıç adımlarını yürütüyor olabilir.");
+            }
+
+            try
+            {
+                await step();
+            }
+            finally
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    "EXEC sp_releaseapplock @Resource = @resource, @LockOwner = 'Session'",
+                    [new SqlParameter("@resource", resource)],
+                    CancellationToken.None);
+            }
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
+    }
+
+    public static bool IsUniqueViolation(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is SqlException sql && sql.Errors.Cast<SqlError>().Any(e => e.Number is 2601 or 2627))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static async Task EnsureUserNameKeysAsync(IServiceProvider services, CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var normalizer = scope.ServiceProvider.GetRequiredService<ILookupNormalizer>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder");
+
+        var users = await db.Users.ToListAsync(cancellationToken);
+        var desired = users
+            .Select(u => (User: u, Key: normalizer.NormalizeName(u.UserName)))
+            .ToList();
+
+        var conflicts = desired
+            .Where(d => d.Key is not null)
+            .GroupBy(d => d.Key!, StringComparer.Ordinal)
+            .Where(g => g.Count() > 1)
+            .ToList();
+        if (conflicts.Count > 0)
+        {
+            var details = string.Join("; ", conflicts.Select(g => $"[{string.Join(", ", g.Select(d => $"{d.User.UserName} (kimlik {d.User.Id})"))}]"));
+            throw new UserNameConflictException(
+                $"Kullanıcı adı normalizasyonu sonrasında aynı anahtara düşen hesaplar var: {details}. Başlangıç durduruldu; bu hesaplardan birinin kullanıcı adını veritabanında değiştirin.");
+        }
+
+        var changed = 0;
+        foreach (var (user, key) in desired)
+        {
+            if (!string.Equals(user.NormalizedUserName, key, StringComparison.Ordinal))
+            {
+                user.NormalizedUserName = key;
+                changed++;
+            }
+        }
+
+        if (changed > 0)
+        {
+            await db.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("{Count} kullanıcının normalleştirilmiş kullanıcı adı anahtarı güncellendi.", changed);
         }
     }
 
@@ -276,7 +367,13 @@ public static class DbSeeder
             return;
         }
 
-        var userName = options.AdminUserName.Trim();
+        var userName = UserNameRules.Canonicalize(options.AdminUserName);
+        if (!UserNameRules.IsValid(userName))
+        {
+            logger.LogError("Seed:AdminUserName geçerli bir kullanıcı adı olmadığından müdür hesabı oluşturulmadı.");
+            return;
+        }
+
         if (UserNameRules.IsReserved(userName))
         {
             logger.LogError("Seed:AdminUserName sistem hesapları için ayrılmış bir ad olduğundan müdür hesabı oluşturulmadı.");

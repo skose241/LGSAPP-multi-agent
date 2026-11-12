@@ -266,7 +266,7 @@ public sealed class CommentService(
         var maxLength = Math.Min(await settings.GetIntAsync(SettingKeys.YorumMaxKarakter, cancellationToken), CommentRules.BodyColumnMaxLength);
         if (body.Length == 0)
         {
-            return Fail.Validation("Yorum boş olamaz.");
+            return Fail.Validation(CommentRules.EmptyBodyMessage);
         }
 
         if (body.Length > maxLength)
@@ -481,7 +481,7 @@ public sealed class CommentService(
         var maxLength = Math.Min(await settings.GetIntAsync(SettingKeys.YorumMaxKarakter, cancellationToken), CommentRules.BodyColumnMaxLength);
         if (body.Length == 0)
         {
-            return Fail.Validation("Yorum boş olamaz.");
+            return Fail.Validation(CommentRules.EmptyBodyMessage);
         }
 
         if (body.Length > maxLength)

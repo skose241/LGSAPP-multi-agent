@@ -4,12 +4,12 @@ using LGSApp.Domain.Entities;
 namespace LGSApp.Api.Dtos;
 
 public record CreateCommentRequest(
-    [Required(ErrorMessage = "Yorum metni zorunludur."), StringLength(4000, ErrorMessage = "Yorum çok uzun.")] string Body,
+    [CommentBody, StringLength(4000, ErrorMessage = "Yorum çok uzun.")] string Body,
     int? ParentId,
     int? SolutionId);
 
 public record EditCommentRequest(
-    [Required(ErrorMessage = "Yorum metni zorunludur."), StringLength(4000, ErrorMessage = "Yorum çok uzun.")] string Body,
+    [CommentBody, StringLength(4000, ErrorMessage = "Yorum çok uzun.")] string Body,
     [Required(ErrorMessage = "Sürüm bilgisi zorunludur.")] byte[] RowVersion);
 
 public record RemoveCommentRequest(

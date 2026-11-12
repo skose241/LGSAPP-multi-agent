@@ -55,6 +55,8 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
 
+        services.Replace(ServiceDescriptor.Singleton<ILookupNormalizer, TurkishLookupNormalizer>());
+
         services.AddSingleton<ITokenService, TokenService>();
         services.AddSingleton<DummyPasswordVerifier>();
         services.AddScoped<OneTimePasswordService>();

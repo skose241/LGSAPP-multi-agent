@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Security.Claims;
 using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
 using LGSApp.Api.Extensions;
+using LGSApp.Api.Options;
 using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
@@ -11,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace LGSApp.Api.Controllers;
 
@@ -25,26 +28,30 @@ public class AuthController : ControllerBase
     private readonly DummyPasswordVerifier _dummyVerifier;
     private readonly AppDbContext _db;
     private readonly ILogger<AuthController> _logger;
+    private readonly ResponseTimingOptions _timing;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         ITokenService tokenService,
         DummyPasswordVerifier dummyVerifier,
         AppDbContext db,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        IOptions<ResponseTimingOptions> timing)
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _dummyVerifier = dummyVerifier;
         _db = db;
         _logger = logger;
+        _timing = timing.Value;
     }
 
     [HttpPost("login")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitingExtensions.LoginPolicy)]
-    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
+    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
     {
+        var started = Stopwatch.GetTimestamp();
         var userName = request.UserName.Trim();
         var user = await _userManager.FindByNameAsync(userName);
         var isSystemAccount = await IsSystemAccountAsync(user?.Id ?? 0);
@@ -52,24 +59,25 @@ public class AuthController : ControllerBase
         {
             _dummyVerifier.Verify(request.Password);
             await PadFailureWriteAsync();
-            return InvalidCredentials();
+            return await FailLoginAsync(started, cancellationToken);
         }
 
         if (await _userManager.IsLockedOutAsync(user))
         {
             _dummyVerifier.Verify(request.Password);
             await PadFailureWriteAsync();
-            return InvalidCredentials();
+            return await FailLoginAsync(started, cancellationToken);
         }
 
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
         {
             await _userManager.AccessFailedAsync(user);
-            return InvalidCredentials();
+            return await FailLoginAsync(started, cancellationToken);
         }
 
         if (user.IsBanned)
         {
+            await WaitForMinimumAsync(started, _timing.LoginFailureMinMilliseconds, cancellationToken);
             return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Hesap engellenmiş.");
         }
 
@@ -120,6 +128,7 @@ public class AuthController : ControllerBase
     [EnableRateLimiting(RateLimitingExtensions.ForgotPasswordPolicy)]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
+        var started = Stopwatch.GetTimestamp();
         var userName = request.UserName.Trim();
         var user = await _userManager.FindByNameAsync(userName);
         var written = false;
@@ -163,6 +172,7 @@ public class AuthController : ControllerBase
                 .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, PasswordResetStatus.Pending), cancellationToken);
         }
 
+        await WaitForMinimumAsync(started, _timing.ForgotPasswordMinMilliseconds, cancellationToken);
         return Ok(new { message = ForgotPasswordMessage });
     }
 
@@ -177,6 +187,26 @@ public class AuthController : ControllerBase
         }
 
         return Ok(await ToUserInfo(user));
+    }
+
+    private async Task<ObjectResult> FailLoginAsync(long started, CancellationToken cancellationToken)
+    {
+        await WaitForMinimumAsync(started, _timing.LoginFailureMinMilliseconds, cancellationToken);
+        return InvalidCredentials();
+    }
+
+    private static async Task WaitForMinimumAsync(long started, int minimumMilliseconds, CancellationToken cancellationToken)
+    {
+        if (minimumMilliseconds <= 0)
+        {
+            return;
+        }
+
+        var remaining = TimeSpan.FromMilliseconds(minimumMilliseconds) - Stopwatch.GetElapsedTime(started);
+        if (remaining > TimeSpan.Zero)
+        {
+            await Task.Delay(remaining, cancellationToken);
+        }
     }
 
     private Task<int> PadFailureWriteAsync() =>

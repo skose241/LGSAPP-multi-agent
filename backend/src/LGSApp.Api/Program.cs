@@ -18,6 +18,7 @@ builder.Services.AddOpenApiWithJwt();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddAppRateLimiting(builder.Configuration);
+builder.Services.Configure<LGSApp.Api.Options.ResponseTimingOptions>(builder.Configuration.GetSection(LGSApp.Api.Options.ResponseTimingOptions.SectionName));
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
@@ -65,9 +66,25 @@ catch (InvalidOperationException ex)
 
 try
 {
-    await DbSeeder.EnsureAiAccountAsync(app.Services);
+    await DbSeeder.RunExclusiveAsync(app.Services, "LGSApp.StartupSeed", async () =>
+    {
+        await DbSeeder.EnsureUserNameKeysAsync(app.Services);
+
+        try
+        {
+            await DbSeeder.EnsureAiAccountAsync(app.Services);
+        }
+        catch (Exception ex) when (ex is not SystemAccountIntegrityException)
+        {
+            app.Logger.LogError(ex, "Yapay zekâ sistem hesabı doğrulanamadı.");
+        }
+
+        await RunSeedStepAsync("Müdür hesabı", LogLevel.Error, () => DbSeeder.SeedAdminAsync(app.Services));
+        await RunSeedStepAsync("Yorum parmak izi doldurma", LogLevel.Warning, () => DbSeeder.BackfillCommentFingerprintsAsync(app.Services));
+        await RunSeedStepAsync("Örnek ders ve konu", LogLevel.Error, () => DbSeeder.SeedReferenceDataAsync(app.Services));
+    });
 }
-catch (SystemAccountIntegrityException ex)
+catch (Exception ex) when (ex is SystemAccountIntegrityException or UserNameConflictException)
 {
     app.Logger.LogCritical("{Message}", ex.Message);
     Environment.ExitCode = 1;
@@ -75,12 +92,8 @@ catch (SystemAccountIntegrityException ex)
 }
 catch (Exception ex)
 {
-    app.Logger.LogError(ex, "Yapay zekâ sistem hesabı doğrulanamadı.");
+    app.Logger.LogError(ex, "Başlangıç adımları yürütülemedi.");
 }
-
-await RunSeedStepAsync("Müdür hesabı", LogLevel.Error, () => DbSeeder.SeedAdminAsync(app.Services));
-await RunSeedStepAsync("Yorum parmak izi doldurma", LogLevel.Warning, () => DbSeeder.BackfillCommentFingerprintsAsync(app.Services));
-await RunSeedStepAsync("Örnek ders ve konu", LogLevel.Error, () => DbSeeder.SeedReferenceDataAsync(app.Services));
 
 app.Run();
 
@@ -89,6 +102,10 @@ async Task RunSeedStepAsync(string name, LogLevel failureLevel, Func<Task> step)
     try
     {
         await step();
+    }
+    catch (Exception ex) when (DbSeeder.IsUniqueViolation(ex))
+    {
+        app.Logger.LogInformation("Başlangıç adımı başka bir örnek tarafından tamamlanmış görünüyor: {Step}", name);
     }
     catch (Exception ex)
     {

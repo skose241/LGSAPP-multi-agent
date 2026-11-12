@@ -65,13 +65,13 @@ public class AdminUsersController : ControllerBase
             return SystemAccountProblem();
         }
 
-        var userName = request.UserName.Trim();
+        var userName = UserNameRules.Canonicalize(request.UserName);
         if (!UserNameRules.IsValid(userName))
         {
             return Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Geçersiz kullanıcı adı.",
-                detail: $"Kullanıcı adı {UserNameRules.MinLength}-{UserNameRules.MaxLength} karakter olmalı ve yalnızca harf, rakam, '.', '_' ve '-' içermelidir.");
+                detail: $"Kullanıcı adı {UserNameRules.MinLength}-{UserNameRules.MaxLength} karakter olmalı ve yalnızca harf (Türkçe harfler dahil), rakam, '.', '_' ve '-' içermelidir.");
         }
 
         if (UserNameRules.IsReserved(userName))

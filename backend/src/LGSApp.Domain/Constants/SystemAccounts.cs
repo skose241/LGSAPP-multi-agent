@@ -9,3 +9,5 @@ public static class SystemAccounts
 }
 
 public sealed class SystemAccountIntegrityException(string message) : InvalidOperationException(message);
+
+public sealed class UserNameConflictException(string message) : InvalidOperationException(message);

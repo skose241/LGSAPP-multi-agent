@@ -15,11 +15,15 @@ public static class CommentRules
     public const int MaxEditCount = 255;
     public const int AncestorPreviewLength = 80;
     public const int MaxResponseNodes = 500;
+    public const string EmptyBodyMessage = "Yorum boş olamaz.";
 
     private const int ZeroWidthNonJoiner = 0x200C;
     private const int ZeroWidthJoiner = 0x200D;
     private const int TagRangeStart = 0xE0000;
     private const int TagRangeEnd = 0xE007F;
+    private const int TagSequenceFirst = 0xE0020;
+    private const int TagSequenceLast = 0xE007E;
+    private const int BlackFlag = 0x1F3F4;
 
     private static readonly HashSet<int> InvisibleFillers =
     [
@@ -38,7 +42,7 @@ public static class CommentRules
         string? problem = null;
         try
         {
-            if (!string.Equals("ç".Normalize(NormalizationForm.FormC), "ç", StringComparison.Ordinal))
+            if (!string.Equals("c\u0327".Normalize(NormalizationForm.FormC), "\u00E7", StringComparison.Ordinal))
             {
                 problem = "Unicode normalizasyonu beklenen sonucu vermiyor.";
             }
@@ -112,7 +116,7 @@ public static class CommentRules
             return Hash(string.Empty);
         }
 
-        var composed = StripUnpairedSurrogates(body).Normalize(NormalizationForm.FormKC);
+        var composed = StripUnpairedSurrogates(body).Normalize(NormalizationForm.FormC);
         var builder = new StringBuilder(composed.Length);
         var pendingSpace = false;
         foreach (var rune in composed.EnumerateRunes())
@@ -142,12 +146,12 @@ public static class CommentRules
 
     private static string FoldTurkish(string value)
     {
-        var prepared = value.Replace("İ", "i", StringComparison.Ordinal).Replace('İ', 'i');
+        var prepared = value.Replace("I\u0307", "i", StringComparison.Ordinal).Replace('\u0130', 'i');
         var lowered = prepared.ToLower(ResolveTurkishCulture());
         return lowered
-            .Replace("i̇", "i", StringComparison.Ordinal)
-            .Replace("ı̇", "i", StringComparison.Ordinal)
-            .Replace('ı', 'i');
+            .Replace("i\u0307", "i", StringComparison.Ordinal)
+            .Replace("\u0131\u0307", "i", StringComparison.Ordinal)
+            .Replace('\u0131', 'i');
     }
 
     private static string Hash(string value) =>
@@ -158,9 +162,32 @@ public static class CommentRules
         var text = StripUnpairedSurrogates(body);
         var kept = new List<Rune>(text.Length);
         var previousWasCarriageReturn = false;
-        foreach (var rune in text.EnumerateRunes())
+        var all = new List<Rune>(text.Length);
+        foreach (var item in text.EnumerateRunes())
         {
+            all.Add(item);
+        }
+
+        for (var index = 0; index < all.Count; index++)
+        {
+            var rune = all[index];
             var value = rune.Value;
+            if (value == BlackFlag)
+            {
+                var end = FindTagSequenceEnd(all, index);
+                if (end > index)
+                {
+                    for (var k = index; k <= end; k++)
+                    {
+                        kept.Add(all[k]);
+                    }
+
+                    previousWasCarriageReturn = false;
+                    index = end;
+                    continue;
+                }
+            }
+
             if (value == '\r')
             {
                 kept.Add(new Rune('\n'));
@@ -219,6 +246,17 @@ public static class CommentRules
         }
 
         return result;
+    }
+
+    private static int FindTagSequenceEnd(List<Rune> runes, int start)
+    {
+        var position = start + 1;
+        while (position < runes.Count && runes[position].Value is >= TagSequenceFirst and <= TagSequenceLast)
+        {
+            position++;
+        }
+
+        return position > start + 1 && position < runes.Count && runes[position].Value == TagRangeEnd ? position : -1;
     }
 
     private static bool IsJoiner(Rune rune) => rune.Value is ZeroWidthNonJoiner or ZeroWidthJoiner;
