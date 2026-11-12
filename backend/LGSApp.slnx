@@ -4,4 +4,7 @@
     <Project Path="src/LGSApp.Domain/LGSApp.Domain.csproj" />
     <Project Path="src/LGSApp.Infrastructure/LGSApp.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LGSApp.Tests/LGSApp.Tests.csproj" />
+  </Folder>
 </Solution>

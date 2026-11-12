@@ -290,3 +290,46 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 5. Dosya: StoredFile + Azure Blob SAS (Azurite), iPhone toplu yükleme (istemcide küçültme, HEIC dönüştürme).
 6. Frontend'e başlarken sözleşme notları: enum camelCase, `Z`'li UTC, `rowVersion` base64, bozuk JSON'da `errors` anahtarı `""`, yorum DTO'ları ve `hasMoreReplies`.
 7. Daha sonra: refresh token, test projesi (CommentTreeBuilder saf, ilk aday), Key Vault, MSSQL'den veri taşıma (ders/konu IDENTITY_INSERT, `DersProgrami.gunNo` Pazar=1 → ISO dönüşümü).
+
+## Oturum 5 — 2026-11-12 / 2026-11-13
+
+### Yapılanlar (commit sırasıyla)
+- `9718cfb` Kullanıcı adında Türkçe harf (`TurkishLookupNormalizer`: ı/İ/I/i→I, ç→C, ğ→G, ö→O, ş→S, ü→U; "şükrü" = "sukru"); Oturum 4'ün 7 düşük bulgusu kapatıldı (sabit yanıt süreleri, seed `sp_getapplock`, CommentRules `\u` kaçışları, tek boş-yorum mesajı, isimli DEFAULT kısıtı vb.).
+- `4f2aa03` Şikayet yönetimi + cevap anahtarı düzeltme (UPDLOCK, set-based IsCorrect, ledger farkı), beğeni, bildirim listesi, liderlik tablosu (haftalık/aylık, önbellek). `0c11562` 3 düşük bulgu.
+- `b7271aa` Ödev modülü (taslak/planlı/açık/kapalı, `AssignmentState` zamanlayıcıdan bağımsız; en fazla 200 soru; silinince ödev için yaratılan sorular gizlenir, havuzdan eklenenler döner; ödev açıkken tartışma ve beğeni sayısı gizli, doğru şık cevaplayınca görünür). Müdür kuralları: müdür müdürü banlayamaz/şifresini yenileyemez/talebini onaylayamaz; müdür şifresi ≥12, JWT 30 dk; 10 tek kullanımlık kurtarma kodu (HMAC-SHA256 + `RecoveryCodes:Pepper`, `XXXX-XXXX-XXXX`), `POST /api/auth/recover`, sunucu komutu `dotnet LGSApp.Api.dll reset-mudur-password <kullaniciAdi>`; seed müdür ilk girişte şifre değiştirir ve kodlarını alır (`recoveryCodesMissing`).
+- reviewer-agent test turu (ReviewTest10): 6 maddeden 5'i geçti; orta bulgu: yanlış kurtarma kodu müdürü kilitliyordu.
+- `eb81b36` Kurtarma kilitleme açığı kapatıldı (yanlış kod kilitlemez, doğru kod kilidi açar); ödev tarihleri en fazla +1 yıl; serbest metinlerde kontrol karakteri reddi (`NoControlCharsAttribute`).
+- `b5a2832` Dosya altyapısı + soru yükleme: `POST/GET/DELETE /api/files` (API üzerinden multipart, 10 MB, `clientUploadId` idempotent), Azure Blob private container + blob başına 90 dk read SAS (30 dk kovalara hizalı), SkiaSharp 4.156.0 ile magic bytes/boyut/animasyon kontrolü, EXIF yönü (8 durum), küçültme (≤2000), EXIF/GPS/ICC temizliği, JPEG q82; HEIC özel mesajla red (istemci çevirecek). `POST /api/questions` (öğrenci: fotoğraf + açıklama, anında yayın, günde 20, ilk 5 puanlı; öğretmen/müdür: anında veya `scheduledPublishDate`), `GET /api/questions/mine`, `IStoredFileValidator`, görünümlere `image{url,...}`, `FileCleanupService`, `POST /api/admin/files/cleanup`. ImageSharp 3.1.12'nin 6 açığı + yeni sürümlerin lisans anahtarı zorunluluğu nedeniyle SkiaSharp'a geçildi.
+- (bu commit) Zamanlayıcı: `SchedulerWorker` (BackgroundService, uyku planlayıcısı, polling yok), `GenerationRunStore` (sp_getapplock claim + LeaseUntil/heartbeat, `Interrupted`), Generate/Complete (aynı eksik-slot algoritması), Publish (AI + tarihi gelmiş öğretmen soruları, ödeve bağlılar hariç, RunId'li bildirim), Assignments (00:05 kapat+aç, bildirimler artık gidiyor), `IQuestionGenerator` (NotConfigured varsayılan, Development'a özel Fake), `api/admin/scheduler` (status, runs, runs/{id}, POST runs, 5/dk), `api/topic-plans`, `api/admin/generation-schedule`, `DevTime:OffsetMinutes` (yalnız Development), ilk test projesi `backend/tests/LGSApp.Tests` (49 birim test). Canlı duman testi geçti.
+
+### Alınan kararlar
+- Barındırma: 100$ öğrenci kredisi, App Service Linux B1 Always On, 5–6 ay; Azure SQL ücretsiz teklif/Basic; zamanlayıcı API içinde (Azure Functions yok).
+- Müdür: yeni müdür butonu kalır; kritik işlemde yeniden şifre sorulmaz; hesap kurtarma = kurtarma kodu + sunucu komutu.
+- PDF'ten ödev sorusu: önce pdf.js metin katmanı, eksik/hatalıysa Gemini, her durumda öğretmen onayı (AI modülünden sonra).
+- Yükleme API üzerinden (SAS upload yok); okuma read SAS. Öğrenci sorusu anında yayın; öğretmen havuza doğrudan soru ekleyebilir.
+- Görsel kütüphanesi SkiaSharp (MIT); Gemini görsel işleme için kullanılmaz (içeriği yeniden çizer, SynthID, maliyet, gizlilik).
+- Zamanlayıcı saatleri appsettings'te sabit; telafi yalnız aynı gün (Generate 23:00'a kadar), geç üretim ikinci yayınla; konu planı/ders programı canlı kurallarla (branş, 16:45, kullanılmış plan kilidi, 30 gün, hedefi yalnız müdür).
+- Ayrıntılar: `.claude/tasarim-domain.md` Revizyon 3, 4, 5.
+
+### Canlıya taşırken gerekenler
+- App Service ayarları: `ConnectionStrings__DefaultConnection`, `Jwt__*`, `RecoveryCodes__Pepper` (≥32 bayt, bir kez belirlenip sabit kalmalı; değişirse tüm kurtarma kodları geçersiz), `Storage__ConnectionString`, `Seed__AdminUserName`/`Seed__AdminPassword` (ilk açılış). Bunlar yoksa uygulama açılmaz.
+- Storage hesabı: StorageV2 LRS Hot, aynı bölge, anonim erişim kapalı, TLS 1.2, `images` private container, soft delete 7 gün.
+- Linux publish'te `libSkiaSharp.so` var; gerçek Linux'ta çalıştırma deploy'da doğrulanmalı.
+- Bütçe uyarısı (50$/80$).
+
+### Açık kalanlar / bilinenler
+- Zamanlayıcı: graceful shutdown'da `Interrupted` yazılması denenmedi (lease devralma test edildi). Entegrasyon senaryoları otomatik testte değil, elle duman testinde.
+- Zamanlayıcı modülü reviewer-agent ile bağımsız test edilmedi (kullanıcı doğrudan commit istedi).
+- Düşük gözlemler: açık ödevde cevaplamayan öğrenci beğenebiliyor; cevaplayan öğrenci beğeni sayısını kapanmadan görüyor; eski veriden kalma müdür reset talebi admin listesinde görünmüyor.
+- Müdür hesabı normal girişte 5 yanlış şifreyle 10 dk kilitlenebilir (kurtarma kodu artık kilidi açıyor).
+- Liderlik önbelleği örnek başına; ayar değişiklikleri SettingsService önbelleğinde 5 dk.
+- Veri taşıma: ders programı günleri ISO (Pzt=1), canlı Pazar=1 → dönüşüm; `Question.Description` 4000 (canlıdaki en uzun değer kontrol edilmeli); StoredFiles CK (Ready ise Width/Height dolu).
+- `ef` araçları 10.0.12 / runtime 10.0.14 uyarısı (işlevsel değil).
+
+### Sıradaki adımlar
+1. İstenirse zamanlayıcı için reviewer-agent test turu.
+2. AI modülü: Semantic Kernel + Gemini (`GEMINI_API_KEY_Soru`, `GEMINI_API_KEY_Cozum`), `IQuestionGenerator` Gemini uygulaması (tek soruluk JSON, son 5 soru benzemesin, 4 şık, açıklama ≥50, 429/503 yeniden deneme), öğrenci istekli çözüm, `AiLog` + günlük limit, AI şüpheli cevap anahtarı (`AiSuggestedOption`).
+3. PDF'ten ödev sorusu (`POST /api/ai/detect-questions`).
+4. Havuz soru listesi `GET /api/questions`; çözüm silme ucu (bağlı yorumlar); öğretmenin öğrenci profili istatistikleri; ayar düzenleme ucu (`soruUretimAktifMi`, `soruCarpani`).
+5. Frontend (Next.js) — sözleşme notları: enum camelCase, `Z`'li UTC, `rowVersion` base64, `image.url` (Next.js `unoptimized`), yükleme istemcide küçültme + HEIC çevirme, `DataTransfer` yok, 2–3 eşzamanlı yükleme, aynı `clientUploadId` ile 1/3/9 sn yeniden deneme, müdür `recoveryCodesMissing` yönlendirmesi.
+6. Key Vault, Managed Identity, MSSQL'den veri taşıma, Azure'a deploy.

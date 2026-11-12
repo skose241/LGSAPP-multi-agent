@@ -8,6 +8,20 @@ public sealed class TurkeyTime(TimeProvider timeProvider)
 
     public DateOnly Today => ToLocalDate(UtcNow);
 
+    public DateTime LocalNow => ToLocal(UtcNow);
+
+    public static DateTime ToLocal(DateTime utc)
+    {
+        var normalized = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+        return TimeZoneInfo.ConvertTimeFromUtc(normalized, Zone);
+    }
+
+    public static int IsoDayOfWeek(DateOnly date)
+    {
+        var day = (int)date.DayOfWeek;
+        return day == 0 ? 7 : day;
+    }
+
     public static DateOnly ToLocalDate(DateTime utc)
     {
         var normalized = DateTime.SpecifyKind(utc, DateTimeKind.Utc);

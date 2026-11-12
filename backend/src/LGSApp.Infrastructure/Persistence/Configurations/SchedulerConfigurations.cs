@@ -35,6 +35,10 @@ public class GenerationRunConfiguration : IEntityTypeConfiguration<GenerationRun
         b.Property(x => x.RowVersion).IsRowVersion();
         b.RestrictToUser<GenerationRun>(x => x.TriggeredByUserId);
         b.HasIndex(x => x.Kind).IsUnique().HasFilter("[Status] = 0").HasDatabaseName("UX_GenerationRuns_Kind_Running");
+        b.HasIndex(x => new { x.Kind, x.RunDate })
+            .IncludeProperties(x => new { x.Status, x.Trigger, x.FinishedAt, x.SucceededCount })
+            .HasDatabaseName("IX_GenerationRuns_Kind_RunDate");
+        b.HasIndex(x => x.StartedAt).IsDescending().HasDatabaseName("IX_GenerationRuns_StartedAt");
     }
 }
 

@@ -40,6 +40,7 @@ public class QuestionConfiguration : IEntityTypeConfiguration<Question>
         b.HasIndex(x => new { x.LessonId, x.GenerationDate, x.GenerationSlot }).IsUnique().HasFilter("[Source] = 4").HasDatabaseName("UX_Questions_Ai_Lesson_Date_Slot");
         b.HasIndex(x => new { x.LessonId, x.PublishedAt }).HasFilter("[IsHidden] = 0").HasDatabaseName("IX_Questions_Lesson_PublishedAt");
         b.HasIndex(x => x.ScheduledPublishDate).HasFilter("[PublishedAt] IS NULL").HasDatabaseName("IX_Questions_ScheduledPublishDate_Unpublished");
+        b.HasIndex(x => x.GenerationDate).HasFilter("[PublishedAt] IS NULL AND [Source] = 4").HasDatabaseName("IX_Questions_Ai_Unpublished");
         b.HasIndex(x => new { x.AuthorUserId, x.CreatedAt }).HasDatabaseName("IX_Questions_Author_CreatedAt");
         b.HasIndex(x => x.IsAnswerDisputed).HasFilter("[IsAnswerDisputed] = 1").HasDatabaseName("IX_Questions_AnswerDisputed");
 

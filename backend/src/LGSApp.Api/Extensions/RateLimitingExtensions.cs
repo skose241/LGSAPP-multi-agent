@@ -17,6 +17,7 @@ public static class RateLimitingExtensions
     public const string AssignmentWritePolicy = "assignment-write";
     public const string FileUploadPolicy = "file-upload";
     public const string QuestionCreatePolicy = "question-create";
+    public const string SchedulerTriggerPolicy = "scheduler-trigger";
 
     public static IServiceCollection AddAppRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
@@ -34,7 +35,8 @@ public static class RateLimitingExtensions
             options.AddPolicy(AssignmentWritePolicy, context => UserPartition(context, AssignmentWritePolicy, settings.AssignmentWrite));
             options.AddPolicy(FileUploadPolicy, context => UserPartition(context, FileUploadPolicy, settings.FileUpload));
             options.AddPolicy(QuestionCreatePolicy, context => UserPartition(context, QuestionCreatePolicy, settings.QuestionCreate));
-            options.OnRejected = async (context, cancellationToken) =>
+            options.AddPolicy(SchedulerTriggerPolicy, context => UserPartition(context, SchedulerTriggerPolicy, settings.SchedulerTrigger));
+            options.OnRejected =async (context, cancellationToken) =>
             {
                 var response = context.HttpContext.Response;
                 response.StatusCode = StatusCodes.Status429TooManyRequests;

@@ -660,7 +660,16 @@ namespace LGSApp.Infrastructure.Migrations
                         .HasDatabaseName("UX_GenerationRuns_Kind_Running")
                         .HasFilter("[Status] = 0");
 
+                    b.HasIndex("StartedAt")
+                        .IsDescending()
+                        .HasDatabaseName("IX_GenerationRuns_StartedAt");
+
                     b.HasIndex("TriggeredByUserId");
+
+                    b.HasIndex("Kind", "RunDate")
+                        .HasDatabaseName("IX_GenerationRuns_Kind_RunDate");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("Kind", "RunDate"), new[] { "Status", "Trigger", "FinishedAt", "SucceededCount" });
 
                     b.ToTable("GenerationRuns", (string)null);
                 });
@@ -997,6 +1006,10 @@ namespace LGSApp.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CorrectOptionChangedByUserId");
+
+                    b.HasIndex("GenerationDate")
+                        .HasDatabaseName("IX_Questions_Ai_Unpublished")
+                        .HasFilter("[PublishedAt] IS NULL AND [Source] = 4");
 
                     b.HasIndex("HiddenByUserId");
 

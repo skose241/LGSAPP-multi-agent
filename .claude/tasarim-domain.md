@@ -238,3 +238,15 @@ CommentDto { id, parentId?, depth, solutionId?, status: "active"|"deleted"|"remo
 - Dosya kotası: öğrenci günde 60, öğretmen 500 dosya (silinenler de sayılır). Rate limit `file-upload` 30/dk token bucket, `question-create` 10/dk.
 - Yetim dosya temizliği: `FileCleanupService` (BackgroundService, 30 dk, sp_getapplock); 30 dk'dan eski Pending ve 7 günden eski bağlanmamış Ready dosyalar silinir (satır Deleted kalır). Müdür elle tetikleyebilir. Zamanlayıcı gelince ona taşınabilir.
 - Görsel kontrolü (sahibi, Ready, amaç, tek kullanım) tek `IStoredFileValidator`'da toplanır. `UX_Solutions_ImageFileId` eklenir. `Question.Description` 4000.
+
+## Revizyon 5 (Oturum 5, 2026-11-12): Zamanlayıcı
+
+### Kararlar
+- Saatler appsettings `Scheduler` bölümünde sabit (Generate 17:30, Complete 18:15, Publish 19:00, ödev aç/kapa 00:05, bugünün konu seçimi son saati 16:45). Müdür arayüzden değiştiremez; ihtiyaç elle tetiklemeyle karşılanır. `soruUretimAktifMi` ve `soruCarpani` Settings'te kalır; `gunlukSoruSayisi` kullanılmaz (canlıda da ölü).
+- Telafi yalnız aynı TR günü: Generate en geç 23:00'a kadar; dünün üretimi yapılmaz. 19:00 sonrası geç üretilen sorular otomatik ikinci yayınla yayınlanır. Önceki günlerden kalan yayınlanmamış AI soruları ve tarihi gelmiş öğretmen soruları sonraki yayına katılır. Ödeve bağlı sorular havuz yayınına girmez.
+- Generate ve Complete aynı "eksik slotu doldur" algoritması (canlıdaki gibi). Hedef `DailyTopicPlan.TargetCount ?? ceil(GenerationSchedule.QuestionCount × soruCarpani)`, en fazla 20.
+- Kilit: GenerationRun Running satırı + `sp_getapplock` claim + LeaseUntil/heartbeat; çöken run devralınır ve `Interrupted` (yeni durum) olur. Generate/Complete aynı kilit grubu.
+- Worker uyku planlayıcısıdır (sabit polling yok) — Azure SQL serverless otomatik duraklamasını engellememek için.
+- AI bağlantısı `IQuestionGenerator` arkasında; Gemini modülüne kadar "Yapay zekâ yapılandırılmadı" hata logu yazılır. Development'ta isteğe bağlı sahte üretici.
+- Konu planı ve ders programı uçları bu modülde, canlı kurallarla: öğretmen yalnız branş dersini planlar, bugünün konusu 16:45'e kadar değişir, kullanılmış plan kilitli, 30 gün ileriye plan, hedef sayıyı yalnız müdür değiştirir. Ders programını müdür yönetir.
+- Canlıdaki "Yetkisiz erişim" hatası: görev betikleri URL token'ını uygulama açılışında ortam değişkeninden bir kez okunan değerle karşılaştırıyordu; değer boş kalınca her istek reddediliyordu. Yeni sistemde HTTP tetikleme/token yok.

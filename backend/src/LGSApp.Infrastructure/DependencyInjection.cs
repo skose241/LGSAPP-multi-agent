@@ -16,6 +16,7 @@ using LGSApp.Infrastructure.Services.Notifications;
 using LGSApp.Infrastructure.Services.Points;
 using LGSApp.Infrastructure.Services.Questions;
 using LGSApp.Infrastructure.Services.Reports;
+using LGSApp.Infrastructure.Services.Scheduler;
 using LGSApp.Infrastructure.Services.Settings;
 using LGSApp.Infrastructure.Services.Solutions;
 using Microsoft.AspNetCore.Identity;
@@ -35,6 +36,7 @@ public static class DependencyInjection
         services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
         services.AddRecoveryCodeOptions(configuration);
         services.AddStorageOptions(configuration);
+        services.AddSchedulerOptions(configuration);
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(
@@ -105,7 +107,36 @@ public static class DependencyInjection
         services.AddScoped<IFileUploadService, FileUploadService>();
         services.AddScoped<IFileCleanupService, FileCleanupService>();
         services.AddHostedService<FileCleanupWorker>();
+        services.AddSchedulerServices(configuration);
 
+        return services;
+    }
+}
+
+public static class SchedulerServiceCollectionExtensions
+{
+    public static IServiceCollection AddSchedulerServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<NotConfiguredQuestionGenerator>();
+        services.AddSingleton<FakeQuestionGenerator>();
+        services.AddSingleton<IQuestionGenerator>(sp =>
+            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<LGSApp.Infrastructure.Options.SchedulerOptions>>().Value.UseFakeGenerator
+                ? sp.GetRequiredService<FakeQuestionGenerator>()
+                : sp.GetRequiredService<NotConfiguredQuestionGenerator>());
+        services.AddSingleton<SchedulerSignals>();
+        services.AddScoped<IGenerationRunStore, GenerationRunStore>();
+        services.AddScoped<IDailyGenerationPlanner, DailyGenerationPlanner>();
+        services.AddScoped<IAiQuestionWriter, AiQuestionWriter>();
+        services.AddScoped<IRunNotifier, RunNotifier>();
+        services.AddScoped<GenerationJob>();
+        services.AddScoped<PublishJob>();
+        services.AddScoped<AssignmentLifecycleJob>();
+        services.AddScoped<ISchedulerQueryService, SchedulerQueryService>();
+        services.AddScoped<ISchedulerService, SchedulerService>();
+        services.AddScoped<ITopicPlanService, TopicPlanService>();
+        services.AddScoped<IGenerationScheduleService, GenerationScheduleService>();
+        services.Configure<Microsoft.Extensions.Hosting.HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(45));
+        services.AddHostedService<SchedulerWorker>();
         return services;
     }
 }

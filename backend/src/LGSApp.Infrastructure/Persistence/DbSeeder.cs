@@ -93,6 +93,21 @@ public static class DbSeeder
             await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Geliştirme ortamı için {Count} örnek konu eklendi.", added);
         }
+
+        if (!await db.GenerationSchedules.AnyAsync(cancellationToken))
+        {
+            var activeLessonIds = await db.Lessons.Where(l => l.IsActive).Select(l => l.Id).ToListAsync(cancellationToken);
+            foreach (var lessonId in activeLessonIds)
+            {
+                for (byte day = 1; day <= 5; day++)
+                {
+                    db.GenerationSchedules.Add(new GenerationSchedule { DayOfWeek = day, LessonId = lessonId, QuestionCount = 1 });
+                }
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Geliştirme ortamı için örnek ders programı eklendi.");
+        }
     }
 
     public static async Task RunExclusiveAsync(IServiceProvider services, string resource, Func<Task> step, CancellationToken cancellationToken = default)

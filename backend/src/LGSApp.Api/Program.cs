@@ -16,6 +16,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAppForwardedHeaders(builder.Configuration, builder.Environment);
 
+var devTimeOffset = builder.Configuration.GetValue<int>("DevTime:OffsetMinutes");
+if (devTimeOffset != 0)
+{
+    if (!builder.Environment.IsDevelopment())
+    {
+        Console.Error.WriteLine("DevTime:OffsetMinutes yalnızca Development ortamında kullanılabilir. Başlangıç durduruldu.");
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    builder.Services.AddSingleton<TimeProvider>(new LGSApp.Infrastructure.Services.Common.OffsetTimeProvider(TimeSpan.FromMinutes(devTimeOffset)));
+}
+
 builder.Services.AddControllers()
     .AddTurkishModelBinding()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
