@@ -14,8 +14,32 @@ namespace LGSApp.Api.Controllers;
 [ApiController]
 [Route("api/questions")]
 [Authorize(Policy = Policies.Kullanici)]
-public class QuestionsController(IQuestionService questions, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes) : ControllerBase
+public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes) : ControllerBase
 {
+    [HttpPost]
+    [EnableRateLimiting(RateLimitingExtensions.QuestionCreatePolicy)]
+    public async Task<IActionResult> Create(CreateQuestionRequest request, CancellationToken cancellationToken)
+    {
+        var command = new CreateQuestionCommand(
+            request.LessonId,
+            request.TopicId,
+            request.Text,
+            request.ImageFileId,
+            request.OptionA,
+            request.OptionB,
+            request.OptionC,
+            request.OptionD,
+            request.CorrectOption,
+            request.Description,
+            request.ScheduledPublishDate);
+        var result = await authoring.CreateAsync(User.ToActor(), command, cancellationToken);
+        return result.ToActionResult(this, view => Created($"/api/questions/{view.Id}", view));
+    }
+
+    [HttpGet("mine")]
+    public async Task<IActionResult> Mine([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default) =>
+        (await authoring.ListMineAsync(User.ToActor(), page, pageSize, cancellationToken)).ToActionResult(this);
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Detail(int id, CancellationToken cancellationToken) =>
         (await questions.GetDetailAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);

@@ -1,3 +1,4 @@
+using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Services.Questions;
 
@@ -31,6 +32,7 @@ public sealed record AssignmentQuestionManageView(
     int OrderNo,
     string? Text,
     int? ImageFileId,
+    ImageView? Image,
     QuestionOptionsView Options,
     byte CorrectOption,
     TopicRefView? Topic,
@@ -119,6 +121,7 @@ public sealed record AssignmentStudentQuestionView(
     int OrderNo,
     string? Text,
     int? ImageFileId,
+    ImageView? Image,
     QuestionOptionsView Options,
     AssignmentMyAnswerView? MyAnswer,
     byte? CorrectOption,

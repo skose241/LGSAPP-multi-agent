@@ -4,6 +4,7 @@ using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Comments;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Infrastructure.Services.Notifications;
 using LGSApp.Infrastructure.Services.Questions;
 using Microsoft.AspNetCore.Identity;
@@ -54,6 +55,7 @@ public sealed record ReportQuestionTarget(
     UserRefView? Author,
     string? Text,
     int? ImageFileId,
+    ImageView? Image,
     string? OptionA,
     string? OptionB,
     string? OptionC,
@@ -83,6 +85,7 @@ public sealed record ReportSolutionTarget(
     UserRefView? Author,
     string? Text,
     int? ImageFileId,
+    ImageView? Image,
     bool IsHidden,
     bool IsDeleted,
     DateTime CreatedAt,
@@ -117,6 +120,7 @@ public sealed class ReportModerationService(
     ICommentService comments,
     INotificationService notifications,
     UserLookupService users,
+    IFileUrlService urls,
     TurkeyTime clock) : IReportModerationService
 {
     private const int MaxPageSize = 50;
@@ -593,6 +597,7 @@ public sealed class ReportModerationService(
             people.GetValueOrDefault(q.AuthorUserId),
             q.Text,
             q.ImageFileId,
+            await urls.GetOneAsync(q.ImageFileId, cancellationToken),
             q.OptionA,
             q.OptionB,
             q.OptionC,
@@ -629,7 +634,7 @@ public sealed class ReportModerationService(
         }
 
         var people = await users.GetAsync([s.AuthorUserId], true, cancellationToken);
-        return new ReportSolutionTarget(s.Id, s.Type, people.GetValueOrDefault(s.AuthorUserId), s.Text, s.ImageFileId, s.IsHidden, s.IsDeleted, s.CreatedAt, s.RowVersion);
+        return new ReportSolutionTarget(s.Id, s.Type, people.GetValueOrDefault(s.AuthorUserId), s.Text, s.ImageFileId, await urls.GetOneAsync(s.ImageFileId, cancellationToken), s.IsHidden, s.IsDeleted, s.CreatedAt, s.RowVersion);
     }
 
     private static string? Summarize(string? snapshot)

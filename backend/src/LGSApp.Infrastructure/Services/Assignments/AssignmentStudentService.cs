@@ -1,6 +1,7 @@
 using LGSApp.Domain.Constants;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Infrastructure.Services.Questions;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,7 @@ public interface IAssignmentStudentService
     Task<ServiceResult<AssignmentStudentDetailView>> GetAsync(Actor actor, int id, CancellationToken cancellationToken = default);
 }
 
-public sealed class AssignmentStudentService(AppDbContext db, TurkeyTime clock) : IAssignmentStudentService
+public sealed class AssignmentStudentService(AppDbContext db, TurkeyTime clock, IFileUrlService urls) : IAssignmentStudentService
 {
     public async Task<ServiceResult<AssignmentStudentListView>> ListAsync(Actor actor, AssignmentEffectiveState state, int? lessonId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
@@ -138,6 +139,8 @@ public sealed class AssignmentStudentService(AppDbContext db, TurkeyTime clock) 
             orderby aq.OrderNo
             select new { q.Id, aq.OrderNo, q.Text, q.ImageFileId, q.OptionA, q.OptionB, q.OptionC, q.OptionD, q.CorrectOption }).ToListAsync(cancellationToken);
 
+        var images = await urls.GetAsync(questionRows.Select(r => r.ImageFileId), cancellationToken);
+
         var mine = await db.Answers.AsNoTracking()
             .Where(a => a.AssignmentId == id && a.UserId == userId)
             .Select(a => new { a.QuestionId, a.SelectedOption, a.IsCorrect, a.AnsweredAt })
@@ -154,6 +157,7 @@ public sealed class AssignmentStudentService(AppDbContext db, TurkeyTime clock) 
                 r.OrderNo,
                 r.Text,
                 r.ImageFileId,
+                images.Find(r.ImageFileId),
                 new QuestionOptionsView(r.OptionA, r.OptionB, r.OptionC, r.OptionD),
                 answer is null ? null : new AssignmentMyAnswerView(answer.SelectedOption, answer.IsCorrect, r.CorrectOption, answer.AnsweredAt),
                 revealKey ? r.CorrectOption : null,

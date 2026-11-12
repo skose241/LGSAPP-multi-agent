@@ -24,6 +24,7 @@ public class SolutionConfiguration : IEntityTypeConfiguration<Solution>
         b.HasOne(x => x.Author).WithMany().HasForeignKey(x => x.AuthorUserId).OnDelete(DeleteBehavior.Restrict);
         b.RestrictTo<Solution, Answer>(x => x.AnswerId);
         b.RestrictTo<Solution, StoredFile>(x => x.ImageFileId);
+        b.HasIndex(x => x.ImageFileId).IsUnique().HasFilter("[ImageFileId] IS NOT NULL").HasDatabaseName("UX_Solutions_ImageFileId");
         b.HasIndex(x => new { x.QuestionId, x.Type }).IsUnique().HasFilter("[Type] IN (2, 4) AND [IsDeleted] = 0").HasDatabaseName("UX_Solutions_Question_Type_TeacherAi");
         b.HasIndex(x => new { x.QuestionId, x.AuthorUserId }).IsUnique().HasFilter("[Type] = 3").HasDatabaseName("UX_Solutions_Question_Author_Student");
         b.HasIndex(x => x.AnswerId).IsUnique().HasFilter("[AnswerId] IS NOT NULL").HasDatabaseName("UX_Solutions_AnswerId");

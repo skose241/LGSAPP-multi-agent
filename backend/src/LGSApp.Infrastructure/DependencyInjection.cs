@@ -8,6 +8,7 @@ using LGSApp.Infrastructure.Services.Answers;
 using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Comments;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Infrastructure.Services.Leaderboard;
 using LGSApp.Infrastructure.Services.Lessons;
 using LGSApp.Infrastructure.Services.Likes;
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
         services.AddRecoveryCodeOptions(configuration);
+        services.AddStorageOptions(configuration);
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(
@@ -76,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IQuestionAccessService, QuestionAccessService>();
         services.AddScoped<ILessonService, LessonService>();
         services.AddScoped<IQuestionService, QuestionService>();
+        services.AddScoped<IQuestionAuthoringService, QuestionAuthoringService>();
         services.AddScoped<IPointService, PointService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IAnswerService, AnswerService>();
@@ -93,6 +96,15 @@ public static class DependencyInjection
         services.AddScoped<IAssignmentLifecycleService, AssignmentLifecycleService>();
         services.AddSingleton<ILeaderboardCache, LeaderboardCache>();
         services.AddScoped<ILeaderboardService, LeaderboardService>();
+        services.AddSingleton<AzureBlobStore>();
+        services.AddSingleton<IBlobStore>(sp => sp.GetRequiredService<AzureBlobStore>());
+        services.AddHostedService<BlobContainerInitializer>();
+        services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
+        services.AddScoped<IFileUrlService, FileUrlService>();
+        services.AddScoped<IStoredFileValidator, StoredFileValidator>();
+        services.AddScoped<IFileUploadService, FileUploadService>();
+        services.AddScoped<IFileCleanupService, FileCleanupService>();
+        services.AddHostedService<FileCleanupWorker>();
 
         return services;
     }

@@ -19,6 +19,10 @@ public static class SettingKeys
     public const string YorumSoruBasinaMax = "yorumSoruBasinaMax";
     public const string CozumMaxKarakter = "cozumMaxKarakter";
     public const string SikayetMinKarakter = "sikayetMinKarakter";
+    public const string GunlukDosyaLimitiOgrenci = "gunlukDosyaLimitiOgrenci";
+    public const string GunlukDosyaLimitiOgretmen = "gunlukDosyaLimitiOgretmen";
+    public const string GunlukSoruYuklemeLimiti = "gunlukSoruYuklemeLimiti";
+    public const string PuanliSoruYuklemeGunluk = "puanliSoruYuklemeGunluk";
 
     public static readonly IReadOnlyList<(string Key, int Value, string Description)> Defaults =
     [
@@ -38,6 +42,10 @@ public static class SettingKeys
         (YorumDuzenlemeDk, 15, "Yorum düzenleme süresi (dakika)."),
         (YorumSoruBasinaMax, 1000, "Bir soruya yazılabilecek azami yorum sayısı."),
         (CozumMaxKarakter, 4000, "İnsan tarafından yazılan çözümün azami karakter sayısı."),
-        (SikayetMinKarakter, 10, "Şikayet açıklamasının asgari karakter sayısı.")
+        (SikayetMinKarakter, 10, "Şikayet açıklamasının asgari karakter sayısı."),
+        (GunlukDosyaLimitiOgrenci, 60, "Öğrenci başına günlük fotoğraf yükleme sınırı."),
+        (GunlukDosyaLimitiOgretmen, 500, "Öğretmen ve müdür başına günlük fotoğraf yükleme sınırı."),
+        (GunlukSoruYuklemeLimiti, 20, "Öğrenci başına günlük soru yükleme sınırı."),
+        (PuanliSoruYuklemeGunluk, 5, "Günde puan kazandıran soru yükleme sayısı.")
     ];
 }

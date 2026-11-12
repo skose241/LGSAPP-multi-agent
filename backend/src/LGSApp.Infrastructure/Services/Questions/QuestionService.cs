@@ -3,6 +3,7 @@ using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Access;
 using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Files;
 using Microsoft.EntityFrameworkCore;
 
 namespace LGSApp.Infrastructure.Services.Questions;
@@ -27,6 +28,7 @@ public sealed record QuestionDetailView(
     UserRefView? Author,
     string? Text,
     int? ImageFileId,
+    ImageView? Image,
     QuestionOptionsView Options,
     DateTime? PublishedAt,
     DateTime CreatedAt,
@@ -46,7 +48,7 @@ public interface IQuestionService
     Task<ServiceResult<QuestionDetailView>> GetDetailAsync(Actor actor, int questionId, CancellationToken cancellationToken = default);
 }
 
-public sealed class QuestionService(AppDbContext db, IQuestionAccessService access, UserLookupService users) : IQuestionService
+public sealed class QuestionService(AppDbContext db, IQuestionAccessService access, UserLookupService users, IFileUrlService urls) : IQuestionService
 {
     public async Task<ServiceResult<QuestionDetailView>> GetDetailAsync(Actor actor, int questionId, CancellationToken cancellationToken = default)
     {
@@ -151,6 +153,7 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             author,
             q.Text,
             q.ImageFileId,
+            await urls.GetOneAsync(q.ImageFileId, cancellationToken),
             new QuestionOptionsView(q.OptionA, q.OptionB, q.OptionC, q.OptionD),
             q.PublishedAt,
             q.CreatedAt,

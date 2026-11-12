@@ -927,8 +927,8 @@ namespace LGSApp.Infrastructure.Migrations
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<DateOnly?>("GenerationDate")
                         .HasColumnType("date");
@@ -1331,6 +1331,30 @@ namespace LGSApp.Infrastructure.Migrations
                             Key = "sikayetMinKarakter",
                             Description = "Şikayet açıklamasının asgari karakter sayısı.",
                             Value = "10"
+                        },
+                        new
+                        {
+                            Key = "gunlukDosyaLimitiOgrenci",
+                            Description = "Öğrenci başına günlük fotoğraf yükleme sınırı.",
+                            Value = "60"
+                        },
+                        new
+                        {
+                            Key = "gunlukDosyaLimitiOgretmen",
+                            Description = "Öğretmen ve müdür başına günlük fotoğraf yükleme sınırı.",
+                            Value = "500"
+                        },
+                        new
+                        {
+                            Key = "gunlukSoruYuklemeLimiti",
+                            Description = "Öğrenci başına günlük soru yükleme sınırı.",
+                            Value = "20"
+                        },
+                        new
+                        {
+                            Key = "puanliSoruYuklemeGunluk",
+                            Description = "Günde puan kazandıran soru yükleme sayısı.",
+                            Value = "5"
                         });
                 });
 
@@ -1392,7 +1416,10 @@ namespace LGSApp.Infrastructure.Migrations
 
                     b.HasIndex("AuthorUserId");
 
-                    b.HasIndex("ImageFileId");
+                    b.HasIndex("ImageFileId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Solutions_ImageFileId")
+                        .HasFilter("[ImageFileId] IS NOT NULL");
 
                     b.HasIndex("QuestionId", "AuthorUserId")
                         .IsUnique()
@@ -1427,6 +1454,9 @@ namespace LGSApp.Infrastructure.Migrations
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
 
+                    b.Property<Guid?>("ClientUploadId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("ConfirmedAt")
                         .HasColumnType("datetime2");
 
@@ -1444,6 +1474,9 @@ namespace LGSApp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("Height")
                         .HasColumnType("int");
@@ -1469,12 +1502,21 @@ namespace LGSApp.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_StoredFiles_BlobName");
 
-                    b.HasIndex("UploadedByUserId");
-
                     b.HasIndex("Status", "CreatedAt")
                         .HasDatabaseName("IX_StoredFiles_Status_CreatedAt");
 
-                    b.ToTable("StoredFiles", (string)null);
+                    b.HasIndex("UploadedByUserId", "ClientUploadId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_StoredFiles_User_ClientUploadId")
+                        .HasFilter("[ClientUploadId] IS NOT NULL");
+
+                    b.HasIndex("UploadedByUserId", "CreatedAt")
+                        .HasDatabaseName("IX_StoredFiles_User_CreatedAt");
+
+                    b.ToTable("StoredFiles", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StoredFiles_ReadyHasMetadata", "[Status] <> 1 OR ([Width] IS NOT NULL AND [Height] IS NOT NULL AND [ConfirmedAt] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("LGSApp.Domain.Entities.Topic", b =>

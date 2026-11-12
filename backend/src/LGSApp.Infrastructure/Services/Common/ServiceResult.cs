@@ -6,7 +6,9 @@ public enum ServiceErrorKind
     NotFound = 1,
     Forbidden = 2,
     Conflict = 3,
-    Validation = 4
+    Validation = 4,
+    TooManyRequests = 5,
+    PayloadTooLarge = 6
 }
 
 public interface IServiceResult
@@ -25,6 +27,8 @@ public static class Fail
     public static Failure Forbidden(string message) => new(ServiceErrorKind.Forbidden, message);
     public static Failure Conflict(string message) => new(ServiceErrorKind.Conflict, message);
     public static Failure Validation(string message) => new(ServiceErrorKind.Validation, message);
+    public static Failure TooManyRequests(string message) => new(ServiceErrorKind.TooManyRequests, message);
+    public static Failure PayloadTooLarge(string message) => new(ServiceErrorKind.PayloadTooLarge, message);
     public static Failure Validation(string message, IReadOnlyDictionary<string, string[]> errors) => new(ServiceErrorKind.Validation, message, errors);
 }
 

@@ -45,6 +45,8 @@ public static class ServiceResultExtensions
             ServiceErrorKind.Forbidden => (StatusCodes.Status403Forbidden, "Bu işlem için yetkiniz yok."),
             ServiceErrorKind.Conflict => (StatusCodes.Status409Conflict, "İşlem çakışması oluştu."),
             ServiceErrorKind.Validation => (StatusCodes.Status400BadRequest, "Geçersiz istek."),
+            ServiceErrorKind.TooManyRequests => (StatusCodes.Status429TooManyRequests, "Çok fazla istek gönderildi."),
+            ServiceErrorKind.PayloadTooLarge => (StatusCodes.Status413PayloadTooLarge, "Dosya çok büyük."),
             _ => (StatusCodes.Status500InternalServerError, "Sunucuda beklenmeyen bir hata oluştu.")
         };
 

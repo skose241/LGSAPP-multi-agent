@@ -17,4 +17,6 @@ public class RateLimitingOptions
     public RateLimitRule AnswerSubmit { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
     public RateLimitRule AssignmentWrite { get; set; } = new() { PermitLimit = 30, WindowSeconds = 60 };
     public RateLimitRule ReportCreate { get; set; } = new() { PermitLimit = 5, WindowSeconds = 60 };
+    public RateLimitRule FileUpload { get; set; } = new() { PermitLimit = 30, WindowSeconds = 60 };
+    public RateLimitRule QuestionCreate { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
 }

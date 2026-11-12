@@ -3,6 +3,7 @@ using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Files;
 using Microsoft.EntityFrameworkCore;
 
 namespace LGSApp.Infrastructure.Services.Assignments;
@@ -39,7 +40,7 @@ public interface IAssignmentQuestionService
     Task<ServiceResult<AddedQuestionView>> UpdateAsync(Actor actor, int assignmentId, int questionId, UpdateAssignmentQuestionCommand command, CancellationToken cancellationToken = default);
 }
 
-public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock) : IAssignmentQuestionService
+public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock, IStoredFileValidator fileValidator) : IAssignmentQuestionService
 {
     private const string NotEditableMessage = "Yalnızca taslak veya başlamamış planlı ödevlerin soruları değiştirilebilir.";
     private const string LinkedElsewhereMessage = "Soru başka bir ödevde kullanılıyor.";
@@ -646,44 +647,12 @@ public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock)
     private async Task<ValidationErrors> ValidateImagesAsync(Actor actor, IReadOnlyList<int?> imageIds, string keyFormat, int? ownQuestionId, CancellationToken token)
     {
         var errors = new ValidationErrors();
-        var ids = imageIds.Where(i => i is not null).Select(i => i!.Value).Distinct().ToList();
-        if (ids.Count == 0)
+        var problems = await fileValidator.ValidateAsync(actor.UserId, imageIds, AllowedPurposes, new StoredFileScope(OwnQuestionId: ownQuestionId), token);
+        for (var i = 0; i < problems.Count; i++)
         {
-            return errors;
-        }
-
-        var files = await db.StoredFiles.AsNoTracking()
-            .Where(f => ids.Contains(f.Id))
-            .Select(f => new { f.Id, f.UploadedByUserId, f.Status, f.Purpose })
-            .ToDictionaryAsync(f => f.Id, token);
-        var usedByQuestions = (await db.Questions.AsNoTracking()
-            .Where(q => q.ImageFileId != null && ids.Contains(q.ImageFileId.Value) && q.Id != (ownQuestionId ?? 0))
-            .Select(q => q.ImageFileId!.Value)
-            .ToListAsync(token)).ToHashSet();
-        var usedBySolutions = (await db.Solutions.AsNoTracking()
-            .Where(s => s.ImageFileId != null && ids.Contains(s.ImageFileId.Value))
-            .Select(s => s.ImageFileId!.Value)
-            .ToListAsync(token)).ToHashSet();
-
-        var seen = new HashSet<int>();
-        for (var i = 0; i < imageIds.Count; i++)
-        {
-            if (imageIds[i] is not int id)
+            if (problems[i].MessageFor() is { } message)
             {
-                continue;
-            }
-
-            var key = string.Format(System.Globalization.CultureInfo.InvariantCulture, keyFormat, i);
-            if (!files.TryGetValue(id, out var file)
-                || file.UploadedByUserId != actor.UserId
-                || file.Status != FileStatus.Ready
-                || !AllowedPurposes.Contains(file.Purpose))
-            {
-                errors.Add(key, "Seçilen fotoğraf geçersiz veya henüz hazır değil.");
-            }
-            else if (usedByQuestions.Contains(id) || usedBySolutions.Contains(id) || !seen.Add(id))
-            {
-                errors.Add(key, "Seçilen fotoğraf daha önce kullanılmış.");
+                errors.Add(string.Format(System.Globalization.CultureInfo.InvariantCulture, keyFormat, i), message);
             }
         }
 

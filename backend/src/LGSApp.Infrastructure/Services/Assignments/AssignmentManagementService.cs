@@ -2,6 +2,7 @@ using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Infrastructure.Services.Questions;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +40,7 @@ public sealed class AssignmentManagementService(
     AppDbContext db,
     UserLookupService users,
     IAssignmentNotifier notifier,
+    IFileUrlService urls,
     TurkeyTime clock) : IAssignmentManagementService
 {
     private const int MaxResultsPageSize = 100;
@@ -473,6 +475,8 @@ public sealed class AssignmentManagementService(
                 q.RowVersion
             }).ToListAsync(cancellationToken);
 
+        var images = await urls.GetAsync(questionRows.Select(r => r.ImageFileId), cancellationToken);
+
         var distribution = await countableAnswers
             .Where(a => a.AssignmentId == id)
             .GroupBy(a => new { a.QuestionId, a.SelectedOption })
@@ -493,6 +497,7 @@ public sealed class AssignmentManagementService(
                 r.OrderNo,
                 r.Text,
                 r.ImageFileId,
+                images.Find(r.ImageFileId),
                 new QuestionOptionsView(r.OptionA, r.OptionB, r.OptionC, r.OptionD),
                 r.CorrectOption,
                 r.TopicId is int topicId && r.TopicName is not null ? new TopicRefView(topicId, r.TopicName) : null,

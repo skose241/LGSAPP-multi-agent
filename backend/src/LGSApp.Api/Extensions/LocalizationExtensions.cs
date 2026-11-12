@@ -19,6 +19,7 @@ public static class LocalizationExtensions
         [StatusCodes.Status405MethodNotAllowed] = "Bu istek yöntemine izin verilmiyor.",
         [StatusCodes.Status406NotAcceptable] = "İstenen yanıt biçimi desteklenmiyor.",
         [StatusCodes.Status409Conflict] = "İşlem çakışması oluştu.",
+        [StatusCodes.Status413PayloadTooLarge] = "İstek çok büyük.",
         [StatusCodes.Status415UnsupportedMediaType] = "Desteklenmeyen içerik türü.",
         [StatusCodes.Status422UnprocessableEntity] = "İstek işlenemedi.",
         [StatusCodes.Status429TooManyRequests] = "Çok fazla istek gönderildi.",

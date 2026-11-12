@@ -4,6 +4,7 @@ using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Access;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Infrastructure.Services.Notifications;
 using LGSApp.Infrastructure.Services.Settings;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public sealed record SolutionView(
     UserRefView? Author,
     string? Text,
     int? ImageFileId,
+    ImageView? Image,
     bool IsHidden,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
@@ -43,8 +45,12 @@ public sealed class SolutionService(
     IQuestionAccessService access,
     INotificationService notifications,
     UserLookupService users,
+    IStoredFileValidator fileValidator,
+    IFileUrlService urls,
     TurkeyTime clock) : ISolutionService
 {
+    private static readonly FilePurpose[] SolutionPurposes = [FilePurpose.SolutionImage];
+
     public async Task<ServiceResult<SolutionListView>> ListAsync(Actor actor, int questionId, CancellationToken cancellationToken = default)
     {
         var decision = await access.GetAsync(questionId, actor, cancellationToken);
@@ -81,6 +87,7 @@ public sealed class SolutionService(
         }
 
         var people = await users.GetAsync(rows.Select(r => r.AuthorUserId), actor.IsModerator, cancellationToken);
+        var images = await urls.GetAsync(rows.Select(r => r.ImageFileId), cancellationToken);
 
         var ordered = rows
             .OrderBy(s => s.Type switch
@@ -91,7 +98,7 @@ public sealed class SolutionService(
             })
             .ThenBy(s => s.CreatedAt)
             .ThenBy(s => s.Id)
-            .Select(s => ToView(s, actor, people, countBySolution.GetValueOrDefault(s.Id)))
+            .Select(s => ToView(s, actor, people, countBySolution.GetValueOrDefault(s.Id), images.Find(s.ImageFileId)))
             .ToList();
 
         return ServiceResult<SolutionListView>.Ok(new SolutionListView(questionId, ordered));
@@ -161,7 +168,7 @@ public sealed class SolutionService(
         }
 
         var people = await users.GetAsync([solution.AuthorUserId], actor.IsModerator, cancellationToken);
-        return ServiceResult<SolutionView>.Ok(ToView(solution, actor, people, 0));
+        return ServiceResult<SolutionView>.Ok(ToView(solution, actor, people, 0, await urls.GetOneAsync(solution.ImageFileId, cancellationToken)));
     }
 
     public async Task<ServiceResult<SolutionView>> UpdateAsync(Actor actor, int solutionId, UpdateSolutionCommand command, CancellationToken cancellationToken = default)
@@ -213,7 +220,7 @@ public sealed class SolutionService(
 
         var people = await users.GetAsync([solution.AuthorUserId], true, cancellationToken);
         var commentCount = await db.Comments.CountAsync(c => c.SolutionId == solution.Id && c.Status == CommentStatus.Active, cancellationToken);
-        return ServiceResult<SolutionView>.Ok(ToView(solution, actor, people, commentCount));
+        return ServiceResult<SolutionView>.Ok(ToView(solution, actor, people, commentCount, await urls.GetOneAsync(solution.ImageFileId, cancellationToken)));
     }
 
     private sealed record ContentCheck(string? Text, Failure? Failure);
@@ -235,31 +242,17 @@ public sealed class SolutionService(
 
         if (imageId is int fileId)
         {
-            var file = await db.StoredFiles.AsNoTracking()
-                .Where(f => f.Id == fileId)
-                .Select(f => new { f.UploadedByUserId, f.Status, f.Purpose })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (file is null
-                || file.UploadedByUserId != actor.UserId
-                || file.Status != FileStatus.Ready
-                || file.Purpose != FilePurpose.SolutionImage)
+            var imageProblem = await fileValidator.ValidateOneAsync(actor.UserId, fileId, SolutionPurposes, new StoredFileScope(OwnSolutionId: currentSolutionId), cancellationToken);
+            if (imageProblem is not null)
             {
-                return new ContentCheck(null, Fail.Validation("Seçilen fotoğraf geçersiz veya henüz hazır değil."));
-            }
-
-            var used = await db.Solutions.AnyAsync(s => s.ImageFileId == fileId && s.Id != currentSolutionId, cancellationToken)
-                || await db.Questions.AnyAsync(q => q.ImageFileId == fileId, cancellationToken);
-            if (used)
-            {
-                return new ContentCheck(null, Fail.Validation("Seçilen fotoğraf daha önce kullanılmış."));
+                return new ContentCheck(null, Fail.Validation(imageProblem));
             }
         }
 
         return new ContentCheck(text, null);
     }
 
-    private static SolutionView ToView(Solution s, Actor actor, IReadOnlyDictionary<int, UserRefView> people, int commentCount)
+    private static SolutionView ToView(Solution s, Actor actor, IReadOnlyDictionary<int, UserRefView> people, int commentCount, ImageView? image)
     {
         var isMine = s.AuthorUserId == actor.UserId;
         var canEdit = actor.IsModerator && s.Type == SolutionType.Teacher && (actor.IsMudur || isMine);
@@ -271,6 +264,7 @@ public sealed class SolutionService(
             author,
             s.Text,
             s.ImageFileId,
+            image,
             s.IsHidden,
             s.CreatedAt,
             s.UpdatedAt,

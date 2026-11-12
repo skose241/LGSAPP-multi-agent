@@ -14,4 +14,6 @@ public class StoredFile
     public int UploadedByUserId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ConfirmedAt { get; set; }
+    public Guid? ClientUploadId { get; set; }
+    public DateTime? DeletedAt { get; set; }
 }

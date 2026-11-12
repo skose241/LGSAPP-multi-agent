@@ -4,6 +4,7 @@ using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Access;
 using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Infrastructure.Services.Notifications;
 using LGSApp.Infrastructure.Services.Points;
 using LGSApp.Infrastructure.Services.Settings;
@@ -27,8 +28,11 @@ public sealed class AnswerService(
     IPointService points,
     INotificationService notifications,
     UserLookupService users,
+    IStoredFileValidator fileValidator,
     TurkeyTime clock) : IAnswerService
 {
+    private static readonly FilePurpose[] SolutionPurposes = [FilePurpose.SolutionImage];
+
     public async Task<ServiceResult<AnswerResultView>> SubmitAsync(Actor actor, int questionId, SubmitAnswerCommand command, CancellationToken cancellationToken = default)
     {
         if (!actor.IsStudent)
@@ -146,24 +150,10 @@ public sealed class AnswerService(
 
         if (imageId is int fileId)
         {
-            var file = await db.StoredFiles.AsNoTracking()
-                .Where(f => f.Id == fileId)
-                .Select(f => new { f.UploadedByUserId, f.Status, f.Purpose })
-                .FirstOrDefaultAsync(token);
-
-            if (file is null
-                || file.UploadedByUserId != actor.UserId
-                || file.Status != FileStatus.Ready
-                || file.Purpose != FilePurpose.SolutionImage)
+            var imageProblem = await fileValidator.ValidateOneAsync(actor.UserId, fileId, SolutionPurposes, null, token);
+            if (imageProblem is not null)
             {
-                return Fail.Validation("Seçilen fotoğraf geçersiz veya henüz hazır değil.");
-            }
-
-            var used = await db.Solutions.AnyAsync(s => s.ImageFileId == fileId, token)
-                || await db.Questions.AnyAsync(q => q.ImageFileId == fileId, token);
-            if (used)
-            {
-                return Fail.Validation("Seçilen fotoğraf daha önce kullanılmış.");
+                return Fail.Validation(imageProblem);
             }
         }
 
