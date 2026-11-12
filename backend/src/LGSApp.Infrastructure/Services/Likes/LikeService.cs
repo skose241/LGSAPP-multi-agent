@@ -1,4 +1,3 @@
-using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Access;
 using LGSApp.Infrastructure.Services.Common;
@@ -29,17 +28,19 @@ public sealed class LikeService(AppDbContext db, IQuestionAccessService access, 
             return Fail.Validation("Kendi sorunuzu beğenemezsiniz.");
         }
 
-        var exists = await db.QuestionLikes.AsNoTracking()
-            .AnyAsync(l => l.QuestionId == questionId && l.UserId == actor.UserId, cancellationToken);
-        if (exists)
-        {
-            return ServiceResult.Ok();
-        }
-
-        db.QuestionLikes.Add(new QuestionLike { QuestionId = questionId, UserId = actor.UserId, CreatedAt = clock.UtcNow });
+        var userId = actor.UserId;
+        var createdAt = clock.UtcNow;
         try
         {
-            await db.SaveChangesAsync(cancellationToken);
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"""
+                INSERT INTO QuestionLikes (QuestionId, UserId, CreatedAt)
+                SELECT {questionId}, {userId}, {createdAt}
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM QuestionLikes WITH (UPDLOCK, HOLDLOCK)
+                    WHERE QuestionId = {questionId} AND UserId = {userId})
+                """,
+                cancellationToken);
         }
         catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {

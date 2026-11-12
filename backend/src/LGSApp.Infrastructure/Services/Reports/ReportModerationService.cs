@@ -443,7 +443,7 @@ public sealed class ReportModerationService(
                     reason = reason[..ReasonMaxLength];
                 }
 
-                return await comments.RemoveAsync(actor, commentId, reason, token);
+                return await comments.RemoveForModerationAsync(actor, commentId, reason, token);
             }
         }
     }

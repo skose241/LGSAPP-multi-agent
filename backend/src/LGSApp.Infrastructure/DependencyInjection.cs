@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<IReportModerationService, ReportModerationService>();
         services.AddScoped<ILikeService, LikeService>();
         services.AddScoped<INotificationInboxService, NotificationInboxService>();
+        services.AddSingleton<ILeaderboardCache, LeaderboardCache>();
         services.AddScoped<ILeaderboardService, LeaderboardService>();
 
         return services;

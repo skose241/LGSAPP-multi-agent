@@ -1,4 +1,5 @@
 using LGSApp.Domain.Entities;
+using LGSApp.Infrastructure.Services.Leaderboard;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,7 +15,8 @@ public sealed class AppUserManager(
     ILookupNormalizer keyNormalizer,
     IdentityErrorDescriber errors,
     IServiceProvider services,
-    ILogger<UserManager<ApplicationUser>> logger)
+    ILogger<UserManager<ApplicationUser>> logger,
+    ILeaderboardCache leaderboardCache)
     : UserManager<ApplicationUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
 {
     public override async Task<IdentityResult> AddToRoleAsync(ApplicationUser user, string role)
@@ -39,6 +41,17 @@ public sealed class AppUserManager(
     {
         var result = await base.RemoveFromRolesAsync(user, roles);
         return result.Succeeded ? await RefreshStampAsync(user) : result;
+    }
+
+    public override async Task<IdentityResult> UpdateSecurityStampAsync(ApplicationUser user)
+    {
+        var result = await base.UpdateSecurityStampAsync(user);
+        if (result.Succeeded)
+        {
+            leaderboardCache.Invalidate();
+        }
+
+        return result;
     }
 
     private async Task<IdentityResult> RefreshStampAsync(ApplicationUser user)

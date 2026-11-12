@@ -74,6 +74,7 @@ public interface ICommentService
     Task<ServiceResult<CommentView>> EditAsync(Actor actor, int commentId, EditCommentCommand command, CancellationToken cancellationToken = default);
     Task<ServiceResult> DeleteAsync(Actor actor, int commentId, CancellationToken cancellationToken = default);
     Task<ServiceResult> RemoveAsync(Actor actor, int commentId, string reason, CancellationToken cancellationToken = default);
+    Task<ServiceResult> RemoveForModerationAsync(Actor actor, int commentId, string reason, CancellationToken cancellationToken = default);
     Task<ServiceResult> RestoreAsync(Actor actor, int commentId, CancellationToken cancellationToken = default);
 }
 
@@ -563,7 +564,13 @@ public sealed class CommentService(
         return ServiceResult.Ok();
     }
 
-    public async Task<ServiceResult> RemoveAsync(Actor actor, int commentId, string reason, CancellationToken cancellationToken = default)
+    public Task<ServiceResult> RemoveAsync(Actor actor, int commentId, string reason, CancellationToken cancellationToken = default) =>
+        RemoveCoreAsync(actor, commentId, reason, false, cancellationToken);
+
+    public Task<ServiceResult> RemoveForModerationAsync(Actor actor, int commentId, string reason, CancellationToken cancellationToken = default) =>
+        RemoveCoreAsync(actor, commentId, reason, true, cancellationToken);
+
+    private async Task<ServiceResult> RemoveCoreAsync(Actor actor, int commentId, string reason, bool ignoreSolutionState, CancellationToken cancellationToken)
     {
         if (!actor.IsModerator)
         {
@@ -581,7 +588,7 @@ public sealed class CommentService(
             return Fail.Validation($"Kaldırma nedeni en fazla {CommentRules.ModerationReasonMaxLength} karakter olabilir.");
         }
 
-        var found = await FindAccessibleAsync(actor, commentId, true, cancellationToken);
+        var found = await FindAccessibleAsync(actor, commentId, true, cancellationToken, ignoreSolutionState);
         if (!found.Succeeded)
         {
             return Fail.NotFound(CommentNotFound);
@@ -657,7 +664,7 @@ public sealed class CommentService(
         return ServiceResult.Ok();
     }
 
-    private async Task<ServiceResult<Comment>> FindAccessibleAsync(Actor actor, int commentId, bool tracking, CancellationToken cancellationToken)
+    private async Task<ServiceResult<Comment>> FindAccessibleAsync(Actor actor, int commentId, bool tracking, CancellationToken cancellationToken, bool ignoreSolutionState = false)
     {
         var source = tracking ? db.Comments : db.Comments.AsNoTracking();
         var comment = await source.FirstOrDefaultAsync(c => c.Id == commentId, cancellationToken);
@@ -675,7 +682,8 @@ public sealed class CommentService(
             }
         }
 
-        if (comment.SolutionId is int solutionId
+        if (!ignoreSolutionState
+            && comment.SolutionId is int solutionId
             && !await IsUsableSolutionAsync(comment.QuestionId, solutionId, actor, cancellationToken))
         {
             return Fail.NotFound(CommentNotFound);

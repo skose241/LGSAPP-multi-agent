@@ -2,7 +2,7 @@ using LGSApp.Domain.Constants;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Common;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LGSApp.Infrastructure.Services.Leaderboard;
 
@@ -29,7 +29,7 @@ public interface ILeaderboardService
     Task<ServiceResult<LeaderboardView>> GetAsync(Actor actor, LeaderboardPeriod period, int offset, int top, CancellationToken cancellationToken = default);
 }
 
-public sealed class LeaderboardService(AppDbContext db, IMemoryCache cache, TurkeyTime clock) : ILeaderboardService
+public sealed class LeaderboardService(IServiceScopeFactory scopes, ILeaderboardCache cache, TurkeyTime clock) : ILeaderboardService
 {
     public const int MaxOffset = 12;
     public const int MaxTop = 100;
@@ -57,11 +57,7 @@ public sealed class LeaderboardService(AppDbContext db, IMemoryCache cache, Turk
 
         var (start, end) = Resolve(period, offset, clock.Today);
         var key = $"leaderboard:{(int)period}:{start:yyyyMMdd}";
-        var ranked = await cache.GetOrCreateAsync(key, async entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
-            return await LoadAsync(start, end, cancellationToken);
-        }) ?? [];
+        var ranked = await cache.GetOrLoadAsync(key, CacheDuration, token => LoadAsync(start, end, token), cancellationToken);
 
         var items = ranked
             .Take(top)
@@ -96,6 +92,8 @@ public sealed class LeaderboardService(AppDbContext db, IMemoryCache cache, Turk
 
     private async Task<IReadOnlyList<RankedRow>> LoadAsync(DateOnly start, DateOnly end, CancellationToken cancellationToken)
     {
+        await using var scope = scopes.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var totals = db.PointTransactions.AsNoTracking()
             .Where(p => p.LocalDate >= start && p.LocalDate <= end)
             .GroupBy(p => p.UserId)
