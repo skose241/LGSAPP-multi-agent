@@ -474,6 +474,11 @@ public sealed class ReportModerationService(
         var result = await userManager.SetBannedAsync(user, true);
         if (!result.Succeeded)
         {
+            if (result.Errors.Any(e => e.Code == SystemAccounts.MudurBanErrorCode))
+            {
+                return Fail.Validation(SystemAccounts.MudurBanMessage);
+            }
+
             return Fail.Validation(string.Join(" ", result.Errors.Select(e => e.Description)));
         }
 

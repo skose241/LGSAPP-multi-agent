@@ -2,6 +2,7 @@ using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Access;
+using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Notifications;
 using LGSApp.Infrastructure.Services.Points;
@@ -85,6 +86,20 @@ public sealed class AnswerService(
         int solutionPoints,
         CancellationToken token)
     {
+        var linkedAssignmentId = await db.AssignmentQuestions
+            .Where(aq => aq.QuestionId == questionId)
+            .Select(aq => (int?)aq.AssignmentId)
+            .FirstOrDefaultAsync(token);
+
+        if (linkedAssignmentId is int lockId)
+        {
+            await db.Assignments
+                .FromSqlInterpolated($"SELECT * FROM [Assignments] WITH (HOLDLOCK, ROWLOCK) WHERE [Id] = {lockId}")
+                .AsNoTracking()
+                .Select(a => a.Id)
+                .FirstOrDefaultAsync(token);
+        }
+
         var locked = await db.Questions
             .FromSqlInterpolated($"SELECT * FROM [Questions] WITH (UPDLOCK, ROWLOCK) WHERE [Id] = {questionId}")
             .AsNoTracking()
@@ -102,12 +117,19 @@ public sealed class AnswerService(
             return Fail.NotFound("Soru bulunamadı.");
         }
 
-        if (decision.Facts.AssignmentStatus is not null)
+        if (decision.Facts.IsHidden)
         {
-            return Fail.Conflict("Bu soru bir ödeve aittir. Ödev sorularını ödev ekranından cevaplayabilirsiniz.");
+            return Fail.NotFound("Soru bulunamadı.");
         }
 
-        if (decision.Facts.PublishedAt is null || decision.Facts.IsHidden)
+        if (decision.Facts.AssignmentState is AssignmentEffectiveState state)
+        {
+            if (state == AssignmentEffectiveState.Closed)
+            {
+                return Fail.Conflict("Bu ödevin süresi dolmuş.");
+            }
+        }
+        else if (decision.Facts.PublishedAt is null)
         {
             return Fail.NotFound("Soru bulunamadı.");
         }
@@ -145,6 +167,7 @@ public sealed class AnswerService(
             }
         }
 
+        var assignmentId = decision.Facts.AssignmentId;
         var now = clock.UtcNow;
         var isCorrect = selectedOption == locked.CorrectOption;
 
@@ -152,6 +175,7 @@ public sealed class AnswerService(
         {
             QuestionId = questionId,
             UserId = actor.UserId,
+            AssignmentId = assignmentId,
             SelectedOption = selectedOption,
             IsCorrect = isCorrect,
             AnsweredAt = now
@@ -171,13 +195,13 @@ public sealed class AnswerService(
         };
         db.Solutions.Add(solution);
 
-        var earned = await points.AwardAsync(actor.UserId, solutionPoints, PointReason.SolutionWritten, questionId, answer.Id, null, null, token);
+        var earned = await points.AwardAsync(actor.UserId, solutionPoints, PointReason.SolutionWritten, questionId, answer.Id, assignmentId, null, token);
         if (isCorrect)
         {
-            earned += await points.AwardAsync(actor.UserId, correctPoints, PointReason.CorrectAnswer, questionId, answer.Id, null, null, token);
+            earned += await points.AwardAsync(actor.UserId, correctPoints, PointReason.CorrectAnswer, questionId, answer.Id, assignmentId, null, token);
         }
 
-        if (locked.Source != QuestionSource.Ai && locked.AuthorUserId != actor.UserId)
+        if (assignmentId is null && locked.Source != QuestionSource.Ai && locked.AuthorUserId != actor.UserId)
         {
             var people = await users.GetAsync([actor.UserId], false, token);
             var name = people.TryGetValue(actor.UserId, out var me) ? me.UserName : "Bir öğrenci";

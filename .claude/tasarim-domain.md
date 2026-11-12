@@ -191,3 +191,38 @@ CommentDto { id, parentId?, depth, solutionId?, status: "active"|"deleted"|"remo
 - **Yanıt boyutu:** `yorumGorunurDerinlik` ne olursa olsun bir liste yanıtındaki toplam düğüm sayısı üst sınırlıdır (örn. 500); aşılırsa en derin seviyeler kesilip `hasMoreReplies` ile işaretlenir.
 - **404/405 charset:** problem+json yanıtları `charset=utf-8` içerir.
 - **Login zamanlaması (var olan kullanıcı + yanlış şifre):** mümkünse `AccessFailedAsync` yazımının maliyeti olmayan kullanıcı yoluna da eşitlenir (sahte yazım veya sabit gecikme); uygulanamazsa gerekçesiyle rapor edilir.
+
+---
+
+## Revizyon 3 (Oturum 5, 2026-11-12, kullanıcı kararları) — çelişirse bu bölüm geçerlidir
+
+### Kullanıcı adı
+- Türkçe harf (ç ğ ı ö ş ü Ç Ğ İ Ö Ş Ü) kabul edilir; girdi trim + NFC.
+- Eşleşme anahtarı `TurkishLookupNormalizer`: ı/İ/I/i→I, ç→C, ğ→G, ö→O, ş→S, ü→U, büyük harf. "şükrü" = "sukru" aynı hesap. Görünen ad özgün yazım.
+- Açılışta `EnsureUserNameKeysAsync` eski anahtarları günceller; çakışmada başlatma durur.
+
+### Barındırma ve zamanlayıcı
+- Azure App Service Linux B1 (Always On), API + Next.js aynı plan; 100$ öğrenci kredisi, 5–6 ay.
+- Azure SQL ücretsiz teklif (kota dolunca ücretlendirmeye geç) veya Basic.
+- Zamanlayıcı API içinde BackgroundService; Azure Functions yok. GenerationRun kilidi + açılışta kaçırılan görevi yakalama. Müdürün manuel tetiklemesi aynı servis.
+- Ödev etkin durumu zamanlayıcıdan bağımsız hesaplanır (`AssignmentState`); zamanlayıcı yalnız Status'u kalıcılaştırır ve bildirim gönderir. Havuz yayın job'ı ödeve bağlı soruları atlamalı.
+
+### Müdür hesapları
+- Müdür başka bir müdürü banlayamaz (tüm ban yolları, `UserBanExtensions`). Unban serbest.
+- Müdür başka bir müdürün şifresini yenileyemez (`regenerate-password`) ve müdür hesabına ait şifre sıfırlama talebini onaylayamaz.
+- Yeni müdür ekleme ayrı bir işlem/buton olarak kalır (kritik işlemde yeniden şifre sorma istenmedi).
+- Müdür şifresi en az 12 karakter (öğretmen/öğrenci 8). Müdür oturumu (JWT) 30 dk, diğerleri 60 dk.
+- Müdür şifre kurtarma: ilk şifre belirlemede tek seferlik 10 kurtarma kodu (hash'li saklanır, bir kez gösterilir, profilden mevcut şifreyle yenilenebilir). Giriş ekranında kullanıcı adı + kurtarma kodu + yeni şifre ile sıfırlama. Kodlar da kaybolursa son çare sunucuda çalıştırılan sıfırlama komutu. Müdürün `forgot-password` talebi diğer müdürlere onaya düşmez (yanıt yine jenerik).
+
+### Ödev
+- Doğru şık öğrenciye soruyu cevapladıktan sonra gösterilir; ödev kapanınca tümü ve tartışma açılır.
+- Ödev açıkken tartışma gizli: cevaplayan öğrenci yalnız kendi cevabını, doğru şıkkı ve kendi çözümünü görür. Diğer çözümler, öğretmen/AI çözümü, yorumlar, istatistikler ve açıklama ödev kapanınca açılır (moderatör muaf). Havuz soruları değişmez. Erişim `CanSeeOwnResult` ve `CanSeeDiscussion` olarak ayrılır.
+- Silinen ödevde ödev için yaratılan sorular gizlenir, havuzdan eklenenler havuza döner. Ödev başına en fazla 200 soru.
+
+### PDF'ten ödev sorusu (dosya modülü + AI entegrasyonundan sonra)
+- Sorular her zaman tek tek görsel (StoredFile) olarak saklanır; sunucuda PDF saklanmaz/dağıtılmaz.
+- Akış: öğretmen PDF seçer → tarayıcıda pdf.js ile sayfalar resme çevrilir →
+  1. **Metin katmanı ile bölme (önce):** pdf.js `getTextContent` konumlarıyla soru numaraları ("1.", "2)", "3-") bulunur, sütunlar ayrılır, numaradan numaraya alan kırpılır. Ücretsiz, istemcide.
+  2. **Gemini (yedek):** metin katmanı yoksa, numara dizisinde boşluk/çakışma varsa veya sonuç belirsizse sayfa görseli backend üzerinden Gemini'ye gönderilir; soru numarası + çerçeve koordinatları istenir. Ortak metinli sorular ("1-3. soruları ...") ve PDF'teki cevap anahtarı sayfası da tespit edilebilir. Anahtar backend'de, `AiLog` + günlük limit.
+  3. **Öğretmen onayı (her durumda zorunlu):** çerçeveler sayfa üzerinde gösterilir; öğretmen taşır/birleştirir/siler, doğru şıkları kontrol eder/işaretler, sonra "Ödeve ekle". Onaysız otomatik ekleme yok. AI'nın önerdiği doğru şık yalnız öneri olarak gösterilir.
+- Kırpılan görseller mevcut yükleme hattından (istemcide küçültme, SAS ile Blob, StoredFile Ready) geçer ve `POST /api/assignments/{id}/questions` toplu ucuyla eklenir; backend ödev uçlarında değişiklik gerekmez. Gemini çerçeve tespiti için ayrı bir uç (ör. `POST /api/ai/detect-questions`) eklenecek.

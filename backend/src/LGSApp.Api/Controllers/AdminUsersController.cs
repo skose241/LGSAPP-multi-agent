@@ -165,7 +165,9 @@ public class AdminUsersController : ControllerBase
         var outcome = await _oneTimePasswords.ResetAsync(user, true);
         if (!outcome.Result.Succeeded)
         {
-            return IdentityProblem(outcome.Result);
+            return outcome.Result.Errors.Any(e => e.Code == MudurRules.PasswordResetForbiddenCode)
+                ? Problem(statusCode: StatusCodes.Status400BadRequest, title: MudurRules.PasswordResetForbiddenMessage)
+                : IdentityProblem(outcome.Result);
         }
 
         return Ok(new OneTimePasswordResponse(user.Id, outcome.Password, user.MustChangePassword));
@@ -192,7 +194,9 @@ public class AdminUsersController : ControllerBase
         var result = await _userManager.SetBannedAsync(user, banned);
         if (!result.Succeeded)
         {
-            return IdentityProblem(result);
+            return result.Errors.Any(e => e.Code == SystemAccounts.MudurBanErrorCode)
+                ? Problem(statusCode: StatusCodes.Status400BadRequest, title: SystemAccounts.MudurBanMessage)
+                : IdentityProblem(result);
         }
 
         return NoContent();

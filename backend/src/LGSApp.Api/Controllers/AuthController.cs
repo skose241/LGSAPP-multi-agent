@@ -27,6 +27,7 @@ public class AuthController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly DummyPasswordVerifier _dummyVerifier;
     private readonly AppDbContext _db;
+    private readonly RecoveryCodeService _recoveryCodes;
     private readonly ILogger<AuthController> _logger;
     private readonly ResponseTimingOptions _timing;
 
@@ -35,6 +36,7 @@ public class AuthController : ControllerBase
         ITokenService tokenService,
         DummyPasswordVerifier dummyVerifier,
         AppDbContext db,
+        RecoveryCodeService recoveryCodes,
         ILogger<AuthController> logger,
         IOptions<ResponseTimingOptions> timing)
     {
@@ -42,6 +44,7 @@ public class AuthController : ControllerBase
         _tokenService = tokenService;
         _dummyVerifier = dummyVerifier;
         _db = db;
+        _recoveryCodes = recoveryCodes;
         _logger = logger;
         _timing = timing.Value;
     }
@@ -96,8 +99,8 @@ public class AuthController : ControllerBase
     [Authorize(Policy = Policies.AuthenticatedAllowPasswordChange)]
     public async Task<ActionResult<LoginResponse>> ChangePassword(ChangePasswordRequest request)
     {
-        var user = await GetCurrentUser();
-        if (user is null)
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null)
         {
             return Unauthorized();
         }
@@ -107,20 +110,50 @@ public class AuthController : ControllerBase
             return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Yeni şifre mevcut şifreden farklı olmalı.");
         }
 
-        user.MustChangePassword = false;
-        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
-        if (!result.Succeeded)
+        ActionResult? error = null;
+        LoginResponse? response = null;
+        var strategy = _db.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
         {
-            return IdentityProblem(result);
-        }
+            error = null;
+            response = null;
+            _db.ChangeTracker.Clear();
 
-        var stamp = await _userManager.UpdateSecurityStampAsync(user);
-        if (!stamp.Succeeded)
-        {
-            return IdentityProblem(stamp);
-        }
+            await using var transaction = await _db.Database.BeginTransactionAsync();
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user is null)
+            {
+                error = Unauthorized();
+                return;
+            }
 
-        return Ok(await BuildLoginResponse(user));
+            var issueCodes = user.MustChangePassword && await _userManager.IsInRoleAsync(user, Roles.Mudur);
+            user.MustChangePassword = false;
+            var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            if (!result.Succeeded)
+            {
+                error = IdentityProblem(result);
+                return;
+            }
+
+            var stamp = await _userManager.UpdateSecurityStampAsync(user);
+            if (!stamp.Succeeded)
+            {
+                error = IdentityProblem(stamp);
+                return;
+            }
+
+            IReadOnlyList<string>? codes = null;
+            if (issueCodes)
+            {
+                codes = await _recoveryCodes.IssueAsync(user.Id);
+            }
+
+            await transaction.CommitAsync();
+            response = await BuildLoginResponse(user, codes);
+        });
+
+        return error ?? Ok(response);
     }
 
     [HttpPost("forgot-password")]
@@ -133,7 +166,7 @@ public class AuthController : ControllerBase
         var user = await _userManager.FindByNameAsync(userName);
         var written = false;
         var queried = false;
-        if (user is not null && !user.IsBanned && !await IsSystemAccountAsync(user.Id))
+        if (user is not null && !user.IsBanned && !await IsRequestBlockedAsync(user.Id))
         {
             queried = true;
             var hasPending = await _db.PasswordResetRequests
@@ -195,25 +228,17 @@ public class AuthController : ControllerBase
         return InvalidCredentials();
     }
 
-    private static async Task WaitForMinimumAsync(long started, int minimumMilliseconds, CancellationToken cancellationToken)
-    {
-        if (minimumMilliseconds <= 0)
-        {
-            return;
-        }
-
-        var remaining = TimeSpan.FromMilliseconds(minimumMilliseconds) - Stopwatch.GetElapsedTime(started);
-        if (remaining > TimeSpan.Zero)
-        {
-            await Task.Delay(remaining, cancellationToken);
-        }
-    }
+    private static Task WaitForMinimumAsync(long started, int minimumMilliseconds, CancellationToken cancellationToken) =>
+        ResponseTimer.WaitForMinimumAsync(started, minimumMilliseconds, cancellationToken);
 
     private Task<int> PadFailureWriteAsync() =>
         _db.Users.Where(u => u.Id == 0).ExecuteUpdateAsync(s => s.SetProperty(u => u.AccessFailedCount, 0));
 
     private Task<bool> IsSystemAccountAsync(int userId) =>
         _db.UserRoles.AnyAsync(ur => ur.UserId == userId && ur.RoleId == Roles.AiId);
+
+    private Task<bool> IsRequestBlockedAsync(int userId) =>
+        _db.UserRoles.AnyAsync(ur => ur.UserId == userId && (ur.RoleId == Roles.AiId || ur.RoleId == Roles.MudurId));
 
     private async Task<ApplicationUser?> GetCurrentUser()
     {
@@ -231,14 +256,15 @@ public class AuthController : ControllerBase
             user.LastName,
             user.ClassName,
             roles.FirstOrDefault() ?? string.Empty,
-            user.MustChangePassword);
+            user.MustChangePassword,
+            roles.Contains(Roles.Mudur) && await _recoveryCodes.RemainingAsync(user.Id) == 0);
     }
 
-    private async Task<LoginResponse> BuildLoginResponse(ApplicationUser user)
+    private async Task<LoginResponse> BuildLoginResponse(ApplicationUser user, IReadOnlyList<string>? recoveryCodes = null)
     {
         var roles = await _userManager.GetRolesAsync(user);
         var token = _tokenService.CreateToken(user, roles);
-        return new LoginResponse(token.Token, token.ExpiresAtUtc, user.MustChangePassword, await ToUserInfo(user));
+        return new LoginResponse(token.Token, token.ExpiresAtUtc, user.MustChangePassword, await ToUserInfo(user), recoveryCodes);
     }
 
     private ObjectResult InvalidCredentials() =>

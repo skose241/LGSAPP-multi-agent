@@ -362,6 +362,11 @@ namespace LGSApp.Infrastructure.Migrations
                     b.Property<int>("QuestionId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("CreatedForAssignment")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<int>("OrderNo")
                         .HasColumnType("int");
 
@@ -1054,6 +1059,43 @@ namespace LGSApp.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("QuestionLikes", (string)null);
+                });
+
+            modelBuilder.Entity("LGSApp.Domain.Entities.RecoveryCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodeHash")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RecoveryCodes_CodeHash");
+
+                    b.HasIndex("UserId", "UsedAt")
+                        .HasDatabaseName("IX_RecoveryCodes_User_UsedAt");
+
+                    b.ToTable("RecoveryCodes", (string)null);
                 });
 
             modelBuilder.Entity("LGSApp.Domain.Entities.Report", b =>
@@ -1876,6 +1918,15 @@ namespace LGSApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("LGSApp.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LGSApp.Domain.Entities.RecoveryCode", b =>
+                {
                     b.HasOne("LGSApp.Domain.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")

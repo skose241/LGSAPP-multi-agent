@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Options;
 using Microsoft.Extensions.Options;
@@ -32,11 +33,15 @@ public class TokenService : ITokenService
             new(MustChangePasswordClaim, user.MustChangePassword ? "true" : "false"),
             new(SecurityStampClaim, user.SecurityStamp ?? string.Empty)
         };
-        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+        var roleList = roles.ToList();
+        claims.AddRange(roleList.Select(r => new Claim(ClaimTypes.Role, r)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expires = DateTime.UtcNow.AddMinutes(_options.ExpiryMinutes);
+        var minutes = roleList.Contains(Roles.Mudur, StringComparer.OrdinalIgnoreCase)
+            ? _options.MudurExpiryMinutes
+            : _options.ExpiryMinutes;
+        var expires = DateTime.UtcNow.AddMinutes(minutes);
 
         var token = new JwtSecurityToken(
             _options.Issuer,

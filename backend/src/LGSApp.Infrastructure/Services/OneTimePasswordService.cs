@@ -15,14 +15,28 @@ public class OneTimePasswordService
         _userManager = userManager;
     }
 
-    public async Task<OneTimePasswordResult> ResetAsync(ApplicationUser user, bool mustChangePassword)
+    public async Task<IdentityResult?> GuardAsync(ApplicationUser user, bool allowMudur = false)
     {
-        var password = PasswordGenerator.Generate();
         if (await _userManager.IsInRoleAsync(user, Roles.Ai))
         {
-            return new OneTimePasswordResult(
-                IdentityResult.Failed(new IdentityError { Description = SystemAccounts.ManagedMessage }),
-                string.Empty);
+            return IdentityResult.Failed(new IdentityError { Description = SystemAccounts.ManagedMessage });
+        }
+
+        if (!allowMudur && await _userManager.IsInRoleAsync(user, Roles.Mudur))
+        {
+            return IdentityResult.Failed(new IdentityError { Code = MudurRules.PasswordResetForbiddenCode, Description = MudurRules.PasswordResetForbiddenMessage });
+        }
+
+        return null;
+    }
+
+    public async Task<OneTimePasswordResult> ResetAsync(ApplicationUser user, bool mustChangePassword, bool allowMudur = false)
+    {
+        var password = PasswordGenerator.Generate();
+        var denied = await GuardAsync(user, allowMudur);
+        if (denied is not null)
+        {
+            return new OneTimePasswordResult(denied, string.Empty);
         }
 
         user.MustChangePassword = mustChangePassword;

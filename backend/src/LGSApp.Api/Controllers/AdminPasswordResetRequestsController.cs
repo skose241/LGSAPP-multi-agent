@@ -34,7 +34,8 @@ public class AdminPasswordResetRequestsController : ControllerBase
     {
         var rows = await _db.PasswordResetRequests
             .AsNoTracking()
-            .Where(r => r.Status == PasswordResetStatus.Pending)
+            .Where(r => r.Status == PasswordResetStatus.Pending
+                && !_db.UserRoles.Any(ur => ur.UserId == r.UserId && ur.RoleId == Roles.MudurId))
             .OrderBy(r => r.CreatedAt)
             .Select(r => new PasswordResetRequestDto(
                 r.Id,
@@ -82,9 +83,10 @@ public class AdminPasswordResetRequestsController : ControllerBase
                     return;
                 }
 
-                if (await _userManager.IsInRoleAsync(request.User, Roles.Ai))
+                var denied = await _oneTimePasswords.GuardAsync(request.User);
+                if (denied is not null)
                 {
-                    error = Problem(statusCode: StatusCodes.Status400BadRequest, title: SystemAccounts.ManagedMessage);
+                    error = Problem(statusCode: StatusCodes.Status400BadRequest, title: denied.Errors.First().Description);
                     return;
                 }
 
@@ -133,6 +135,12 @@ public class AdminPasswordResetRequestsController : ControllerBase
         if (request is null)
         {
             return NotFound();
+        }
+
+        var denied = await _oneTimePasswords.GuardAsync(await _userManager.FindByIdAsync(request.UserId.ToString(CultureInfo.InvariantCulture)) ?? new ApplicationUser { Id = request.UserId });
+        if (denied is not null && denied.Errors.Any(e => e.Code == MudurRules.PasswordResetForbiddenCode))
+        {
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: MudurRules.PasswordResetForbiddenMessage);
         }
 
         if (request.Status != PasswordResetStatus.Pending)

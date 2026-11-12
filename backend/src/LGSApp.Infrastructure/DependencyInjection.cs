@@ -5,6 +5,7 @@ using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
 using LGSApp.Infrastructure.Services.Access;
 using LGSApp.Infrastructure.Services.Answers;
+using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Comments;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Leaderboard;
@@ -31,6 +32,7 @@ public static class DependencyInjection
     {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
+        services.AddRecoveryCodeOptions(configuration);
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(
@@ -58,10 +60,13 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.Replace(ServiceDescriptor.Singleton<ILookupNormalizer, TurkishLookupNormalizer>());
+        services.Replace(ServiceDescriptor.Scoped<IPasswordValidator<ApplicationUser>, RoleAwarePasswordValidator>());
 
         services.AddSingleton<ITokenService, TokenService>();
         services.AddSingleton<DummyPasswordVerifier>();
         services.AddScoped<OneTimePasswordService>();
+        services.AddScoped<RecoveryCodeService>();
+        services.AddScoped<MudurRecoveryService>();
 
         services.AddMemoryCache();
         services.TryAddSingleton(TimeProvider.System);
@@ -81,6 +86,11 @@ public static class DependencyInjection
         services.AddScoped<IReportModerationService, ReportModerationService>();
         services.AddScoped<ILikeService, LikeService>();
         services.AddScoped<INotificationInboxService, NotificationInboxService>();
+        services.AddScoped<IAssignmentNotifier, AssignmentNotifier>();
+        services.AddScoped<IAssignmentManagementService, AssignmentManagementService>();
+        services.AddScoped<IAssignmentQuestionService, AssignmentQuestionService>();
+        services.AddScoped<IAssignmentStudentService, AssignmentStudentService>();
+        services.AddScoped<IAssignmentLifecycleService, AssignmentLifecycleService>();
         services.AddSingleton<ILeaderboardCache, LeaderboardCache>();
         services.AddScoped<ILeaderboardService, LeaderboardService>();
 

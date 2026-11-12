@@ -10,9 +10,11 @@ public static class RateLimitingExtensions
 {
     public const string LoginPolicy = "login";
     public const string ForgotPasswordPolicy = "forgot-password";
+    public const string RecoverPolicy = "recover";
     public const string CommentWritePolicy = "comment-write";
     public const string AnswerSubmitPolicy = "answer-submit";
     public const string ReportCreatePolicy = "report-create";
+    public const string AssignmentWritePolicy = "assignment-write";
 
     public static IServiceCollection AddAppRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
@@ -23,9 +25,11 @@ public static class RateLimitingExtensions
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.AddPolicy(LoginPolicy, context => IpPartition(context, settings.Login));
             options.AddPolicy(ForgotPasswordPolicy, context => IpPartition(context, settings.ForgotPassword));
+            options.AddPolicy(RecoverPolicy, context => IpPartition(context, settings.Recover));
             options.AddPolicy(CommentWritePolicy, context => UserPartition(context, CommentWritePolicy, settings.CommentWrite));
             options.AddPolicy(AnswerSubmitPolicy, context => UserPartition(context, AnswerSubmitPolicy, settings.AnswerSubmit));
             options.AddPolicy(ReportCreatePolicy, context => UserPartition(context, ReportCreatePolicy, settings.ReportCreate));
+            options.AddPolicy(AssignmentWritePolicy, context => UserPartition(context, AssignmentWritePolicy, settings.AssignmentWrite));
             options.OnRejected = async (context, cancellationToken) =>
             {
                 var response = context.HttpContext.Response;

@@ -35,6 +35,7 @@ public class AssignmentQuestionConfiguration : IEntityTypeConfiguration<Assignme
     {
         b.ToTable("AssignmentQuestions");
         b.HasKey(x => new { x.AssignmentId, x.QuestionId });
+        b.Property(x => x.CreatedForAssignment).HasDefaultValue(false);
         b.RestrictTo<AssignmentQuestion, Assignment>(x => x.AssignmentId);
         b.RestrictTo<AssignmentQuestion, Question>(x => x.QuestionId);
         b.HasIndex(x => x.QuestionId).IsUnique().HasDatabaseName("UX_AssignmentQuestions_QuestionId");

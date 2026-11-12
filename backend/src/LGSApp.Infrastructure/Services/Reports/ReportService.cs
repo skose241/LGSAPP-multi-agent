@@ -111,9 +111,14 @@ public sealed class ReportService(
         var description = prepared.Value!;
 
         var decision = await access.GetAsync(questionId, actor, cancellationToken);
-        if (decision is null || !decision.CanSeeDiscussion)
+        if (decision is null || !decision.CanSeeOwnResult)
         {
             return Fail.NotFound("Soru bulunamadı.");
+        }
+
+        if (!decision.CanSeeDiscussion && command.Reason != ReportReason.WrongAnswerKey)
+        {
+            return Fail.Validation("Ödev açıkken soru için yalnızca yanlış cevap anahtarı şikayeti yapılabilir.");
         }
 
         var question = await db.Questions.AsNoTracking()

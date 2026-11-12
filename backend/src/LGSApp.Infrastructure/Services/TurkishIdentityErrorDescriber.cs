@@ -1,3 +1,4 @@
+using LGSApp.Domain.Constants;
 using Microsoft.AspNetCore.Identity;
 
 namespace LGSApp.Infrastructure.Services;
@@ -69,4 +70,7 @@ public class TurkishIdentityErrorDescriber : IdentityErrorDescriber
 
     public override IdentityError PasswordRequiresUpper() =>
         new() { Code = nameof(PasswordRequiresUpper), Description = "Şifre en az bir büyük harf içermelidir." };
+
+    public IdentityError MudurPasswordTooShort() =>
+        new() { Code = MudurRules.PasswordTooShortCode, Description = MudurRules.PasswordTooShortMessage };
 }

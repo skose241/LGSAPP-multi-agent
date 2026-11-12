@@ -6,6 +6,12 @@ using LGSApp.Infrastructure;
 using LGSApp.Infrastructure.Persistence;
 using Scalar.AspNetCore;
 
+if (LGSApp.Api.ServerCommands.IsCommand(args))
+{
+    Environment.ExitCode = await LGSApp.Api.ServerCommands.RunAsync(args);
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAppForwardedHeaders(builder.Configuration, builder.Environment);

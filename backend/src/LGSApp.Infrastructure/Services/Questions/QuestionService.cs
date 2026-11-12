@@ -1,6 +1,7 @@
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Access;
+using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +17,7 @@ public sealed record QuestionStatsView(int AnswerCount, int CorrectCount, int So
 
 public sealed record MyAnswerView(byte SelectedOption, bool IsCorrect, DateTime AnsweredAt, int? SolutionId);
 
-public sealed record QuestionPermissionsView(bool CanAnswer, bool CanSeeDiscussion, bool CanReport, bool CanModerate);
+public sealed record QuestionPermissionsView(bool CanAnswer, bool CanSeeDiscussion, bool CanSeeOwnResult, bool CanReport, bool CanModerate);
 
 public sealed record QuestionDetailView(
     int Id,
@@ -36,7 +37,7 @@ public sealed record QuestionDetailView(
     bool? IsAnswerDisputed,
     byte? AiSuggestedOption,
     QuestionPermissionsView Permissions,
-    int LikeCount,
+    int? LikeCount,
     bool LikedByMe,
     byte[]? RowVersion);
 
@@ -99,7 +100,8 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
         people.TryGetValue(q.AuthorUserId, out var author);
 
         var currentUserId = actor.UserId;
-        var likeCount = await db.QuestionLikes.AsNoTracking().CountAsync(l => l.QuestionId == questionId, cancellationToken);
+        var hideLikeCount = decision.Facts.AssignmentState == AssignmentEffectiveState.Open && !decision.CanSeeOwnResult;
+        int? likeCount = hideLikeCount ? null : await db.QuestionLikes.AsNoTracking().CountAsync(l => l.QuestionId == questionId, cancellationToken);
         var likedByMe = await db.QuestionLikes.AsNoTracking().AnyAsync(l => l.QuestionId == questionId && l.UserId == currentUserId, cancellationToken);
 
         QuestionStatsView? stats = null;
@@ -119,7 +121,10 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
                 .CountAsync(c => c.QuestionId == questionId && c.Status == CommentStatus.Active, cancellationToken);
 
             stats = new QuestionStatsView(answerStats?.Total ?? 0, answerStats?.Correct ?? 0, solutionCount, commentCount);
+        }
 
+        if (decision.CanSeeOwnResult)
+        {
             var userId = actor.UserId;
             var mine = await db.Answers.AsNoTracking()
                 .Where(a => a.QuestionId == questionId && a.UserId == userId)
@@ -149,13 +154,13 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             new QuestionOptionsView(q.OptionA, q.OptionB, q.OptionC, q.OptionD),
             q.PublishedAt,
             q.CreatedAt,
-            decision.CanSeeDiscussion ? q.CorrectOption : null,
+            decision.CanSeeOwnResult ? q.CorrectOption : null,
             decision.CanSeeDiscussion ? q.Description : null,
             stats,
             myAnswer,
             actor.IsModerator ? q.IsAnswerDisputed : null,
             actor.IsModerator ? q.AiSuggestedOption : null,
-            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanReport, decision.CanModerate),
+            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanSeeOwnResult, decision.CanReport, decision.CanModerate),
             likeCount,
             likedByMe,
             actor.IsModerator ? q.RowVersion : null);

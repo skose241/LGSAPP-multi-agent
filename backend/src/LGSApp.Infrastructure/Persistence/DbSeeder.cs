@@ -392,7 +392,7 @@ public static class DbSeeder
             UserName = userName,
             FirstName = options.AdminFirstName,
             LastName = options.AdminLastName,
-            MustChangePassword = false,
+            MustChangePassword = true,
             CreatedAt = DateTime.UtcNow
         };
 

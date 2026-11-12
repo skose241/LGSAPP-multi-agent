@@ -1,6 +1,7 @@
 using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
+using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Access;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Notifications;
@@ -46,22 +47,38 @@ public sealed class SolutionService(
 {
     public async Task<ServiceResult<SolutionListView>> ListAsync(Actor actor, int questionId, CancellationToken cancellationToken = default)
     {
-        var gate = await access.RequireDiscussionAsync(questionId, actor, "Çözümleri görmek için önce soruyu cevaplamalısınız.", cancellationToken);
-        if (!gate.Succeeded)
+        var decision = await access.GetAsync(questionId, actor, cancellationToken);
+        if (decision is null || !decision.IsVisible)
         {
-            return ServiceResult<SolutionListView>.From(gate);
+            return Fail.NotFound("Soru bulunamadı.");
         }
 
+        var ownOnly = !decision.CanSeeDiscussion;
+        if (ownOnly && !decision.CanSeeOwnResult)
+        {
+            return Fail.Forbidden(decision.Facts.AssignmentState == AssignmentEffectiveState.Open
+                ? QuestionAccessService.AssignmentDiscussionClosedMessage
+                : "Çözümleri görmek için önce soruyu cevaplamalısınız.");
+        }
+
+        var userId = actor.UserId;
         var rows = await db.Solutions.AsNoTracking()
-            .Where(s => s.QuestionId == questionId && !s.IsDeleted && (actor.IsModerator || !s.IsHidden))
+            .Where(s => s.QuestionId == questionId
+                && !s.IsDeleted
+                && (actor.IsModerator || !s.IsHidden)
+                && (!ownOnly || (s.AuthorUserId == userId && s.Type == SolutionType.Student)))
             .ToListAsync(cancellationToken);
 
-        var counts = await db.Comments.AsNoTracking()
-            .Where(c => c.QuestionId == questionId && c.SolutionId != null && c.Status == CommentStatus.Active)
-            .GroupBy(c => c.SolutionId)
-            .Select(g => new { SolutionId = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken);
-        var countBySolution = counts.Where(c => c.SolutionId != null).ToDictionary(c => c.SolutionId!.Value, c => c.Count);
+        var countBySolution = new Dictionary<int, int>();
+        if (!ownOnly)
+        {
+            var counts = await db.Comments.AsNoTracking()
+                .Where(c => c.QuestionId == questionId && c.SolutionId != null && c.Status == CommentStatus.Active)
+                .GroupBy(c => c.SolutionId)
+                .Select(g => new { SolutionId = g.Key, Count = g.Count() })
+                .ToListAsync(cancellationToken);
+            countBySolution = counts.Where(c => c.SolutionId != null).ToDictionary(c => c.SolutionId!.Value, c => c.Count);
+        }
 
         var people = await users.GetAsync(rows.Select(r => r.AuthorUserId), actor.IsModerator, cancellationToken);
 

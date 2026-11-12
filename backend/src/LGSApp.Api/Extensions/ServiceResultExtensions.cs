@@ -1,5 +1,6 @@
 using LGSApp.Infrastructure.Services.Common;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace LGSApp.Api.Extensions;
 
@@ -18,8 +19,26 @@ public static class ServiceResultExtensions
         return onSuccess is null ? controller.Ok(result.Value) : onSuccess(result.Value!);
     }
 
-    private static ObjectResult Failure(ControllerBase controller, IServiceResult result)
+    private static IActionResult Failure(ControllerBase controller, IServiceResult result)
     {
+        if (result.Error == ServiceErrorKind.Validation && result.Errors is { Count: > 0 } errors)
+        {
+            var modelState = new ModelStateDictionary();
+            foreach (var (key, messages) in errors)
+            {
+                foreach (var message in messages)
+                {
+                    modelState.AddModelError(key, message);
+                }
+            }
+
+            return controller.ValidationProblem(
+                detail: result.Message,
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Bir veya daha fazla doğrulama hatası oluştu.",
+                modelStateDictionary: modelState);
+        }
+
         var (status, title) = result.Error switch
         {
             ServiceErrorKind.NotFound => (StatusCodes.Status404NotFound, "Kayıt bulunamadı."),
