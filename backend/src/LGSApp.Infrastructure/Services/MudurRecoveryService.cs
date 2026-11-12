@@ -46,8 +46,7 @@ public class MudurRecoveryService(
             && !user.IsBanned
             && user.PasswordHash is not null
             && await userManager.IsInRoleAsync(user, Roles.Mudur)
-            && !await userManager.IsInRoleAsync(user, Roles.Ai)
-            && !await userManager.IsLockedOutAsync(user);
+            && !await userManager.IsInRoleAsync(user, Roles.Ai);
         if (!eligible)
         {
             await codes.FindMatchAsync(user?.Id ?? 0, recoveryCode, cancellationToken);
@@ -59,7 +58,7 @@ public class MudurRecoveryService(
         var codeId = await codes.FindMatchAsync(userId, recoveryCode, cancellationToken);
         if (codeId is null)
         {
-            await userManager.AccessFailedAsync(user);
+            await PadWriteAsync(cancellationToken);
             return new RecoverOutcome(false, 0);
         }
 

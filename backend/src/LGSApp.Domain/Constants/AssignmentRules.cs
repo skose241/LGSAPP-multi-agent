@@ -3,6 +3,7 @@ namespace LGSApp.Domain.Constants;
 public static class AssignmentRules
 {
     public const int MaxRangeDays = 60;
+    public const string FutureLimitMessage = "Ödev tarihleri bugünden en fazla 1 yıl sonrası olabilir.";
     public const int MaxBatchSize = 20;
     public const int MaxQuestionsPerAssignment = 200;
     public const int TitleMaxLength = 150;

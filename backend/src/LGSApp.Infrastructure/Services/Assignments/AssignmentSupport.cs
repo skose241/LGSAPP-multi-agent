@@ -82,6 +82,12 @@ internal static class AssignmentGate
             return Fail.Validation("Başlangıç tarihi bugünden önce olamaz.");
         }
 
+        var limit = today.AddYears(1);
+        if (start > limit || end > limit)
+        {
+            return Fail.Validation(AssignmentRules.FutureLimitMessage);
+        }
+
         if (end < start)
         {
             return Fail.Validation("Bitiş tarihi başlangıç tarihinden önce olamaz.");
