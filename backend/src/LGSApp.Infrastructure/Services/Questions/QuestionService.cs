@@ -35,7 +35,10 @@ public sealed record QuestionDetailView(
     MyAnswerView? MyAnswer,
     bool? IsAnswerDisputed,
     byte? AiSuggestedOption,
-    QuestionPermissionsView Permissions);
+    QuestionPermissionsView Permissions,
+    int LikeCount,
+    bool LikedByMe,
+    byte[]? RowVersion);
 
 public interface IQuestionService
 {
@@ -73,7 +76,8 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
                 x.PublishedAt,
                 x.CreatedAt,
                 x.IsAnswerDisputed,
-                x.AiSuggestedOption
+                x.AiSuggestedOption,
+                x.RowVersion
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -93,6 +97,10 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
 
         var people = await users.GetAsync([q.AuthorUserId], actor.IsModerator, cancellationToken);
         people.TryGetValue(q.AuthorUserId, out var author);
+
+        var currentUserId = actor.UserId;
+        var likeCount = await db.QuestionLikes.AsNoTracking().CountAsync(l => l.QuestionId == questionId, cancellationToken);
+        var likedByMe = await db.QuestionLikes.AsNoTracking().AnyAsync(l => l.QuestionId == questionId && l.UserId == currentUserId, cancellationToken);
 
         QuestionStatsView? stats = null;
         MyAnswerView? myAnswer = null;
@@ -147,7 +155,10 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             myAnswer,
             actor.IsModerator ? q.IsAnswerDisputed : null,
             actor.IsModerator ? q.AiSuggestedOption : null,
-            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanReport, decision.CanModerate));
+            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanReport, decision.CanModerate),
+            likeCount,
+            likedByMe,
+            actor.IsModerator ? q.RowVersion : null);
 
         return ServiceResult<QuestionDetailView>.Ok(view);
     }

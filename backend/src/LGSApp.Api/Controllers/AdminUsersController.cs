@@ -189,17 +189,10 @@ public class AdminUsersController : ControllerBase
             return SystemAccountProblem();
         }
 
-        user.IsBanned = banned;
-        var result = await _userManager.UpdateAsync(user);
+        var result = await _userManager.SetBannedAsync(user, banned);
         if (!result.Succeeded)
         {
             return IdentityProblem(result);
-        }
-
-        var stamp = await _userManager.UpdateSecurityStampAsync(user);
-        if (!stamp.Succeeded)
-        {
-            return IdentityProblem(stamp);
         }
 
         return NoContent();

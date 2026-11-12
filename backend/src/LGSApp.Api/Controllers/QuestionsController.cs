@@ -2,6 +2,7 @@ using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
 using LGSApp.Api.Extensions;
 using LGSApp.Infrastructure.Services.Answers;
+using LGSApp.Infrastructure.Services.Likes;
 using LGSApp.Infrastructure.Services.Questions;
 using LGSApp.Infrastructure.Services.Solutions;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +14,7 @@ namespace LGSApp.Api.Controllers;
 [ApiController]
 [Route("api/questions")]
 [Authorize(Policy = Policies.Kullanici)]
-public class QuestionsController(IQuestionService questions, IAnswerService answers, ISolutionService solutions) : ControllerBase
+public class QuestionsController(IQuestionService questions, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes) : ControllerBase
 {
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Detail(int id, CancellationToken cancellationToken) =>
@@ -27,6 +28,22 @@ public class QuestionsController(IQuestionService questions, IAnswerService answ
         var command = new SubmitAnswerCommand(request.SelectedOption, request.SolutionText, request.SolutionImageFileId);
         return (await answers.SubmitAsync(User.ToActor(), id, command, cancellationToken)).ToActionResult(this);
     }
+
+    [HttpPut("{id:int}/correct-option")]
+    [Authorize(Policy = Policies.OgretmenOrMudur)]
+    public async Task<IActionResult> ChangeCorrectOption(int id, ChangeCorrectOptionRequest request, CancellationToken cancellationToken)
+    {
+        var command = new ChangeAnswerKeyCommand(request.CorrectOption, request.RowVersion, request.Note);
+        return (await answerKeys.ChangeAsync(User.ToActor(), id, command, cancellationToken)).ToActionResult(this);
+    }
+
+    [HttpPut("{id:int}/like")]
+    public async Task<IActionResult> Like(int id, CancellationToken cancellationToken) =>
+        (await likes.LikeAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
+
+    [HttpDelete("{id:int}/like")]
+    public async Task<IActionResult> Unlike(int id, CancellationToken cancellationToken) =>
+        (await likes.UnlikeAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpGet("{id:int}/solutions")]
     public async Task<IActionResult> Solutions(int id, CancellationToken cancellationToken) =>

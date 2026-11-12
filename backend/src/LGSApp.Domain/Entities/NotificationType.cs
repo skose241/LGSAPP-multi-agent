@@ -13,5 +13,6 @@ public enum NotificationType
     AssignmentClosed = 9,
     GenerationReport = 10,
     ReportResolved = 11,
-    CommentRemoved = 12
+    CommentRemoved = 12,
+    AnswerKeyChanged = 13
 }

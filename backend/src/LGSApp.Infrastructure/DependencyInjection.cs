@@ -7,7 +7,9 @@ using LGSApp.Infrastructure.Services.Access;
 using LGSApp.Infrastructure.Services.Answers;
 using LGSApp.Infrastructure.Services.Comments;
 using LGSApp.Infrastructure.Services.Common;
+using LGSApp.Infrastructure.Services.Leaderboard;
 using LGSApp.Infrastructure.Services.Lessons;
+using LGSApp.Infrastructure.Services.Likes;
 using LGSApp.Infrastructure.Services.Notifications;
 using LGSApp.Infrastructure.Services.Points;
 using LGSApp.Infrastructure.Services.Questions;
@@ -75,6 +77,11 @@ public static class DependencyInjection
         services.AddScoped<ISolutionService, SolutionService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<ICommentService, CommentService>();
+        services.AddScoped<IAnswerKeyService, AnswerKeyService>();
+        services.AddScoped<IReportModerationService, ReportModerationService>();
+        services.AddScoped<ILikeService, LikeService>();
+        services.AddScoped<INotificationInboxService, NotificationInboxService>();
+        services.AddScoped<ILeaderboardService, LeaderboardService>();
 
         return services;
     }
