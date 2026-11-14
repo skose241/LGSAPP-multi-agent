@@ -38,9 +38,10 @@ interface ProblemBannerProps {
   countdown?: number;
   onRetry?: () => void;
   className?: string;
+  conflictAsMessage?: boolean;
 }
 
-export function ProblemBanner({ state, countdown = 0, onRetry, className }: ProblemBannerProps) {
+export function ProblemBanner({ state, countdown = 0, onRetry, className, conflictAsMessage = false }: ProblemBannerProps) {
   if (!state) return null;
   const { status, problem } = state;
 
@@ -59,7 +60,7 @@ export function ProblemBanner({ state, countdown = 0, onRetry, className }: Prob
     Icon = ServerCrash;
     tone = "border-info bg-info-soft text-info-soft-foreground";
     text = status === 0 ? problem.message : "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar dene.";
-  } else if (status === 409) {
+  } else if (status === 409 && !conflictAsMessage) {
     Icon = RefreshCw;
     tone = "border-warning bg-warning-soft text-warning-soft-foreground";
     text = "Kayıt başka biri tarafından değiştirilmiş. Güncel hali yüklendi, kontrol edip tekrar dene.";

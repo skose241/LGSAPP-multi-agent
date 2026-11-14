@@ -86,12 +86,28 @@ export interface CreatedAccount {
   role: string;
 }
 
-export async function createAccount(role: "ogrenci" | "ogretmen" | "mudur", prefix = role): Promise<CreatedAccount> {
+export interface AccountOverrides {
+  firstName?: string;
+  lastName?: string;
+  className?: string | null;
+}
+
+export async function createAccount(
+  role: "ogrenci" | "ogretmen" | "mudur",
+  prefix: string = role,
+  overrides: AccountOverrides = {},
+): Promise<CreatedAccount> {
   const token = await adminToken();
   const userName = uniqueName(`${prefix}.`);
   const result = await backend<{ user: { id: number }; oneTimePassword: string }>("POST", "/api/admin/users", {
     token,
-    body: { userName, firstName: "Deneme", lastName: "Kullanıcı", role, className: role === "ogrenci" ? "8-A" : null },
+    body: {
+      userName,
+      firstName: overrides.firstName ?? "Deneme",
+      lastName: overrides.lastName ?? "Kullanıcı",
+      role,
+      className: overrides.className !== undefined ? overrides.className : role === "ogrenci" ? "8-A" : null,
+    },
   });
   if (result.status !== 201) throw new Error(`Hesap oluşturulamadı: ${result.status} ${JSON.stringify(result.body)}`);
   return { id: result.body.user.id, userName, oneTimePassword: result.body.oneTimePassword, role };
@@ -123,4 +139,9 @@ export async function exhaustRecoveryCodes(userName: string, codes: string[]): P
     if (result.status !== 200) throw new Error(`Kod tüketilemedi: ${result.status}`);
     index += 1;
   }
+}
+
+export async function requestPasswordReset(userName: string): Promise<void> {
+  const result = await backend("POST", "/api/auth/forgot-password", { body: { userName } });
+  if (result.status !== 200) throw new Error(`Talep oluşturulamadı: ${result.status}`);
 }

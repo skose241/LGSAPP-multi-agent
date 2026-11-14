@@ -119,7 +119,7 @@ export function AppShell({
             )}
           </div>
         </Top>
-        <Content className="mx-auto w-full max-w-screen-2xl px-safe py-5 pb-28 lg:pb-8">{children}</Content>
+        <Content className="mx-auto w-full max-w-screen-2xl px-safe pt-5 pb-tab-clearance">{children}</Content>
       </div>
 
       <nav

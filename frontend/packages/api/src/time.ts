@@ -23,6 +23,20 @@ export function formatDateTime(value: string | Date): string {
   }).format(date);
 }
 
+export function formatDateTimeShort(value: string | Date): string {
+  const date = toDate(value);
+  if (!isValid(date)) return "";
+  return new Intl.DateTimeFormat(LOCALE, {
+    timeZone: TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+}
+
 export function formatTime(value: string | Date): string {
   const date = toDate(value);
   if (!isValid(date)) return "";

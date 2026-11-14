@@ -74,7 +74,19 @@ const extraTitles: Record<string, string> = {
   "/bildirimler": "Bildirimler",
 };
 
-export function navFor(role: string | undefined): NavConfig {
+function withBadges(config: NavConfig, badges: Record<string, number>): NavConfig {
+  const apply = (entry: NavItem): NavItem => {
+    const count = badges[entry.id];
+    return count ? { ...entry, badge: count } : entry;
+  };
+  return { items: config.items.map(apply), tabs: config.tabs.map(apply) };
+}
+
+export function navFor(role: string | undefined, badges: Record<string, number> = {}): NavConfig {
+  return withBadges(baseNavFor(role), badges);
+}
+
+function baseNavFor(role: string | undefined): NavConfig {
   if (role === "mudur") {
     return { items: mudurItems, tabs: [pano, mudurItems[1]!, mudurItems[2]!, liderlik, menu] };
   }

@@ -4,6 +4,7 @@ import {
   compareDateOnly,
   formatDateOnly,
   formatDateTime,
+  formatDateTimeShort,
   formatTime,
   isDateOnly,
   isExpired,
@@ -21,6 +22,11 @@ describe("saat dilimi", () => {
 
   it("tarih ve saati Türkçe biçimler", () => {
     expect(formatDateTime("2026-11-14T14:30:00Z")).toContain("14 Kasım 2026");
+  });
+
+  it("kısa biçimi tek satırlık üretir", () => {
+    expect(formatDateTimeShort("2026-11-14T20:15:00Z")).toBe("14.11.2026 23:15");
+    expect(formatDateTimeShort("bozuk")).toBe("");
   });
 
   it("geçersiz değerde boş döner", () => {

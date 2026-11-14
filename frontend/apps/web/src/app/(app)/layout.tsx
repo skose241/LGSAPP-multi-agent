@@ -1,5 +1,7 @@
 "use client";
 
+import { passwordResetRequestsQuery } from "@lgs/api/queries";
+import { useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -7,6 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { SessionActions } from "@/features/auth/session-actions";
 import { useMe } from "@/features/auth/use-me";
+import { api } from "@/lib/api/client";
 import { navFor, roleLabel } from "@/lib/nav";
 import { CloudOff } from "lucide-react";
 
@@ -27,6 +30,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const me = useMe();
   const target = me.data ? redirectTarget(pathname, me.data) : null;
+  const isMudur = me.data?.role === "mudur";
+  const resets = useQuery({ ...passwordResetRequestsQuery(api()), enabled: isMudur && !target });
+  const pendingResets = resets.data?.length ?? 0;
 
   useEffect(() => {
     if (target) router.replace(target);
@@ -53,7 +59,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  const nav = navFor(me.data.role);
+  const nav = navFor(me.data.role, { "sifre-talepleri": pendingResets });
 
   return (
     <AppShell

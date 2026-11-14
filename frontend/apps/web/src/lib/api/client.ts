@@ -17,6 +17,7 @@ export function endSession(reason: "oturum" | null = "oturum") {
 }
 
 export function api(): ApiClient {
+  if (typeof window === "undefined") return createApiClient({ baseUrl: "http://localhost" });
   if (!client) {
     client = createApiClient({ baseUrl: window.location.origin });
     client.use({
