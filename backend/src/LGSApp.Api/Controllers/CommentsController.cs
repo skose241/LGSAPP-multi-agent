@@ -14,6 +14,7 @@ namespace LGSApp.Api.Controllers;
 public class CommentsController(ICommentService comments, IReportService reports) : ControllerBase
 {
     [HttpGet("api/questions/{questionId:int}/comments")]
+    [ProducesResponseType<CommentThreadView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
         int questionId,
         [FromQuery] int? solutionId,
@@ -42,11 +43,13 @@ public class CommentsController(ICommentService comments, IReportService reports
     }
 
     [HttpGet("api/comments/{id:int}/thread")]
+    [ProducesResponseType<CommentSubthreadView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Thread(int id, [FromQuery] bool includeRemoved = false, CancellationToken cancellationToken = default) =>
         (await comments.GetSubthreadAsync(User.ToActor(), id, includeRemoved, cancellationToken)).ToActionResult(this);
 
     [HttpPost("api/questions/{questionId:int}/comments")]
     [EnableRateLimiting(RateLimitingExtensions.CommentWritePolicy)]
+    [ProducesResponseType<CommentView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(int questionId, CreateCommentRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateCommentCommand(request.Body, request.ParentId, request.SolutionId);
@@ -55,6 +58,7 @@ public class CommentsController(ICommentService comments, IReportService reports
     }
 
     [HttpPatch("api/comments/{id:int}")]
+    [ProducesResponseType<CommentView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Edit(int id, EditCommentRequest request, CancellationToken cancellationToken)
     {
         var command = new EditCommentCommand(request.Body, request.RowVersion);
@@ -62,21 +66,25 @@ public class CommentsController(ICommentService comments, IReportService reports
     }
 
     [HttpDelete("api/comments/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) =>
         (await comments.DeleteAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpPost("api/comments/{id:int}/remove")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Remove(int id, RemoveCommentRequest request, CancellationToken cancellationToken) =>
         (await comments.RemoveAsync(User.ToActor(), id, request.Reason, cancellationToken)).ToActionResult(this);
 
     [HttpPost("api/comments/{id:int}/restore")]
     [Authorize(Policy = Policies.MudurOnly)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Restore(int id, CancellationToken cancellationToken) =>
         (await comments.RestoreAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpPost("api/comments/{id:int}/reports")]
     [EnableRateLimiting(RateLimitingExtensions.ReportCreatePolicy)]
+    [ProducesResponseType<ReportCreatedView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Report(int id, CreateReportRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateReportCommand(request.Reason, request.Description);

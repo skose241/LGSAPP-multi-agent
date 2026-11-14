@@ -91,6 +91,7 @@ public class AdminUsersController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType<CreatedUserResponse>(StatusCodes.Status201Created)]
     public async Task<ActionResult<CreatedUserResponse>> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
         var role = request.Role.Trim().ToLowerInvariant();
@@ -197,9 +198,11 @@ public class AdminUsersController : ControllerBase
     }
 
     [HttpPost("{id:int}/ban")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Ban(int id) => await SetBan(id, true);
 
     [HttpPost("{id:int}/unban")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Unban(int id) => await SetBan(id, false);
 
     [HttpPost("{id:int}/regenerate-password")]

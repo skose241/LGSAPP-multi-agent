@@ -13,6 +13,7 @@ namespace LGSApp.Api.Controllers;
 public class SolutionsController(ISolutionService solutions) : ControllerBase
 {
     [HttpPatch("{id:int}")]
+    [ProducesResponseType<SolutionView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(int id, UpdateSolutionRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateSolutionCommand(request.Text, request.ImageFileId, request.RowVersion);

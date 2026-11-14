@@ -22,6 +22,8 @@ public record LoginResponse(
     DateTime ExpiresAtUtc,
     bool MustChangePassword,
     UserInfoDto User,
+    string? RefreshToken,
+    DateTime? RefreshExpiresAtUtc,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? RecoveryCodes = null);
 
 public record ChangePasswordRequest(
@@ -44,3 +46,11 @@ public record RecoveryCodesResponse(IReadOnlyList<string> RecoveryCodes);
 public record RecoveryStatusResponse(int Remaining);
 
 public record RecoverResponse(string Message, int RemainingRecoveryCodes);
+
+public record ForgotPasswordResponse(string Message);
+
+public record RefreshRequest(
+    [Required(ErrorMessage = "Yenileme anahtarı zorunludur."), StringLength(256, ErrorMessage = "Yenileme anahtarı en fazla {1} karakter olabilir.")] string RefreshToken);
+
+public record LogoutRequest(
+    [StringLength(256, ErrorMessage = "Yenileme anahtarı en fazla {1} karakter olabilir.")] string? RefreshToken);

@@ -21,6 +21,9 @@ public class FilesController(IFileUploadService files, IOptions<UploadOptions> u
     [Consumes("multipart/form-data")]
     [EnableRateLimiting(RateLimitingExtensions.FileUploadPolicy)]
     [TypeFilter(typeof(UploadRequestSizeFilter))]
+    [ProducesResponseType<FileView>(StatusCodes.Status201Created)]
+    [ProducesResponseType<FileView>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status413PayloadTooLarge, "application/problem+json")]
     public async Task<IActionResult> Upload(CancellationToken cancellationToken)
     {
         IFormCollection form;
@@ -73,10 +76,12 @@ public class FilesController(IFileUploadService files, IOptions<UploadOptions> u
     }
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType<FileView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(int id, CancellationToken cancellationToken) =>
         (await files.GetAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken) =>
         (await files.DeleteAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 

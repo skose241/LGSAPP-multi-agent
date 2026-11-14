@@ -46,6 +46,7 @@ public class RecoveryController : ControllerBase
     [HttpPost("recover")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitingExtensions.RecoverPolicy)]
+    [ProducesResponseType<RecoverResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Recover(RecoverRequest request, CancellationToken cancellationToken)
     {
         var started = Stopwatch.GetTimestamp();

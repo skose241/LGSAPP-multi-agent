@@ -18,6 +18,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <ProjectReference Include="..\..\src\LGSApp.Infrastructure\LGSApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\LGSApp.Api\LGSApp.Api.csproj" />
   </ItemGroup>
 
 </Project>

@@ -11,6 +11,7 @@ public static class RateLimitingExtensions
     public const string LoginPolicy = "login";
     public const string ForgotPasswordPolicy = "forgot-password";
     public const string RecoverPolicy = "recover";
+    public const string RefreshPolicy = "refresh";
     public const string CommentWritePolicy = "comment-write";
     public const string AnswerSubmitPolicy = "answer-submit";
     public const string ReportCreatePolicy = "report-create";
@@ -31,6 +32,7 @@ public static class RateLimitingExtensions
             options.AddPolicy(LoginPolicy, context => IpPartition(context, settings.Login));
             options.AddPolicy(ForgotPasswordPolicy, context => IpPartition(context, settings.ForgotPassword));
             options.AddPolicy(RecoverPolicy, context => IpPartition(context, settings.Recover));
+            options.AddPolicy(RefreshPolicy, context => IpPartition(context, settings.Refresh));
             options.AddPolicy(CommentWritePolicy, context => UserPartition(context, CommentWritePolicy, settings.CommentWrite));
             options.AddPolicy(AnswerSubmitPolicy, context => UserPartition(context, AnswerSubmitPolicy, settings.AnswerSubmit));
             options.AddPolicy(ReportCreatePolicy, context => UserPartition(context, ReportCreatePolicy, settings.ReportCreate));

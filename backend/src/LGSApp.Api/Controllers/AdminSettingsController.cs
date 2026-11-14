@@ -14,11 +14,13 @@ namespace LGSApp.Api.Controllers;
 public class AdminSettingsController(IAdminSettingsService settings) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType<IReadOnlyList<AdminSettingView>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> List(CancellationToken cancellationToken) =>
         Ok(await settings.ListAsync(cancellationToken));
 
     [HttpPut]
     [EnableRateLimiting(RateLimitingExtensions.AdminSettingsPolicy)]
+    [ProducesResponseType<AdminSettingsUpdateResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Update([FromBody] Dictionary<string, JsonElement>? body, CancellationToken cancellationToken)
     {
         var changes = body?.ToDictionary(

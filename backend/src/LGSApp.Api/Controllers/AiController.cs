@@ -12,6 +12,7 @@ namespace LGSApp.Api.Controllers;
 public class AiController(IAiSolutionService aiSolutions) : ControllerBase
 {
     [HttpGet("quota")]
+    [ProducesResponseType<AiQuotaStatusView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Quota(CancellationToken cancellationToken) =>
         (await aiSolutions.GetQuotaAsync(User.ToActor(), cancellationToken)).ToActionResult(this);
 }

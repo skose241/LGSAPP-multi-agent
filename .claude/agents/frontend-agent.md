@@ -1,7 +1,7 @@
 ---
 name: frontend-agent
 description: React/Next.js arayüzünü ve UI sadeleştirmesini yürütür
-tools: Read, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 ---
 

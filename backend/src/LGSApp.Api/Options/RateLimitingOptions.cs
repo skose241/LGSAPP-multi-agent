@@ -13,6 +13,7 @@ public class RateLimitingOptions
     public RateLimitRule Login { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
     public RateLimitRule ForgotPassword { get; set; } = new() { PermitLimit = 5, WindowSeconds = 300 };
     public RateLimitRule Recover { get; set; } = new() { PermitLimit = 5, WindowSeconds = 300 };
+    public RateLimitRule Refresh { get; set; } = new() { PermitLimit = 30, WindowSeconds = 60 };
     public RateLimitRule CommentWrite { get; set; } = new() { PermitLimit = 6, WindowSeconds = 60 };
     public RateLimitRule AnswerSubmit { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
     public RateLimitRule AssignmentWrite { get; set; } = new() { PermitLimit = 30, WindowSeconds = 60 };

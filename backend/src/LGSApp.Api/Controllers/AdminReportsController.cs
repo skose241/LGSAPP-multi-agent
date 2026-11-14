@@ -14,6 +14,7 @@ namespace LGSApp.Api.Controllers;
 public class AdminReportsController(IReportModerationService moderation) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType<ReportListView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
         [FromQuery] ReportStatus? status,
         [FromQuery] ReportTargetType? targetType,
@@ -43,10 +44,12 @@ public class AdminReportsController(IReportModerationService moderation) : Contr
     }
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType<ReportDetailView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Detail(int id, CancellationToken cancellationToken) =>
         (await moderation.GetAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpPost("{id:int}/resolve")]
+    [ProducesResponseType<ReportResolveView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Resolve(int id, ResolveReportRequest request, CancellationToken cancellationToken)
     {
         var command = new ResolveReportCommand(request.Action, request.Note, request.CorrectOption, request.RowVersion);

@@ -14,11 +14,13 @@ namespace LGSApp.Api.Controllers;
 public class AdminGenerationScheduleController(IGenerationScheduleService schedule) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType<GenerationScheduleView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(CancellationToken cancellationToken) =>
         Ok(await schedule.GetAsync(cancellationToken));
 
     [HttpPut]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<GenerationScheduleView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Replace(ReplaceGenerationScheduleRequest request, CancellationToken cancellationToken)
     {
         var items = request.Items!.Select(i => new ScheduleItemView(i.IsoDayOfWeek, i.LessonId, i.QuestionCount)).ToList();

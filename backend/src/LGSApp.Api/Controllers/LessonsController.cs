@@ -16,6 +16,7 @@ public class LessonsController(ILessonService lessons) : ControllerBase
         Ok(await lessons.GetLessonsAsync(cancellationToken));
 
     [HttpGet("{id:int}/topics")]
+    [ProducesResponseType<IReadOnlyList<TopicView>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Topics(int id, CancellationToken cancellationToken) =>
         (await lessons.GetTopicsAsync(id, cancellationToken)).ToActionResult(this);
 }

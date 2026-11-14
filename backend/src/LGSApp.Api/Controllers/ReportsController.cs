@@ -14,6 +14,7 @@ public class ReportsController(IReportService reports) : ControllerBase
 {
     [HttpPost("api/questions/{id:int}/reports")]
     [EnableRateLimiting(RateLimitingExtensions.ReportCreatePolicy)]
+    [ProducesResponseType<ReportCreatedView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> ReportQuestion(int id, CreateReportRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateReportCommand(request.Reason, request.Description);
@@ -23,6 +24,7 @@ public class ReportsController(IReportService reports) : ControllerBase
 
     [HttpPost("api/solutions/{id:int}/reports")]
     [EnableRateLimiting(RateLimitingExtensions.ReportCreatePolicy)]
+    [ProducesResponseType<ReportCreatedView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> ReportSolution(int id, CreateReportRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateReportCommand(request.Reason, request.Description);

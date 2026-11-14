@@ -11,6 +11,7 @@ namespace LGSApp.Api.Controllers;
 public class AdminFilesController(IFileCleanupService cleanup) : ControllerBase
 {
     [HttpPost("cleanup")]
+    [ProducesResponseType<FileCleanupResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Cleanup(CancellationToken cancellationToken) =>
         Ok(await cleanup.RunAsync(cancellationToken));
 }

@@ -129,6 +129,7 @@ public class AdminPasswordResetRequestsController : ControllerBase
     }
 
     [HttpPost("{id:int}/reject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Reject(int id, CancellationToken cancellationToken)
     {
         var request = await _db.PasswordResetRequests.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);

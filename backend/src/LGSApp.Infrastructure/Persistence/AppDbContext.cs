@@ -14,6 +14,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
 
     public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();
     public DbSet<RecoveryCode> RecoveryCodes => Set<RecoveryCode>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<Topic> Topics => Set<Topic>();
     public DbSet<GenerationSchedule> GenerationSchedules => Set<GenerationSchedule>();

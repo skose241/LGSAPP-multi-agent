@@ -4,6 +4,7 @@ using LGSApp.Api.Extensions;
 using LGSApp.Domain.Constants;
 using LGSApp.Infrastructure;
 using LGSApp.Infrastructure.Persistence;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Scalar.AspNetCore;
 
 if (LGSApp.Api.ServerCommands.IsCommand(args))
@@ -12,9 +13,15 @@ if (LGSApp.Api.ServerCommands.IsCommand(args))
     return;
 }
 
-var builder = WebApplication.CreateBuilder(args);
+var documentGeneration = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider";
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    EnvironmentName = documentGeneration ? Environments.Development : null
+});
 
 builder.Services.AddAppForwardedHeaders(builder.Configuration, builder.Environment);
+builder.Services.AddBffClientIp(builder.Configuration);
 
 var devTimeOffset = builder.Configuration.GetValue<int>("DevTime:OffsetMinutes");
 if (devTimeOffset != 0)
@@ -29,9 +36,10 @@ if (devTimeOffset != 0)
     builder.Services.AddSingleton<TimeProvider>(new LGSApp.Infrastructure.Services.Common.OffsetTimeProvider(TimeSpan.FromMinutes(devTimeOffset)));
 }
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options => options.Conventions.Add(new ErrorResponseConvention()))
     .AddTurkishModelBinding()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
+builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 builder.Services.AddTurkishProblemDetails();
 builder.Services.AddOpenApiWithJwt();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -50,9 +58,15 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddHealthChecks();
 
+if (documentGeneration)
+{
+    builder.Services.RemoveAll<IHostedService>();
+}
+
 var app = builder.Build();
 
 app.UseAppForwardedHeaders(builder.Configuration, app.Environment);
+app.UseBffClientIp();
 app.UseProblemJsonCharset();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
@@ -83,35 +97,38 @@ catch (InvalidOperationException ex)
     return;
 }
 
-try
+if (!documentGeneration)
 {
-    await DbSeeder.RunExclusiveAsync(app.Services, "LGSApp.StartupSeed", async () =>
+    try
     {
-        await DbSeeder.EnsureUserNameKeysAsync(app.Services);
-
-        try
+        await DbSeeder.RunExclusiveAsync(app.Services, "LGSApp.StartupSeed", async () =>
         {
-            await DbSeeder.EnsureAiAccountAsync(app.Services);
-        }
-        catch (Exception ex) when (ex is not SystemAccountIntegrityException)
-        {
-            app.Logger.LogError(ex, "Yapay zekâ sistem hesabı doğrulanamadı.");
-        }
+            await DbSeeder.EnsureUserNameKeysAsync(app.Services);
 
-        await RunSeedStepAsync("Müdür hesabı", LogLevel.Error, () => DbSeeder.SeedAdminAsync(app.Services));
-        await RunSeedStepAsync("Yorum parmak izi doldurma", LogLevel.Warning, () => DbSeeder.BackfillCommentFingerprintsAsync(app.Services));
-        await RunSeedStepAsync("Örnek ders ve konu", LogLevel.Error, () => DbSeeder.SeedReferenceDataAsync(app.Services));
-    });
-}
-catch (Exception ex) when (ex is SystemAccountIntegrityException or UserNameConflictException)
-{
-    app.Logger.LogCritical("{Message}", ex.Message);
-    Environment.ExitCode = 1;
-    return;
-}
-catch (Exception ex)
-{
-    app.Logger.LogError(ex, "Başlangıç adımları yürütülemedi.");
+            try
+            {
+                await DbSeeder.EnsureAiAccountAsync(app.Services);
+            }
+            catch (Exception ex) when (ex is not SystemAccountIntegrityException)
+            {
+                app.Logger.LogError(ex, "Yapay zekâ sistem hesabı doğrulanamadı.");
+            }
+
+            await RunSeedStepAsync("Müdür hesabı", LogLevel.Error, () => DbSeeder.SeedAdminAsync(app.Services));
+            await RunSeedStepAsync("Yorum parmak izi doldurma", LogLevel.Warning, () => DbSeeder.BackfillCommentFingerprintsAsync(app.Services));
+            await RunSeedStepAsync("Örnek ders ve konu", LogLevel.Error, () => DbSeeder.SeedReferenceDataAsync(app.Services));
+        });
+    }
+    catch (Exception ex) when (ex is SystemAccountIntegrityException or UserNameConflictException)
+    {
+        app.Logger.LogCritical("{Message}", ex.Message);
+        Environment.ExitCode = 1;
+        return;
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Başlangıç adımları yürütülemedi.");
+    }
 }
 
 app.Run();

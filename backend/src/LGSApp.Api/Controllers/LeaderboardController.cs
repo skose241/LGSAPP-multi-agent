@@ -12,6 +12,7 @@ namespace LGSApp.Api.Controllers;
 public class LeaderboardController(ILeaderboardService leaderboard) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType<LeaderboardView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(
         [FromQuery] string? period,
         [FromQuery] int offset = 0,

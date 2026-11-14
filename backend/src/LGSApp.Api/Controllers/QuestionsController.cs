@@ -19,6 +19,7 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
 {
     [HttpPost]
     [EnableRateLimiting(RateLimitingExtensions.QuestionCreatePolicy)]
+    [ProducesResponseType<QuestionDetailView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(CreateQuestionRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateQuestionCommand(
@@ -38,16 +39,19 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
     }
 
     [HttpGet("mine")]
+    [ProducesResponseType<MyQuestionListView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Mine([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default) =>
         (await authoring.ListMineAsync(User.ToActor(), page, pageSize, cancellationToken)).ToActionResult(this);
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType<QuestionDetailView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Detail(int id, CancellationToken cancellationToken) =>
         (await questions.GetDetailAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpPost("{id:int}/answers")]
     [Authorize(Policy = Policies.OgrenciOnly)]
     [EnableRateLimiting(RateLimitingExtensions.AnswerSubmitPolicy)]
+    [ProducesResponseType<AnswerResultView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Submit(int id, SubmitAnswerRequest request, CancellationToken cancellationToken)
     {
         var command = new SubmitAnswerCommand(request.SelectedOption, request.SolutionText, request.SolutionImageFileId);
@@ -56,6 +60,7 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
 
     [HttpPut("{id:int}/correct-option")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType<AnswerKeyChangeView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ChangeCorrectOption(int id, ChangeCorrectOptionRequest request, CancellationToken cancellationToken)
     {
         var command = new ChangeAnswerKeyCommand(request.CorrectOption, request.RowVersion, request.Note);
@@ -64,23 +69,28 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
 
     [HttpPost("{id:int}/answer-dispute/dismiss")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType<DismissDisputeView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> DismissAnswerDispute(int id, DismissAnswerDisputeRequest request, CancellationToken cancellationToken) =>
         (await disputes.DismissAsync(User.ToActor(), id, new DismissDisputeCommand(request.RowVersion, request.Note), cancellationToken)).ToActionResult(this);
 
     [HttpPut("{id:int}/like")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Like(int id, CancellationToken cancellationToken) =>
         (await likes.LikeAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpDelete("{id:int}/like")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Unlike(int id, CancellationToken cancellationToken) =>
         (await likes.UnlikeAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpGet("{id:int}/solutions")]
+    [ProducesResponseType<SolutionListView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Solutions(int id, CancellationToken cancellationToken) =>
         (await solutions.ListAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpPost("{id:int}/solutions/teacher")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType<SolutionView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateTeacherSolution(int id, CreateTeacherSolutionRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateTeacherSolutionCommand(request.Text, request.ImageFileId);
@@ -90,6 +100,10 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
 
     [HttpPost("{id:int}/solutions/ai")]
     [EnableRateLimiting(RateLimitingExtensions.AiSolutionPolicy)]
+    [ProducesResponseType<AiSolutionResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<AiSolutionResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable, "application/problem+json")]
     public async Task<IActionResult> RequestAiSolution(int id, CancellationToken cancellationToken)
     {
         var result = await aiSolutions.RequestAsync(User.ToActor(), id, cancellationToken);

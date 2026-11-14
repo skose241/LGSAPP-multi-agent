@@ -12,10 +12,12 @@ namespace LGSApp.Api.Controllers;
 public class AdminAiController(IAiAdminService admin) : ControllerBase
 {
     [HttpGet("usage")]
+    [ProducesResponseType<AiUsageView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Usage([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken cancellationToken) =>
         (await admin.GetUsageAsync(from, to, cancellationToken)).ToActionResult(this);
 
     [HttpGet("status")]
+    [ProducesResponseType<AiAdminStatusView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Status(CancellationToken cancellationToken) =>
         Ok(await admin.GetStatusAsync(cancellationToken));
 }

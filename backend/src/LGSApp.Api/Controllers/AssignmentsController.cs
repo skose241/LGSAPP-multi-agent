@@ -17,6 +17,7 @@ public class AssignmentsController(
     IAssignmentStudentService students) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType<AssignmentStudentListView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
         [FromQuery] string? state,
         [FromQuery] int? lessonId,
@@ -38,12 +39,14 @@ public class AssignmentsController(
     }
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType<AssignmentStudentDetailView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Detail(int id, CancellationToken cancellationToken) =>
         (await students.GetAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpPost]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<AssignmentManageDetailView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(CreateAssignmentRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateAssignmentCommand(request.LessonId, request.Title, request.Description, request.StartDate, request.EndDate);
@@ -54,6 +57,7 @@ public class AssignmentsController(
     [HttpPatch("{id:int}")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<AssignmentManageDetailView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(int id, UpdateAssignmentRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateAssignmentCommand(request.Title, request.Description, request.StartDate, request.EndDate, request.RowVersion);
@@ -63,11 +67,13 @@ public class AssignmentsController(
     [HttpDelete("{id:int}")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(int id, [FromQuery] byte[]? rowVersion, CancellationToken cancellationToken) =>
         (await management.DeleteAsync(User.ToActor(), id, rowVersion, cancellationToken)).ToActionResult(this);
 
     [HttpGet("manage")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType<AssignmentManageListView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ManageList(
         [FromQuery] string? status,
         [FromQuery] int? lessonId,
@@ -93,23 +99,27 @@ public class AssignmentsController(
 
     [HttpGet("{id:int}/manage")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType<AssignmentManageDetailView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ManageDetail(int id, CancellationToken cancellationToken) =>
         (await management.GetAsync(User.ToActor(), id, cancellationToken)).ToActionResult(this);
 
     [HttpPost("{id:int}/publish")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<AssignmentChangeView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Publish(int id, AssignmentRowVersionRequest request, CancellationToken cancellationToken) =>
         (await management.PublishAsync(User.ToActor(), id, request.RowVersion, cancellationToken)).ToActionResult(this);
 
     [HttpPost("{id:int}/unpublish")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<AssignmentChangeView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Unpublish(int id, AssignmentRowVersionRequest request, CancellationToken cancellationToken) =>
         (await management.UnpublishAsync(User.ToActor(), id, request.RowVersion, cancellationToken)).ToActionResult(this);
 
     [HttpGet("{id:int}/results")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType<AssignmentResultsView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Results(
         int id,
         [FromQuery] string? sort,
@@ -164,6 +174,7 @@ public class AssignmentsController(
     [HttpPost("{id:int}/questions")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<AddedQuestionsView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> AddQuestions(int id, AddAssignmentQuestionsRequest request, CancellationToken cancellationToken)
     {
         var items = request.Items
@@ -176,6 +187,7 @@ public class AssignmentsController(
     [HttpPost("{id:int}/questions/attach")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<AddedQuestionsView>(StatusCodes.Status201Created)]
     public async Task<IActionResult> AttachQuestions(int id, AssignmentQuestionIdsRequest request, CancellationToken cancellationToken)
     {
         var result = await questions.AttachAsync(User.ToActor(), id, request.QuestionIds, cancellationToken);
@@ -185,12 +197,14 @@ public class AssignmentsController(
     [HttpPut("{id:int}/questions/order")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Reorder(int id, AssignmentQuestionIdsRequest request, CancellationToken cancellationToken) =>
         (await questions.ReorderAsync(User.ToActor(), id, request.QuestionIds, cancellationToken)).ToActionResult(this);
 
     [HttpPatch("{id:int}/questions/{questionId:int}")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<AddedQuestionView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateQuestion(int id, int questionId, UpdateAssignmentQuestionRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateAssignmentQuestionCommand(
@@ -210,6 +224,7 @@ public class AssignmentsController(
     [HttpDelete("{id:int}/questions/{questionId:int}")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveQuestion(int id, int questionId, CancellationToken cancellationToken) =>
         (await questions.RemoveAsync(User.ToActor(), id, questionId, cancellationToken)).ToActionResult(this);
 }

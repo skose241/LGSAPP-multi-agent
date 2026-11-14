@@ -1,5 +1,8 @@
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
+using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Leaderboard;
+using LGSApp.Infrastructure.Services.RefreshTokens;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,7 +19,8 @@ public sealed class AppUserManager(
     IdentityErrorDescriber errors,
     IServiceProvider services,
     ILogger<UserManager<ApplicationUser>> logger,
-    ILeaderboardCache leaderboardCache)
+    ILeaderboardCache leaderboardCache,
+    AppDbContext db)
     : UserManager<ApplicationUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
 {
     public override async Task<IdentityResult> AddToRoleAsync(ApplicationUser user, string role)
@@ -49,6 +53,7 @@ public sealed class AppUserManager(
         if (result.Succeeded)
         {
             leaderboardCache.Invalidate();
+            await RefreshTokenRevoker.RevokeAllAsync(db, user.Id, RefreshRevokeReasons.SecurityStamp);
         }
 
         return result;

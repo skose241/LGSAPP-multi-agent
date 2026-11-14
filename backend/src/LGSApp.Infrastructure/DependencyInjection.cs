@@ -16,6 +16,7 @@ using LGSApp.Infrastructure.Services.Likes;
 using LGSApp.Infrastructure.Services.Notifications;
 using LGSApp.Infrastructure.Services.Points;
 using LGSApp.Infrastructure.Services.Questions;
+using LGSApp.Infrastructure.Services.RefreshTokens;
 using LGSApp.Infrastructure.Services.Reports;
 using LGSApp.Infrastructure.Services.Scheduler;
 using LGSApp.Infrastructure.Services.Settings;
@@ -36,6 +37,7 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
         services.AddRecoveryCodeOptions(configuration);
+        services.AddRefreshTokenOptions(configuration);
         services.AddStorageOptions(configuration);
         services.AddSchedulerOptions(configuration);
         services.AddAiOptions(configuration);
@@ -73,6 +75,8 @@ public static class DependencyInjection
         services.AddScoped<OneTimePasswordService>();
         services.AddScoped<RecoveryCodeService>();
         services.AddScoped<MudurRecoveryService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddHostedService<RefreshTokenCleanupWorker>();
 
         services.AddMemoryCache();
         services.TryAddSingleton(TimeProvider.System);

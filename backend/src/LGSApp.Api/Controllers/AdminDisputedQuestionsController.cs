@@ -12,6 +12,7 @@ namespace LGSApp.Api.Controllers;
 public class AdminDisputedQuestionsController(IAnswerDisputeService disputes) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType<DisputedQuestionListView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
         [FromQuery] int? lessonId,
         [FromQuery] int page = 1,

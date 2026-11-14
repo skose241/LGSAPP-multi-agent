@@ -15,10 +15,12 @@ namespace LGSApp.Api.Controllers;
 public class AdminSchedulerController(ISchedulerQueryService queries, ISchedulerService scheduler) : ControllerBase
 {
     [HttpGet("status")]
+    [ProducesResponseType<SchedulerStatusView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Status(CancellationToken cancellationToken) =>
         Ok(await queries.GetStatusAsync(cancellationToken));
 
     [HttpGet("runs")]
+    [ProducesResponseType<RunPage>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Runs(
         [FromQuery] string? kind,
         [FromQuery] string? status,
@@ -59,9 +61,9 @@ public class AdminSchedulerController(ISchedulerQueryService queries, IScheduler
     }
 
     [HttpGet("runs/{id:int}")]
+    [ProducesResponseType<RunDetailResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Run(int id, CancellationToken cancellationToken) =>
-        (await queries.GetRunAsync(id, cancellationToken)).ToActionResult(this, detail => Ok(new
-        {
+        (await queries.GetRunAsync(id, cancellationToken)).ToActionResult(this, detail => Ok(new RunDetailResponse(
             detail.Run.Id,
             detail.Run.RunDate,
             detail.Run.Kind,
@@ -74,11 +76,12 @@ public class AdminSchedulerController(ISchedulerQueryService queries, IScheduler
             detail.Run.SucceededCount,
             detail.Run.FailedCount,
             detail.Run.Summary,
-            detail.Logs
-        }));
+            detail.Logs)));
 
     [HttpPost("runs")]
     [EnableRateLimiting(RateLimitingExtensions.SchedulerTriggerPolicy)]
+    [ProducesResponseType<RunView>(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
     public async Task<IActionResult> Start(StartSchedulerRunRequest request, CancellationToken cancellationToken)
     {
         if (!RunKindNames.TryParse(request.Kind, out var kind))

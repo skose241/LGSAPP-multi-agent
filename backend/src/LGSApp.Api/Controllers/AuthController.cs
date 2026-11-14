@@ -8,6 +8,7 @@ using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
+using LGSApp.Infrastructure.Services.RefreshTokens;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,7 @@ public class AuthController : ControllerBase
     private readonly DummyPasswordVerifier _dummyVerifier;
     private readonly AppDbContext _db;
     private readonly RecoveryCodeService _recoveryCodes;
+    private readonly IRefreshTokenService _refreshTokens;
     private readonly ILogger<AuthController> _logger;
     private readonly ResponseTimingOptions _timing;
 
@@ -37,6 +39,7 @@ public class AuthController : ControllerBase
         DummyPasswordVerifier dummyVerifier,
         AppDbContext db,
         RecoveryCodeService recoveryCodes,
+        IRefreshTokenService refreshTokens,
         ILogger<AuthController> logger,
         IOptions<ResponseTimingOptions> timing)
     {
@@ -45,6 +48,7 @@ public class AuthController : ControllerBase
         _dummyVerifier = dummyVerifier;
         _db = db;
         _recoveryCodes = recoveryCodes;
+        _refreshTokens = refreshTokens;
         _logger = logger;
         _timing = timing.Value;
     }
@@ -52,6 +56,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitingExtensions.LoginPolicy)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var started = Stopwatch.GetTimestamp();
@@ -149,16 +155,69 @@ public class AuthController : ControllerBase
                 codes = await _recoveryCodes.IssueAsync(user.Id);
             }
 
-            await transaction.CommitAsync();
             response = await BuildLoginResponse(user, codes);
+            await transaction.CommitAsync();
         });
 
         return error ?? Ok(response);
     }
 
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitingExtensions.RefreshPolicy)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
+    public async Task<ActionResult<LoginResponse>> Refresh(RefreshRequest request, CancellationToken cancellationToken)
+    {
+        var rotation = await _refreshTokens.RotateAsync(request.RefreshToken.Trim(), cancellationToken);
+        if (!rotation.Succeeded || rotation.User is null || rotation.Token is null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Oturum yenilenemedi.",
+                detail: "Oturumunuz sona erdi. Lütfen yeniden giriş yapın.");
+        }
+
+        var token = _tokenService.CreateToken(rotation.User, rotation.Roles);
+        return Ok(new LoginResponse(
+            token.Token,
+            token.ExpiresAtUtc,
+            rotation.User.MustChangePassword,
+            await ToUserInfo(rotation.User),
+            rotation.Token.Token,
+            rotation.Token.ExpiresAtUtc));
+    }
+
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout([FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] LogoutRequest? request, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(request?.RefreshToken))
+        {
+            await _refreshTokens.RevokeFamilyAsync(request.RefreshToken.Trim(), CurrentUserId(), cancellationToken);
+        }
+
+        return NoContent();
+    }
+
+    [HttpPost("logout-all")]
+    [Authorize(Policy = Policies.AuthenticatedAllowPasswordChange)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> LogoutAll(CancellationToken cancellationToken)
+    {
+        if (CurrentUserId() is not { } userId)
+        {
+            return Unauthorized();
+        }
+
+        await _refreshTokens.RevokeAllAsync(userId, RefreshRevokeReasons.LogoutAll, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitingExtensions.ForgotPasswordPolicy)]
+    [ProducesResponseType<ForgotPasswordResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
         var started = Stopwatch.GetTimestamp();
@@ -206,7 +265,7 @@ public class AuthController : ControllerBase
         }
 
         await WaitForMinimumAsync(started, _timing.ForgotPasswordMinMilliseconds, cancellationToken);
-        return Ok(new { message = ForgotPasswordMessage });
+        return Ok(new ForgotPasswordResponse(ForgotPasswordMessage));
     }
 
     [HttpGet("me")]
@@ -240,6 +299,9 @@ public class AuthController : ControllerBase
     private Task<bool> IsRequestBlockedAsync(int userId) =>
         _db.UserRoles.AnyAsync(ur => ur.UserId == userId && (ur.RoleId == Roles.AiId || ur.RoleId == Roles.MudurId));
 
+    private int? CurrentUserId() =>
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var id) ? id : null;
+
     private async Task<ApplicationUser?> GetCurrentUser()
     {
         var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -264,7 +326,10 @@ public class AuthController : ControllerBase
     {
         var roles = await _userManager.GetRolesAsync(user);
         var token = _tokenService.CreateToken(user, roles);
-        return new LoginResponse(token.Token, token.ExpiresAtUtc, user.MustChangePassword, await ToUserInfo(user), recoveryCodes);
+        var refresh = RefreshTokenRules.CanHoldRefreshToken(user.MustChangePassword)
+            ? await _refreshTokens.IssueFamilyAsync(user, roles.ToList())
+            : null;
+        return new LoginResponse(token.Token, token.ExpiresAtUtc, user.MustChangePassword, await ToUserInfo(user), refresh?.Token, refresh?.ExpiresAtUtc, recoveryCodes);
     }
 
     private ObjectResult InvalidCredentials() =>

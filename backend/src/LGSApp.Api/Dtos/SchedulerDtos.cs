@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LGSApp.Infrastructure.Services.Scheduler;
 
 namespace LGSApp.Api.Dtos;
 
@@ -17,3 +18,18 @@ public record ScheduleItemRequest(
 
 public record ReplaceGenerationScheduleRequest(
     [Required(ErrorMessage = "Program kalemleri zorunludur.")] List<ScheduleItemRequest>? Items);
+
+public record RunDetailResponse(
+    int Id,
+    DateOnly RunDate,
+    string Kind,
+    string Trigger,
+    RunUserView? TriggeredBy,
+    string Status,
+    DateTime StartedAt,
+    DateTime? FinishedAt,
+    DateTime LeaseUntil,
+    int SucceededCount,
+    int FailedCount,
+    string? Summary,
+    IReadOnlyList<RunLogView> Logs);

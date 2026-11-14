@@ -14,11 +14,13 @@ namespace LGSApp.Api.Controllers;
 public class TopicPlansController(ITopicPlanService plans) : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType<TopicPlanRangeView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> List([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken cancellationToken) =>
         (await plans.GetAsync(User.ToActor(), from, to, cancellationToken)).ToActionResult(this);
 
     [HttpPut("{date}/{lessonId:int}")]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType<TopicPlanLessonView>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Save(DateOnly date, int lessonId, SaveTopicPlanRequest request, CancellationToken cancellationToken)
     {
         var command = new SaveTopicPlanCommand(request.TopicId, request.TargetCount, request.RowVersion);
@@ -27,6 +29,7 @@ public class TopicPlansController(ITopicPlanService plans) : ControllerBase
 
     [HttpDelete("{date}/{lessonId:int}")]
     [EnableRateLimiting(RateLimitingExtensions.AssignmentWritePolicy)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(DateOnly date, int lessonId, [FromQuery] byte[]? rowVersion, CancellationToken cancellationToken) =>
         (await plans.DeleteAsync(User.ToActor(), date, lessonId, rowVersion, cancellationToken)).ToActionResult(this);
 }
