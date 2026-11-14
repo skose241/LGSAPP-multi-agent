@@ -265,3 +265,41 @@ CommentDto { id, parentId?, depth, solutionId?, status: "active"|"deleted"|"remo
 - Sınırlar: aynı TR gününde, tür başına en fazla `MaxTimerAttemptsPerDay` zamanlayıcı denemesi; manuel çalıştırmalar sayıya girmez ama başarıyla bitmişse "bitti" sayılır; Generate ve Complete 23:00 (`CatchUpGenerateUntil`) sonrası başlatılmaz. Ertesi gün sayaç sıfırlanır.
 - `soruUretimAktifMi=0` Succeeded (0 üretim) biter; AI yapılandırılmamışsa Failed olur ve deneme sınırı tür başına günde en fazla 3 run ile keser.
 - Yeniden deneme mevcut eksik-slot algoritmasıyla yalnız eksikleri üretir.
+
+## Revizyon 7 (Oturum 6, 2026-11-14): AI modülü — çelişirse bu bölüm geçerlidir
+
+Ayrıntılı plan: `.claude/plan-ai-modulu.md`. Commit'ler: ef1fbd1 (altyapı + veri modeli), ce93586 (öğrenci çözümü), c78f6c6 (soru üretimi + doğrulama), 616dd15 (şüpheli cevap anahtarı), 272441c (yönetim).
+
+### Sağlayıcı ve gizlilik
+- Gemini, kendi `IGeminiClient`/`GeminiRestClient` ile doğrudan REST (`x-goog-api-key`, `responseJsonSchema`, `thinkingConfig`); Semantic Kernel kullanılmaz. Ücretli katman, model `gemini-3.8-flash` (üretim ve çözüm), fiyat 0.75/3.75 USD/MTok (tarihe bağlı fiyat ertelendi).
+- Anahtarlar `Ai:Gemini:QuestionApiKey`/`SolutionApiKey`, geriye uyum için `GEMINI_API_KEY_Soru`/`GEMINI_API_KEY_Cozum`. Anahtar yoksa uygulama açılır, AI kapalı sayılır (`aiConfigured:false`). Development'ta `Ai:Provider=Fake`.
+- Gemini'ye kullanıcı adı, ad soyad ve öğrenci açıklaması gönderilmez. Görsel `ResizeForAi` ile 1536 px/q80 gönderilir.
+- Kullanıcıya ve bildirimlere hiçbir zaman ham sağlayıcı/istisna metni dönmez; sabit Türkçe mesajlar kullanılır. Ham metin yalnız `AiLogs.ErrorMessage` içinde kalır. Zamanlayıcı run'ı tümüyle istisnayla biterse müdürlere sabit metinli tek bildirim gider (aynı RunId için üretim raporu gittiyse gönderilmez).
+
+### Kayıt, kota ve yeniden deneme
+- Her çağrı `AiLog` (Pending/Succeeded/Failed/Rejected, `AiErrorKind`, token, CostUsd). Kota Pending rezervasyonla (`sp_getapplock`), Türkiye gününe göre (21:00 UTC sınırı). Sağlayıcı hatasında hak iade (`CountsTowardLimit=0`); okunamayan ve güvenilmez sonuçta hak düşer.
+- Öğrenci 5/gün (`aiGunlukCozumLimit`), öğretmen/müdür kişi limitinden muaf (`aiGunlukCozumLimitModerator=0`) ama global 150'ye (`aiGunlukCozumGlobalLimit`) sayılır.
+- Yeniden deneme `GeminiRetryPolicy` (RetryInfo, PerDay kota, jitter). Sağlayıcı devre kesicisi `AiProviderGate` bellek içi, amaç (soru/çözüm) başına: günlük kota dolunca Pasifik gece yarısına, anahtar geçersizse 10 dk kapanır. Tek örnekli barındırma varsayılır.
+
+### Öğrenci istekli çözüm
+- `POST /api/questions/{id}/solutions/ai`, `GET /api/ai/quota`; rate limit `ai-solution` 3/dk. İsteyebilenler görünürlük kuralına uyar. Aynı soruya eşzamanlı istekte tek üretim (`AiSolutionCoordinator`).
+- Mod: anahtar öğretmence incelenmişse (`AnswerKeyReviewedAt` dolu) Verified, değilse Blind. Sınıflandırma Accepted/Mismatch/Unreadable/Unreliable.
+- `aiSolutionState`: none, available, underReview, removed, unavailable, unreadable; ayrıca `canRequestAiSolution`.
+- Okunamayan görsel ve Verified modda onaylı anahtarla uyuşmayan sonuç `aiOkunamadiBeklemeSaat` (24) boyunca yeniden çağrılmaz, hak düşmez; uyuşmazlık beklemesi anahtar değişince/şüphe kalkınca düşer (state `unavailable`), okunamadı beklemesi düşmez.
+
+### Soru üretimi
+- Zamanlayıcının `IQuestionGenerator`'ı Gemini. Hedef şık `AnswerBalancer` (son 20 soru), benzerlik 3-gram Jaccard ≥0,6 reddedilir, `aiSoruDogrulamaAktifMi=1` iken ikinci çağrıyla doğrulanır (`QuestionVerifier`). Job içinde ayrıca `GenerationCircuitBreaker`.
+
+### Şüpheli cevap anahtarı
+- Blind modda AI şıkkı anahtarla uyuşmazsa soru `IsAnswerDisputed=1`, `AiSuggestedOption` yazılır, AI çözümü gizlenir, branş öğretmenine (yoksa müdüre) bildirim gider.
+- `GET /api/admin/disputed-questions` (öğretmen varsayılan ve yalnız kendi branşı, müdür tümü). Anahtar AI şıkkına çevrilirse çözüm görünür olur, farklı şıkka çevrilirse çözüm soft-delete. `POST /api/questions/{id}/answer-dispute/dismiss { rowVersion, note? }` şüpheyi kaldırır, gizli çözümü siler; not `AnswerKeyReviewNote` olarak saklanır.
+- Branş yetkisi: öğretmen yalnız branş dersinin sorularında anahtar değiştirir, dismiss yapar ve bekleyen WrongAnswerKey içeren soru şikayet grubunu çözer (Reject ve HideContent dahil). Müdür her derste yetkili.
+- `AiSuggestedOption` şüphe kalktıktan sonra geçmiş bilgisi olarak kalır; frontend yalnız `isAnswerDisputed` true iken göstermeli.
+
+### Yönetim (müdür)
+- `GET /api/admin/ai/usage?from=&to=`: gün × operasyon, durum sayıları, başarı oranı, token, maliyet, hata türleri, kullanıcı/sistem satırları. Varsayılan 7 gün, en fazla 92 gün, tarih 2025-01-01..yarın. Pending ayrı sayılır; `limitConsumed` yalnız hak düşen satırlar. (Not: kota sayacı Pending'i sayar ve yalnız çözüm operasyonlarını kapsar; normal akışta fark yok.)
+- `GET /api/admin/ai/status`: sağlayıcı, yapılandırma, modeller, devre kesici (`gates`: tripped/kind/reason/until), bugünkü global kullanım ve limit. Anahtar ve BaseUrl asla dönmez.
+- `GET/PUT /api/admin/settings` beyaz liste: aiGunlukCozumLimit 0–50, aiGunlukCozumLimitModerator 0–50, aiGunlukCozumGlobalLimit 0–2000, aiCozumAktifMi/aiSoruDogrulamaAktifMi/soruUretimAktifMi 0/1, soruCarpani 0–5, aiOkunamadiBeklemeSaat 1–168. Hepsi-ya-hiç doğrulama, yalnız değişenler yazılır (UpdatedAt/UpdatedByUserId), değişiklik anında geçerli. PUT rate limit `admin-settings` 10/dk.
+
+### Açık
+- Gerçek anahtarla duman testi kullanıcı onayı bekliyor. Fotoğraflı AI yolu Azurite olmadığı için uçtan uca test edilmedi. Tarihe bağlı fiyat (2027-01-01) ertelendi. PDF'ten soru tespiti (`QuestionDetection`) sonraya.
