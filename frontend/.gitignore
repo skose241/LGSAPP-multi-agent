@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.azurite
+coverage
+test-results
+playwright-report
+blob-report
+*.tsbuildinfo
+.env.local
+.env*.local
+next-env.d.ts

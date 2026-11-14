@@ -1,0 +1,24 @@
+{
+  "name": "lgs-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.34.9",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "pnpm --filter @lgs/web dev",
+    "dev:lan": "pnpm --filter @lgs/web dev:lan",
+    "build": "pnpm --filter @lgs/web build",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "gen:api": "pnpm --filter @lgs/api gen:api",
+    "e2e": "pnpm --filter @lgs/web e2e"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "globals": "17.14.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.2"
+  }
+}
