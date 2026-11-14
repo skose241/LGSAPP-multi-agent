@@ -2,6 +2,8 @@ namespace LGSApp.Infrastructure.Services.Ai;
 
 public static class AiMessages
 {
+    public const string GateQuotaExhausted = "Günlük Gemini kotası doldu; kota yenilenene kadar çağrı yapılmıyor.";
+    public const string GateAuthFailed = "Yapay zekâ anahtarı geçersiz; bekleme süresi dolana kadar çağrı yapılmıyor.";
     public const string NotConfigured = "Yapay zekâ yapılandırılmadı.";
     public const string SolutionUnavailable = "Yapay zekâ çözümü şu anda kullanılamıyor.";
     public const string SolutionRemoved = "Bu sorunun yapay zekâ çözümü kaldırılmış.";

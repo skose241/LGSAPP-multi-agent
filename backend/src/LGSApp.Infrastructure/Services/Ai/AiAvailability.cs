@@ -1,9 +1,23 @@
 namespace LGSApp.Infrastructure.Services.Ai;
 
-public sealed record AiStateFacts(bool SolutionExists, bool SolutionHidden, bool Disputed, bool Closed, bool UnreadableCached);
+public sealed record AiStateFacts(bool SolutionExists, bool SolutionHidden, bool Disputed, bool Closed, bool UnreadableCached, bool UnreliableCached = false);
 
 public static class AiAvailability
 {
+    public static DateTime? UnreadableWindowStart(DateTime nowUtc, int waitHours) =>
+        waitHours <= 0 ? null : nowUtc.AddHours(-waitHours);
+
+    public static DateTime? UnreliableWindowStart(DateTime nowUtc, int waitHours, DateTime? keyReviewedAt)
+    {
+        if (waitHours <= 0 || keyReviewedAt is null)
+        {
+            return null;
+        }
+
+        var since = nowUtc.AddHours(-waitHours);
+        return keyReviewedAt.Value > since ? keyReviewedAt.Value : since;
+    }
+
     public static bool IsClosed(bool enabled, bool isModerator, int personalLimit, int globalLimit) =>
         !enabled || globalLimit <= 0 || (!isModerator && personalLimit <= 0);
 
@@ -29,8 +43,13 @@ public static class AiAvailability
             return new AiSolutionStateInfo(AiSolutionStates.Unavailable, false);
         }
 
-        return facts.UnreadableCached
-            ? new AiSolutionStateInfo(AiSolutionStates.Unreadable, false)
+        if (facts.UnreadableCached)
+        {
+            return new AiSolutionStateInfo(AiSolutionStates.Unreadable, false);
+        }
+
+        return facts.UnreliableCached
+            ? new AiSolutionStateInfo(AiSolutionStates.Unavailable, false)
             : new AiSolutionStateInfo(AiSolutionStates.None, true);
     }
 }

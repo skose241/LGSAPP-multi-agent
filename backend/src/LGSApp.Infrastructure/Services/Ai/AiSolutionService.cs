@@ -77,6 +77,11 @@ public sealed class AiSolutionService(
             return Fail.Unprocessable(AiMessages.Unreadable);
         }
 
+        if (await UnreliableCachedAsync(questionId, cancellationToken))
+        {
+            return Fail.Unprocessable(AiMessages.Unreliable);
+        }
+
         if (gate.Check(AiKeyPurpose.Solution) is { } open)
         {
             return Fail.Unavailable(AiMessages.ProviderFailure, open.RetryAfterSeconds);
@@ -132,7 +137,8 @@ public sealed class AiSolutionService(
 
         var closed = await IsClosedAsync(actor, cancellationToken);
         var unreadable = !closed && await UnreadableCachedAsync(questionId, cancellationToken);
-        return AiAvailability.ResolveState(true, new AiStateFacts(false, false, false, closed, unreadable));
+        var unreliable = !closed && !unreadable && await UnreliableCachedAsync(questionId, cancellationToken);
+        return AiAvailability.ResolveState(true, new AiStateFacts(false, false, false, closed, unreadable, unreliable));
     }
 
     public async Task<ServiceResult<AiQuotaStatusView>> GetQuotaAsync(Actor actor, CancellationToken cancellationToken = default) =>
@@ -154,11 +160,33 @@ public sealed class AiSolutionService(
             return false;
         }
 
-        var since = clock.UtcNow.AddHours(-hours);
+        var since = AiAvailability.UnreadableWindowStart(clock.UtcNow, hours);
         return await db.AiLogs.AsNoTracking().AnyAsync(
             l => l.QuestionId == questionId
                 && l.Operation == AiOperation.SolutionInvalid
                 && l.ErrorKind == AiErrorKind.Unreadable
+                && l.CreatedAt >= since,
+            cancellationToken);
+    }
+
+    private async Task<bool> UnreliableCachedAsync(int questionId, CancellationToken cancellationToken)
+    {
+        var reviewedAt = await db.Questions.AsNoTracking()
+            .Where(q => q.Id == questionId)
+            .Select(q => q.AnswerKeyReviewedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        var hours = await settings.GetIntAsync(SettingKeys.AiOkunamadiBeklemeSaat, cancellationToken);
+        if (AiAvailability.UnreliableWindowStart(clock.UtcNow, hours, reviewedAt) is not { } since)
+        {
+            return false;
+        }
+
+        return await db.AiLogs.AsNoTracking().AnyAsync(
+            l => l.QuestionId == questionId
+                && l.Status == AiLogStatus.Rejected
+                && l.CountsTowardLimit
+                && (l.Operation == AiOperation.AnswerMismatch || l.Operation == AiOperation.SolutionInvalid)
+                && l.ErrorKind != AiErrorKind.Unreadable
                 && l.CreatedAt >= since,
             cancellationToken);
     }

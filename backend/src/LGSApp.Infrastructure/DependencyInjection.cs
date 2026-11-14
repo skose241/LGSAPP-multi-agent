@@ -79,6 +79,8 @@ public static class DependencyInjection
         services.AddSingleton<TurkeyTime>();
         services.AddScoped<UserLookupService>();
         services.AddScoped<ISettingsService, SettingsService>();
+        services.AddScoped<IAdminSettingsService, AdminSettingsService>();
+        services.AddScoped<IAiAdminService, AiAdminService>();
         services.AddScoped<IQuestionAccessService, QuestionAccessService>();
         services.AddScoped<ILessonService, LessonService>();
         services.AddScoped<IQuestionService, QuestionService>();

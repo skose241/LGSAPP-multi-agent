@@ -32,6 +32,7 @@ public interface IAiQuotaService
     Task DiscardAsync(long logId, CancellationToken cancellationToken);
     Task<AiQuotaSummary> GetSummaryAsync(Actor actor, CancellationToken cancellationToken);
     Task<AiQuotaStatusView> GetStatusAsync(Actor actor, CancellationToken cancellationToken);
+    Task<int> GetGlobalUsedTodayAsync(CancellationToken cancellationToken);
 }
 
 public sealed class AiQuotaService(
@@ -140,6 +141,12 @@ public sealed class AiQuotaService(
         var globalLimit = await settings.GetIntAsync(SettingKeys.AiGunlukCozumGlobalLimit, cancellationToken);
         var enabled = !AiAvailability.IsClosed(active, actor.IsModerator, summary.DailyLimit ?? 0, globalLimit);
         return new AiQuotaStatusView(enabled, summary.DailyLimit, summary.UsedToday, summary.RemainingToday, to);
+    }
+
+    public Task<int> GetGlobalUsedTodayAsync(CancellationToken cancellationToken)
+    {
+        var (from, to) = DayBoundsUtc(clock.UtcNow);
+        return CountAsync(null, from, to, cancellationToken);
     }
 
     private async Task<int?> PersonalLimitAsync(Actor actor, CancellationToken cancellationToken)

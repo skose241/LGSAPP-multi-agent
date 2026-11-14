@@ -25,6 +25,62 @@ public class AiAvailabilityTests
     }
 
     [Fact]
+    public void Unreliable_cache_gives_unavailable_state_and_blocks_request()
+    {
+        var state = AiAvailability.ResolveState(true, new AiStateFacts(false, false, false, false, false, true));
+
+        Assert.Equal(AiSolutionStates.Unavailable, state.State);
+        Assert.False(state.CanRequest);
+    }
+
+    [Fact]
+    public void Unreadable_wins_over_unreliable_and_closed_wins_over_both()
+    {
+        Assert.Equal(AiSolutionStates.Unreadable, AiAvailability.ResolveState(true, new AiStateFacts(false, false, false, false, true, true)).State);
+        Assert.Equal(AiSolutionStates.Unavailable, AiAvailability.ResolveState(true, new AiStateFacts(false, false, false, true, true, true)).State);
+    }
+
+    [Fact]
+    public void Visible_solution_ignores_unreliable_cache()
+    {
+        var state = AiAvailability.ResolveState(true, new AiStateFacts(true, false, false, false, false, true));
+
+        Assert.Equal(AiSolutionStates.Available, state.State);
+    }
+
+    [Fact]
+    public void Unreliable_window_is_null_for_blind_questions_or_disabled_wait()
+    {
+        var now = new DateTime(2026, 11, 14, 12, 0, 0, DateTimeKind.Utc);
+
+        Assert.Null(AiAvailability.UnreliableWindowStart(now, 24, null));
+        Assert.Null(AiAvailability.UnreliableWindowStart(now, 0, now.AddHours(-1)));
+        Assert.Null(AiAvailability.UnreadableWindowStart(now, 0));
+    }
+
+    [Fact]
+    public void Unreliable_window_starts_at_the_later_of_wait_start_and_key_review()
+    {
+        var now = new DateTime(2026, 11, 14, 12, 0, 0, DateTimeKind.Utc);
+
+        Assert.Equal(now.AddHours(-2), AiAvailability.UnreliableWindowStart(now, 24, now.AddHours(-2)));
+        Assert.Equal(now.AddHours(-24), AiAvailability.UnreliableWindowStart(now, 24, now.AddHours(-48)));
+        Assert.Equal(now.AddHours(-24), AiAvailability.UnreadableWindowStart(now, 24));
+    }
+
+    [Fact]
+    public void Log_before_a_new_key_review_falls_outside_the_window()
+    {
+        var now = new DateTime(2026, 11, 14, 12, 0, 0, DateTimeKind.Utc);
+        var logAt = now.AddHours(-5);
+        var reviewedAfterLog = now.AddHours(-1);
+
+        var start = AiAvailability.UnreliableWindowStart(now, 24, reviewedAfterLog)!.Value;
+
+        Assert.True(logAt < start);
+    }
+
+    [Fact]
     public void No_discussion_access_is_none()
     {
         var state = AiAvailability.ResolveState(false, new AiStateFacts(false, false, false, true, true));

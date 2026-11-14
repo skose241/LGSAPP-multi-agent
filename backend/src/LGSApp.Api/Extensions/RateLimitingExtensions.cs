@@ -19,6 +19,7 @@ public static class RateLimitingExtensions
     public const string QuestionCreatePolicy = "question-create";
     public const string AiSolutionPolicy = "ai-solution";
     public const string SchedulerTriggerPolicy = "scheduler-trigger";
+    public const string AdminSettingsPolicy = "admin-settings";
 
     public static IServiceCollection AddAppRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
@@ -38,6 +39,7 @@ public static class RateLimitingExtensions
             options.AddPolicy(QuestionCreatePolicy, context => UserPartition(context, QuestionCreatePolicy, settings.QuestionCreate));
             options.AddPolicy(AiSolutionPolicy, context => UserPartition(context, AiSolutionPolicy, settings.AiSolution));
             options.AddPolicy(SchedulerTriggerPolicy, context => UserPartition(context, SchedulerTriggerPolicy, settings.SchedulerTrigger));
+            options.AddPolicy(AdminSettingsPolicy, context => UserPartition(context, AdminSettingsPolicy, settings.AdminSettings));
             options.OnRejected =async (context, cancellationToken) =>
             {
                 var response = context.HttpContext.Response;
