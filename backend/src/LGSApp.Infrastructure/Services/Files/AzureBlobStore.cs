@@ -43,6 +43,33 @@ public sealed class AzureBlobStore : IBlobStore
         await container.GetBlobClient(blobName).DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: cancellationToken);
     }
 
+    public async Task<byte[]> DownloadAsync(string blobName, long maxBytes, CancellationToken cancellationToken = default)
+    {
+        var blob = container.GetBlobClient(blobName);
+        try
+        {
+            var properties = await blob.GetPropertiesAsync(cancellationToken: cancellationToken);
+            var length = properties.Value.ContentLength;
+            if (length > maxBytes)
+            {
+                throw new InvalidDataException($"Dosya izin verilen boyutu aşıyor ({length} bayt).");
+            }
+
+            using var buffer = new MemoryStream((int)length);
+            await blob.DownloadToAsync(buffer, cancellationToken);
+            if (buffer.Length > maxBytes)
+            {
+                throw new InvalidDataException($"Dosya izin verilen boyutu aşıyor ({buffer.Length} bayt).");
+            }
+
+            return buffer.ToArray();
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            throw new FileNotFoundException("Depolamada dosya bulunamadı.", blobName, ex);
+        }
+    }
+
     public BlobReadUri GetReadUri(string blobName, DateTimeOffset now)
     {
         var bucket = TimeSpan.FromMinutes(Math.Max(1, options.ReadSasBucketMinutes));

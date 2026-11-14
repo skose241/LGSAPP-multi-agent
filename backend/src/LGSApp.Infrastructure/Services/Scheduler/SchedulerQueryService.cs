@@ -112,7 +112,8 @@ public sealed class SchedulerQueryService(
     IDailyGenerationPlanner planner,
     IQuestionGenerator generator,
     TurkeyTime clock,
-    IOptions<SchedulerOptions> options) : ISchedulerQueryService
+    IOptions<SchedulerOptions> options,
+    IOptions<AiOptions> aiOptions) : ISchedulerQueryService
 {
     private const int MaxPageSize = 50;
 
@@ -149,7 +150,7 @@ public sealed class SchedulerQueryService(
                 l.MissingSlots.Count))
             .ToList();
 
-        return new SchedulerStatusView(now, today, generator.IsConfigured, dailyPlan.Enabled, o.UseFakeGenerator, jobs, lessons);
+        return new SchedulerStatusView(now, today, generator.IsConfigured, dailyPlan.Enabled, aiOptions.Value.Provider == AiProvider.Fake, jobs, lessons);
     }
 
     public async Task<RunPage> ListRunsAsync(RunFilter filter, CancellationToken cancellationToken)

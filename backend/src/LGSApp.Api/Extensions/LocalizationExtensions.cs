@@ -23,7 +23,8 @@ public static class LocalizationExtensions
         [StatusCodes.Status415UnsupportedMediaType] = "Desteklenmeyen içerik türü.",
         [StatusCodes.Status422UnprocessableEntity] = "İstek işlenemedi.",
         [StatusCodes.Status429TooManyRequests] = "Çok fazla istek gönderildi.",
-        [StatusCodes.Status500InternalServerError] = "Sunucuda beklenmeyen bir hata oluştu."
+        [StatusCodes.Status500InternalServerError] = "Sunucuda beklenmeyen bir hata oluştu.",
+        [StatusCodes.Status503ServiceUnavailable] = "Hizmet şu anda kullanılamıyor."
     };
 
     public static IServiceCollection AddTurkishProblemDetails(this IServiceCollection services)

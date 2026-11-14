@@ -35,6 +35,7 @@ public class QuestionConfiguration : IEntityTypeConfiguration<Question>
         b.RestrictTo<Question, StoredFile>(x => x.ImageFileId);
         b.RestrictToUser<Question>(x => x.HiddenByUserId);
         b.RestrictToUser<Question>(x => x.CorrectOptionChangedByUserId);
+        b.RestrictToUser<Question>(x => x.AnswerKeyReviewedByUserId);
 
         b.HasIndex(x => x.ImageFileId).IsUnique().HasFilter("[ImageFileId] IS NOT NULL").HasDatabaseName("UX_Questions_ImageFileId");
         b.HasIndex(x => new { x.LessonId, x.GenerationDate, x.GenerationSlot }).IsUnique().HasFilter("[Source] = 4").HasDatabaseName("UX_Questions_Ai_Lesson_Date_Slot");

@@ -8,6 +8,7 @@ public class Solution
     public ApplicationUser Author { get; set; } = null!;
     public SolutionType Type { get; set; }
     public int? AnswerId { get; set; }
+    public byte? StatedOption { get; set; }
     public string? Text { get; set; }
     public int? ImageFileId { get; set; }
     public bool IsDeleted { get; set; }

@@ -4,6 +4,7 @@ using LGSApp.Infrastructure.Options;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
 using LGSApp.Infrastructure.Services.Access;
+using LGSApp.Infrastructure.Services.Ai;
 using LGSApp.Infrastructure.Services.Answers;
 using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Comments;
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddRecoveryCodeOptions(configuration);
         services.AddStorageOptions(configuration);
         services.AddSchedulerOptions(configuration);
+        services.AddAiOptions(configuration);
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(
@@ -107,6 +109,7 @@ public static class DependencyInjection
         services.AddScoped<IFileUploadService, FileUploadService>();
         services.AddScoped<IFileCleanupService, FileCleanupService>();
         services.AddHostedService<FileCleanupWorker>();
+        services.AddAiServices(configuration);
         services.AddSchedulerServices(configuration);
 
         return services;
@@ -117,12 +120,6 @@ public static class SchedulerServiceCollectionExtensions
 {
     public static IServiceCollection AddSchedulerServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<NotConfiguredQuestionGenerator>();
-        services.AddSingleton<FakeQuestionGenerator>();
-        services.AddSingleton<IQuestionGenerator>(sp =>
-            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<LGSApp.Infrastructure.Options.SchedulerOptions>>().Value.UseFakeGenerator
-                ? sp.GetRequiredService<FakeQuestionGenerator>()
-                : sp.GetRequiredService<NotConfiguredQuestionGenerator>());
         services.AddSingleton<SchedulerSignals>();
         services.AddScoped<IGenerationRunStore, GenerationRunStore>();
         services.AddScoped<IDailyGenerationPlanner, DailyGenerationPlanner>();

@@ -49,13 +49,13 @@ public sealed class NotConfiguredQuestionGenerator : IQuestionGenerator
         Task.FromResult(QuestionGenerationResult.Failure(SchedulerMessages.AiNotConfigured));
 }
 
-public sealed class FakeQuestionGenerator(IOptions<SchedulerOptions> options, TimeProvider timeProvider) : IQuestionGenerator
+public sealed class FakeQuestionGenerator(IOptions<AiOptions> options, TimeProvider timeProvider) : IQuestionGenerator
 {
     public bool IsConfigured => true;
 
     public async Task<QuestionGenerationResult> GenerateAsync(QuestionGenerationRequest request, CancellationToken cancellationToken)
     {
-        var fake = options.Value.FakeGenerator;
+        var fake = options.Value.Fake;
         if (fake.DelayMs > 0)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(fake.DelayMs), timeProvider, cancellationToken);

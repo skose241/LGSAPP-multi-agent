@@ -82,13 +82,44 @@ public sealed class SkiaImageProcessor : IImageProcessor, IDisposable
         }
     }
 
+    public byte[] ResizeForAi(byte[] source, int maxEdge, int quality)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (source.Length == 0)
+        {
+            throw new InvalidDataException(EmptyMessage);
+        }
+
+        var kind = Sniff(source.AsSpan(0, Math.Min(32, source.Length)));
+        if (kind is SniffResult.Unsupported or SniffResult.Heic)
+        {
+            throw new InvalidDataException(UnsupportedMessage);
+        }
+
+        gate.Wait();
+        try
+        {
+            var result = Encode(source, source.Length, Math.Clamp(maxEdge, 64, 8000), Math.Clamp(quality, 30, 100), false);
+            if (!result.Succeeded)
+            {
+                throw new InvalidDataException(result.Message ?? CorruptMessage);
+            }
+
+            return result.Value!.Bytes;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     private async Task<ServiceResult<ProcessedImage>> DecodeAndEncodeAsync(MemoryStream buffer, CancellationToken cancellationToken)
     {
         try
         {
             var bytes = buffer.GetBuffer();
             var length = (int)buffer.Length;
-            return await Task.Run(() => Encode(bytes, length), cancellationToken);
+            return await Task.Run(() => Encode(bytes, length, options.MaxEdge, options.JpegQuality, true), cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -96,7 +127,7 @@ public sealed class SkiaImageProcessor : IImageProcessor, IDisposable
         }
     }
 
-    private ServiceResult<ProcessedImage> Encode(byte[] bytes, int length)
+    private ServiceResult<ProcessedImage> Encode(byte[] bytes, int length, int maxEdge, int jpegQuality, bool enforceUploadLimits)
     {
         using var data = SKData.CreateCopy(bytes.AsSpan(0, length));
         using var codec = SKCodec.Create(data);
@@ -116,7 +147,7 @@ public sealed class SkiaImageProcessor : IImageProcessor, IDisposable
             return FileErrors.Invalid(AnimatedMessage);
         }
 
-        if (Math.Min(info.Width, info.Height) < options.MinEdge)
+        if (enforceUploadLimits && Math.Min(info.Width, info.Height) < options.MinEdge)
         {
             return FileErrors.Invalid($"Fotoğrafın kısa kenarı en az {options.MinEdge} piksel olmalıdır.");
         }
@@ -134,27 +165,27 @@ public sealed class SkiaImageProcessor : IImageProcessor, IDisposable
         var longEdge = Math.Max(orientedWidth, orientedHeight);
         var targetWidth = orientedWidth;
         var targetHeight = orientedHeight;
-        if (longEdge > options.MaxEdge)
+        if (longEdge > maxEdge)
         {
-            var ratio = (double)options.MaxEdge / longEdge;
+            var ratio = (double)maxEdge / longEdge;
             targetWidth = Math.Max(1, (int)Math.Round(orientedWidth * ratio));
             targetHeight = Math.Max(1, (int)Math.Round(orientedHeight * ratio));
         }
 
-        if (Math.Min(targetWidth, targetHeight) < options.MinEdge)
+        if (enforceUploadLimits && Math.Min(targetWidth, targetHeight) < options.MinEdge)
         {
             return FileErrors.Invalid($"Fotoğrafın kısa kenarı en az {options.MinEdge} piksel olmalıdır.");
         }
 
         var decodeWidth = info.Width;
         var decodeHeight = info.Height;
-        if (longEdge > options.MaxEdge)
+        if (longEdge > maxEdge)
         {
             var scaled = codec.GetScaledDimensions((float)targetWidth / orientedWidth);
             if (scaled.Width > 0 && scaled.Height > 0 && scaled.Width <= info.Width && scaled.Height <= info.Height)
             {
                 var scaledLong = Math.Max(scaled.Width, scaled.Height);
-                if (scaledLong >= options.MaxEdge)
+                if (scaledLong >= maxEdge)
                 {
                     decodeWidth = scaled.Width;
                     decodeHeight = scaled.Height;
@@ -197,7 +228,7 @@ public sealed class SkiaImageProcessor : IImageProcessor, IDisposable
         }
 
         using var outputImage = SKImage.FromBitmap(target);
-        using var encoded = outputImage.Encode(SKEncodedImageFormat.Jpeg, options.JpegQuality);
+        using var encoded = outputImage.Encode(SKEncodedImageFormat.Jpeg, jpegQuality);
         if (encoded is null)
         {
             return FileErrors.Invalid(CorruptMessage);

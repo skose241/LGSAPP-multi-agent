@@ -25,6 +25,8 @@ public class Question
     public bool IsAnswerDisputed { get; set; }
     public DateTime? AnswerDisputedAt { get; set; }
     public byte? AiSuggestedOption { get; set; }
+    public DateTime? AnswerKeyReviewedAt { get; set; }
+    public int? AnswerKeyReviewedByUserId { get; set; }
     public bool SolutionNotNeeded { get; set; }
     public DateTime? CorrectOptionChangedAt { get; set; }
     public int? CorrectOptionChangedByUserId { get; set; }

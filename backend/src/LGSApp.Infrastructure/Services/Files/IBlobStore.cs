@@ -4,6 +4,7 @@ public interface IBlobStore
 {
     Task UploadAsync(string blobName, Stream content, string contentType, string cacheControl, CancellationToken cancellationToken = default);
     Task DeleteIfExistsAsync(string blobName, CancellationToken cancellationToken = default);
+    Task<byte[]> DownloadAsync(string blobName, long maxBytes, CancellationToken cancellationToken = default);
     BlobReadUri GetReadUri(string blobName, DateTimeOffset now);
     string ContainerName { get; }
 }

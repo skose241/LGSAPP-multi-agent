@@ -13,5 +13,17 @@ public class AiLog
     public int? OutputTokens { get; set; }
     public int? DurationMs { get; set; }
     public bool Success { get; set; }
+    public AiLogStatus Status { get; set; } = AiLogStatus.Succeeded;
+    public AiErrorKind ErrorKind { get; set; }
+    public string? ErrorMessage { get; set; }
+    public short? HttpStatus { get; set; }
+    public byte AttemptCount { get; set; } = 1;
+    public int? ThinkingTokens { get; set; }
+    public decimal? CostUsd { get; set; }
+    public bool CountsTowardLimit { get; set; }
+    public int? SolutionId { get; set; }
+    public int? ImageFileId { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public string? ModelVersion { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

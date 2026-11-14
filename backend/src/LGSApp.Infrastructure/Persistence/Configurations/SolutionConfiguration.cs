@@ -13,6 +13,7 @@ public class SolutionConfiguration : IEntityTypeConfiguration<Solution>
             t.HasCheckConstraint("CK_Solutions_Type", "[Type] IN (2, 3, 4)");
             t.HasCheckConstraint("CK_Solutions_TextOrImage", "[Text] IS NOT NULL OR [ImageFileId] IS NOT NULL");
             t.HasCheckConstraint("CK_Solutions_StudentAnswer", "([Type] = 3 AND [AnswerId] IS NOT NULL) OR ([Type] <> 3 AND [AnswerId] IS NULL)");
+            t.HasCheckConstraint("CK_Solutions_StatedOption", "([Type] = 4 OR [StatedOption] IS NULL) AND ([StatedOption] IS NULL OR [StatedOption] BETWEEN 1 AND 4)");
         });
         b.HasKey(x => x.Id);
         b.Property(x => x.Type).HasConversion<byte>();

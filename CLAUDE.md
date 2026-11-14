@@ -29,7 +29,7 @@ Yukarıda tanıtımı yapılan proje mevcutta CFML/Lucee/MSSQL ile netpesinde.co
 - **Backend:** ASP.NET Core(C#)
 - **Frontend:** React/Next.js
 - **Veritabanı:** Azure SQL Database (mevcuttaki MSSQL'den taşınacak)
-- **AI Entegrasyonu:** Semantic Kernel üzerinden GEMINI API
+- **AI Entegrasyonu:** GEMINI API, kendi `IGeminiClient` arayüzü ile doğrudan REST (Semantic Kernel Gemini bağlayıcısı alpha olduğu için şimdilik kullanılmıyor; ileride SK/Agent Framework yeniden değerlendirilecek)
 - **Mobil:** React Native
 - **Barındırma:** Microsoft Azure (Öğrenci Kredisi)
 

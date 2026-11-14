@@ -102,6 +102,8 @@ public sealed class AiQuestionWriter(AppDbContext db, TurkeyTime clock) : IAiQue
                     OutputTokens = result.OutputTokens,
                     DurationMs = result.DurationMs,
                     Success = true,
+                    Status = AiLogStatus.Succeeded,
+                    CompletedAt = now,
                     CreatedAt = now
                 });
                 await db.SaveChangesAsync(token);
@@ -151,6 +153,9 @@ public sealed class AiQuestionWriter(AppDbContext db, TurkeyTime clock) : IAiQue
                 OutputTokens = result.OutputTokens,
                 DurationMs = result.DurationMs,
                 Success = false,
+                Status = AiLogStatus.Failed,
+                ErrorMessage = Truncate(error, ErrorMaxLength),
+                CompletedAt = now,
                 CreatedAt = now
             });
         }

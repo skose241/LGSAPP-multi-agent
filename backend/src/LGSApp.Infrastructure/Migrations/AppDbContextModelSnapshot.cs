@@ -30,12 +30,44 @@ namespace LGSApp.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<byte>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("CostUsd")
+                        .HasPrecision(12, 6)
+                        .HasColumnType("decimal(12,6)");
+
+                    b.Property<bool>("CountsTowardLimit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<int?>("DurationMs")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("ErrorKind")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<short?>("HttpStatus")
+                        .HasColumnType("smallint");
+
+                    b.Property<int?>("ImageFileId")
                         .HasColumnType("int");
 
                     b.Property<string>("Input")
@@ -47,6 +79,10 @@ namespace LGSApp.Infrastructure.Migrations
                     b.Property<string>("Model")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ModelVersion")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
 
                     b.Property<byte>("Operation")
                         .HasColumnType("tinyint");
@@ -60,15 +96,40 @@ namespace LGSApp.Infrastructure.Migrations
                     b.Property<int?>("QuestionId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SolutionId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
+
                     b.Property<bool>("Success")
                         .HasColumnType("bit");
+
+                    b.Property<int?>("ThinkingTokens")
+                        .HasColumnType("int");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("QuestionId");
+                    b.HasIndex("ImageFileId");
+
+                    b.HasIndex("SolutionId");
+
+                    b.HasIndex("Operation", "CreatedAt")
+                        .HasDatabaseName("IX_AiLogs_Operation_CreatedAt");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("Operation", "CreatedAt"), new[] { "CountsTowardLimit", "CostUsd" });
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("IX_AiLogs_Pending")
+                        .HasFilter("[Status] = 0");
+
+                    b.HasIndex("QuestionId", "Operation", "CreatedAt")
+                        .HasDatabaseName("IX_AiLogs_Question_Operation_CreatedAt");
 
                     b.HasIndex("UserId", "Operation", "CreatedAt")
                         .HasDatabaseName("IX_AiLogs_User_Operation_CreatedAt");
@@ -918,6 +979,12 @@ namespace LGSApp.Infrastructure.Migrations
                     b.Property<DateTime?>("AnswerDisputedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("AnswerKeyReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("AnswerKeyReviewedByUserId")
+                        .HasColumnType("int");
+
                     b.Property<int>("AuthorUserId")
                         .HasColumnType("int");
 
@@ -1004,6 +1071,8 @@ namespace LGSApp.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AnswerKeyReviewedByUserId");
 
                     b.HasIndex("CorrectOptionChangedByUserId");
 
@@ -1305,6 +1374,36 @@ namespace LGSApp.Infrastructure.Migrations
                         },
                         new
                         {
+                            Key = "aiCozumAktifMi",
+                            Description = "Öğrenci istekli yapay zekâ çözümü açık mı (1 açık, 0 kapalı).",
+                            Value = "1"
+                        },
+                        new
+                        {
+                            Key = "aiGunlukCozumGlobalLimit",
+                            Description = "Tüm kullanıcılar için günlük toplam yapay zekâ çözüm sınırı.",
+                            Value = "150"
+                        },
+                        new
+                        {
+                            Key = "aiGunlukCozumLimitModerator",
+                            Description = "Öğretmen ve müdür başına günlük yapay zekâ çözüm hakkı (0 sınırsız, genel sınıra sayılır).",
+                            Value = "0"
+                        },
+                        new
+                        {
+                            Key = "aiSoruDogrulamaAktifMi",
+                            Description = "Üretilen soruların ikinci bir yapay zekâ çağrısıyla doğrulanması açık mı (1 açık, 0 kapalı).",
+                            Value = "1"
+                        },
+                        new
+                        {
+                            Key = "aiOkunamadiBeklemeSaat",
+                            Description = "Okunamayan soru görseli için yeniden denemeden önce beklenecek saat.",
+                            Value = "24"
+                        },
+                        new
+                        {
                             Key = "yorumMaxKarakter",
                             Description = "Yorumun azami karakter sayısı.",
                             Value = "800"
@@ -1408,6 +1507,9 @@ namespace LGSApp.Infrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<byte?>("StatedOption")
+                        .HasColumnType("tinyint");
+
                     b.Property<string>("Text")
                         .HasColumnType("nvarchar(max)");
 
@@ -1446,6 +1548,8 @@ namespace LGSApp.Infrastructure.Migrations
 
                     b.ToTable("Solutions", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Solutions_StatedOption", "([Type] = 4 OR [StatedOption] IS NULL) AND ([StatedOption] IS NULL OR [StatedOption] BETWEEN 1 AND 4)");
+
                             t.HasCheckConstraint("CK_Solutions_StudentAnswer", "([Type] = 3 AND [AnswerId] IS NOT NULL) OR ([Type] <> 3 AND [AnswerId] IS NULL)");
 
                             t.HasCheckConstraint("CK_Solutions_TextOrImage", "[Text] IS NOT NULL OR [ImageFileId] IS NOT NULL");
@@ -1671,9 +1775,19 @@ namespace LGSApp.Infrastructure.Migrations
 
             modelBuilder.Entity("LGSApp.Domain.Entities.AiLog", b =>
                 {
+                    b.HasOne("LGSApp.Domain.Entities.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("ImageFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LGSApp.Domain.Entities.Question", null)
                         .WithMany()
                         .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LGSApp.Domain.Entities.Solution", null)
+                        .WithMany()
+                        .HasForeignKey("SolutionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LGSApp.Domain.Entities.ApplicationUser", null)
@@ -1927,6 +2041,11 @@ namespace LGSApp.Infrastructure.Migrations
 
             modelBuilder.Entity("LGSApp.Domain.Entities.Question", b =>
                 {
+                    b.HasOne("LGSApp.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AnswerKeyReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LGSApp.Domain.Entities.ApplicationUser", "Author")
                         .WithMany()
                         .HasForeignKey("AuthorUserId")

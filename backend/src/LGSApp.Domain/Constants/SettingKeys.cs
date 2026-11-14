@@ -12,6 +12,11 @@ public static class SettingKeys
     public const string SoruUretimAktifMi = "soruUretimAktifMi";
     public const string SoruCarpani = "soruCarpani";
     public const string AiGunlukCozumLimit = "aiGunlukCozumLimit";
+    public const string AiCozumAktifMi = "aiCozumAktifMi";
+    public const string AiGunlukCozumGlobalLimit = "aiGunlukCozumGlobalLimit";
+    public const string AiGunlukCozumLimitModerator = "aiGunlukCozumLimitModerator";
+    public const string AiSoruDogrulamaAktifMi = "aiSoruDogrulamaAktifMi";
+    public const string AiOkunamadiBeklemeSaat = "aiOkunamadiBeklemeSaat";
     public const string YorumMaxKarakter = "yorumMaxKarakter";
     public const string YorumMaxDerinlik = "yorumMaxDerinlik";
     public const string YorumGorunurDerinlik = "yorumGorunurDerinlik";
@@ -36,6 +41,11 @@ public static class SettingKeys
         (SoruUretimAktifMi, 1, "Günlük soru üretimi açık mı (1 açık, 0 kapalı)."),
         (SoruCarpani, 1, "Günlük soru sayısı çarpanı."),
         (AiGunlukCozumLimit, 5, "Öğrenci başına günlük yapay zeka çözüm hakkı."),
+        (AiCozumAktifMi, 1, "Öğrenci istekli yapay zekâ çözümü açık mı (1 açık, 0 kapalı)."),
+        (AiGunlukCozumGlobalLimit, 150, "Tüm kullanıcılar için günlük toplam yapay zekâ çözüm sınırı."),
+        (AiGunlukCozumLimitModerator, 0, "Öğretmen ve müdür başına günlük yapay zekâ çözüm hakkı (0 sınırsız, genel sınıra sayılır)."),
+        (AiSoruDogrulamaAktifMi, 1, "Üretilen soruların ikinci bir yapay zekâ çağrısıyla doğrulanması açık mı (1 açık, 0 kapalı)."),
+        (AiOkunamadiBeklemeSaat, 24, "Okunamayan soru görseli için yeniden denemeden önce beklenecek saat."),
         (YorumMaxKarakter, 800, "Yorumun azami karakter sayısı."),
         (YorumMaxDerinlik, 10, "Yorum ağacının mutlak azami derinliği (en fazla 10)."),
         (YorumGorunurDerinlik, 3, "Listede bir kökün altında gösterilen yorum seviyesi sayısı."),

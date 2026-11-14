@@ -71,8 +71,22 @@ public class AiLogConfiguration : IEntityTypeConfiguration<AiLog>
         b.Property(x => x.Input).HasColumnType("nvarchar(max)");
         b.Property(x => x.Output).HasColumnType("nvarchar(max)");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+        b.Property(x => x.Status).HasConversion<byte>().HasDefaultValue(AiLogStatus.Succeeded).HasSentinel(AiLogStatus.Succeeded);
+        b.Property(x => x.ErrorKind).HasConversion<byte>().HasDefaultValue(AiErrorKind.None);
+        b.Property(x => x.ErrorMessage).HasMaxLength(2000);
+        b.Property(x => x.AttemptCount).HasDefaultValue((byte)1).HasSentinel((byte)1);
+        b.Property(x => x.CostUsd).HasPrecision(12, 6);
+        b.Property(x => x.CountsTowardLimit).HasDefaultValue(false);
+        b.Property(x => x.ModelVersion).HasMaxLength(80);
         b.RestrictToUser<AiLog>(x => x.UserId);
         b.RestrictTo<AiLog, Question>(x => x.QuestionId);
+        b.RestrictTo<AiLog, Solution>(x => x.SolutionId);
+        b.RestrictTo<AiLog, StoredFile>(x => x.ImageFileId);
         b.HasIndex(x => new { x.UserId, x.Operation, x.CreatedAt }).HasDatabaseName("IX_AiLogs_User_Operation_CreatedAt");
+        b.HasIndex(x => new { x.Operation, x.CreatedAt })
+            .IncludeProperties(x => new { x.CountsTowardLimit, x.CostUsd })
+            .HasDatabaseName("IX_AiLogs_Operation_CreatedAt");
+        b.HasIndex(x => new { x.QuestionId, x.Operation, x.CreatedAt }).HasDatabaseName("IX_AiLogs_Question_Operation_CreatedAt");
+        b.HasIndex(x => new { x.Status, x.CreatedAt }).HasFilter("[Status] = 0").HasDatabaseName("IX_AiLogs_Pending");
     }
 }

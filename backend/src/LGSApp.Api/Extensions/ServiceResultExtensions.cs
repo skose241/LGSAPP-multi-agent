@@ -47,8 +47,15 @@ public static class ServiceResultExtensions
             ServiceErrorKind.Validation => (StatusCodes.Status400BadRequest, "Geçersiz istek."),
             ServiceErrorKind.TooManyRequests => (StatusCodes.Status429TooManyRequests, "Çok fazla istek gönderildi."),
             ServiceErrorKind.PayloadTooLarge => (StatusCodes.Status413PayloadTooLarge, "Dosya çok büyük."),
+            ServiceErrorKind.Unavailable => (StatusCodes.Status503ServiceUnavailable, "Hizmet şu anda kullanılamıyor."),
+            ServiceErrorKind.Unprocessable => (StatusCodes.Status422UnprocessableEntity, "İstek işlenemedi."),
             _ => (StatusCodes.Status500InternalServerError, "Sunucuda beklenmeyen bir hata oluştu.")
         };
+
+        if (result.RetryAfterSeconds is { } retryAfter and > 0)
+        {
+            controller.Response.Headers.RetryAfter = retryAfter.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
 
         return controller.Problem(statusCode: status, title: title, detail: result.Message);
     }

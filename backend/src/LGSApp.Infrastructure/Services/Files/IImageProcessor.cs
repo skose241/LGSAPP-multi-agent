@@ -7,6 +7,7 @@ public sealed record ProcessedImage(byte[] Bytes, int Width, int Height);
 public interface IImageProcessor
 {
     Task<ServiceResult<ProcessedImage>> ProcessAsync(Stream input, CancellationToken cancellationToken = default);
+    byte[] ResizeForAi(byte[] source, int maxEdge, int quality);
 }
 
 public static class FileErrors
