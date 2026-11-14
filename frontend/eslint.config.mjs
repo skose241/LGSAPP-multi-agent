@@ -24,6 +24,8 @@ export default tseslint.config(
     ignores: [
       "**/node_modules/**",
       "**/.next/**",
+      "**/.next-e2e/**",
+      "**/.e2e/**",
       "**/generated/**",
       "**/test-results/**",
       "**/playwright-report/**",

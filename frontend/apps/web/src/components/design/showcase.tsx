@@ -4,7 +4,7 @@ import { BookOpenCheck, CloudOff, Inbox, Plus, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { AiSolutionPanel, type AiPanelState } from "@/components/ai-solution-panel";
-import { AppShell, studentNav } from "@/components/app-shell";
+import { AppShell, showcaseNav } from "@/components/app-shell";
 import {
   accentScale,
   neutralScale,
@@ -333,7 +333,7 @@ export function Showcase() {
       <Section id="kabuk" title="Uygulama kabuğu" description="Mobilde alt sekme çubuğu, 1024 piksel ve üzerinde yan menü. Tarayıcı genişliğine göre değişir.">
         <div className="overflow-hidden rounded-lg border border-border shadow-md">
           <AppShell
-            items={studentNav}
+            items={showcaseNav}
             activeId="pano"
             userName="Ahmet Kaya"
             roleLabel="Öğrenci"

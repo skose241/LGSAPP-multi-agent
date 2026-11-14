@@ -210,7 +210,19 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
+        var user = await _userManager.FindByIdAsync(userId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
         await _refreshTokens.RevokeAllAsync(userId, RefreshRevokeReasons.LogoutAll, cancellationToken);
+        var stamp = await _userManager.UpdateSecurityStampAsync(user);
+        if (!stamp.Succeeded)
+        {
+            return IdentityProblem(stamp);
+        }
+
         return NoContent();
     }
 

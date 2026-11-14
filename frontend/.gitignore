@@ -10,3 +10,5 @@ blob-report
 .env.local
 .env*.local
 next-env.d.ts
+.next-e2e
+.e2e

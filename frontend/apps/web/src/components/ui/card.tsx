@@ -14,8 +14,12 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
   return <div className={cn("flex flex-col gap-1 p-4 pb-0 md:p-5 md:pb-0", className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn("text-lg leading-snug", className)} {...props} />;
+export function CardTitle({
+  className,
+  as: Heading = "h3",
+  ...props
+}: HTMLAttributes<HTMLHeadingElement> & { as?: "h2" | "h3" }) {
+  return <Heading className={cn("text-lg leading-snug", className)} {...props} />;
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {

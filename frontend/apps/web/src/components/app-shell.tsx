@@ -1,5 +1,8 @@
+"use client";
+
 import { Bell, GraduationCap, House, ImagePlus, ListChecks, Trophy, UserRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { NotificationBadge } from "@/components/notification-badge";
 import { cn } from "@/lib/utils";
@@ -12,7 +15,7 @@ export interface NavItem {
   badge?: number;
 }
 
-export const studentNav: NavItem[] = [
+export const showcaseNav: NavItem[] = [
   { id: "pano", label: "Pano", href: "/tasarim#pano", icon: House },
   { id: "coz", label: "Soru Çöz", href: "/tasarim#coz", icon: ListChecks },
   { id: "yukle", label: "Soru Yükle", href: "/tasarim#yukle", icon: ImagePlus },
@@ -22,34 +25,62 @@ export const studentNav: NavItem[] = [
 
 interface AppShellProps {
   items: NavItem[];
-  activeId: string;
+  tabs?: NavItem[];
+  activeId?: string;
   userName: string;
   roleLabel: string;
   contained?: boolean;
   notificationCount?: number;
+  notificationsHref?: string;
+  sidebarActions?: ReactNode;
   children: ReactNode;
+}
+
+function matchActive(items: NavItem[], pathname: string): string | undefined {
+  let best: NavItem | undefined;
+  for (const item of items) {
+    const base = item.href.split("#")[0] ?? item.href;
+    const hit = base === "/" ? pathname === "/" : pathname === base || pathname.startsWith(`${base}/`);
+    if (hit && (!best || base.length > (best.href.split("#")[0] ?? "").length)) best = item;
+  }
+  return best?.id;
 }
 
 export function AppShell({
   items,
+  tabs,
   activeId,
   userName,
   roleLabel,
   contained = false,
   notificationCount = 0,
+  notificationsHref,
+  sidebarActions,
   children,
 }: AppShellProps) {
+  const pathname = usePathname();
+  const active = activeId ?? matchActive([...items, ...(tabs ?? [])], pathname);
+  const tabItems = tabs ?? items;
   const position = contained ? "absolute" : "fixed";
   const Side = contained ? "div" : "aside";
   const Top = contained ? "div" : "header";
   const Content = contained ? "div" : "main";
+
+  const bellClasses = "relative flex size-11 items-center justify-center rounded-pill text-foreground hover:bg-surface-muted";
+  const bellLabel = notificationCount > 0 ? `Bildirimler, ${notificationCount} okunmamış` : "Bildirimler";
+  const bellContent = (
+    <>
+      <Bell className="size-6" aria-hidden="true" />
+      <NotificationBadge count={notificationCount} className="absolute right-1 top-1" />
+    </>
+  );
 
   return (
     <div className={cn("bg-background", contained ? "relative h-[680px] overflow-hidden" : "min-h-dvh")}>
       <Side
         className={cn(
           position,
-          "inset-y-0 left-0 z-20 hidden w-sidebar flex-col gap-6 border-r border-border bg-surface p-4 lg:flex",
+          "inset-y-0 left-0 z-20 hidden w-sidebar flex-col gap-6 overflow-y-auto border-r border-border bg-surface p-4 lg:flex",
         )}
       >
         <div className="flex items-center gap-3 px-2 pt-2">
@@ -60,12 +91,15 @@ export function AppShell({
         </div>
         <nav aria-label="Ana menü" className="flex flex-1 flex-col gap-1">
           {items.map((item) => (
-            <NavLink key={item.id} item={item} active={item.id === activeId} layout="side" />
+            <NavLink key={item.id} item={item} active={item.id === active} layout="side" />
           ))}
         </nav>
-        <div className="rounded-md bg-surface-muted p-3">
-          <p className="text-sm font-semibold">{userName}</p>
-          <p className="text-xs text-muted-foreground">{roleLabel}</p>
+        <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-3">
+          <div>
+            <p className="text-sm font-semibold">{userName}</p>
+            <p className="text-xs text-muted-foreground">{roleLabel}</p>
+          </div>
+          {sidebarActions}
         </div>
       </Side>
 
@@ -74,14 +108,15 @@ export function AppShell({
           <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center justify-between px-safe">
             <span className="font-display text-lg font-bold lg:sr-only">LGS Hazırlık</span>
             <span className="hidden text-sm text-muted-foreground lg:block">{roleLabel}</span>
-            <button
-              type="button"
-              className="relative flex size-11 items-center justify-center rounded-pill text-foreground hover:bg-surface-muted"
-              aria-label={notificationCount > 0 ? `Bildirimler, ${notificationCount} okunmamış` : "Bildirimler"}
-            >
-              <Bell className="size-6" aria-hidden="true" />
-              <NotificationBadge count={notificationCount} className="absolute right-1 top-1" />
-            </button>
+            {notificationsHref ? (
+              <Link href={notificationsHref} className={bellClasses} aria-label={bellLabel}>
+                {bellContent}
+              </Link>
+            ) : (
+              <button type="button" className={bellClasses} aria-label={bellLabel}>
+                {bellContent}
+              </button>
+            )}
           </div>
         </Top>
         <Content className="mx-auto w-full max-w-screen-2xl px-safe py-5 pb-28 lg:pb-8">{children}</Content>
@@ -95,9 +130,9 @@ export function AppShell({
         )}
       >
         <ul className="mx-auto flex max-w-screen-md items-stretch justify-around">
-          {items.map((item) => (
+          {tabItems.map((item) => (
             <li key={item.id} className="flex-1">
-              <NavLink item={item} active={item.id === activeId} layout="tab" />
+              <NavLink item={item} active={item.id === active} layout="tab" />
             </li>
           ))}
         </ul>
