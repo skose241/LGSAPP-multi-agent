@@ -250,3 +250,18 @@ CommentDto { id, parentId?, depth, solutionId?, status: "active"|"deleted"|"remo
 - AI bağlantısı `IQuestionGenerator` arkasında; Gemini modülüne kadar "Yapay zekâ yapılandırılmadı" hata logu yazılır. Development'ta isteğe bağlı sahte üretici.
 - Konu planı ve ders programı uçları bu modülde, canlı kurallarla: öğretmen yalnız branş dersini planlar, bugünün konusu 16:45'e kadar değişir, kullanılmış plan kilitli, 30 gün ileriye plan, hedef sayıyı yalnız müdür değiştirir. Ders programını müdür yönetir.
 - Canlıdaki "Yetkisiz erişim" hatası: görev betikleri URL token'ını uygulama açılışında ortam değişkeninden bir kez okunan değerle karşılaştırıyordu; değer boş kalınca her istek reddediliyordu. Yeni sistemde HTTP tetikleme/token yok.
+
+## Revizyon 6 (Oturum 5, 2026-11-14): Branş dersi atama ve sınırlı yeniden deneme
+
+### Öğretmen branş dersi
+- `POST /api/admin/users` gövdesine isteğe bağlı `branchLessonId`: yalnız öğretmen rolünde; başka rolde 400, ders yok/pasif ise 400.
+- `PUT /api/admin/users/{id}/branch-lesson` gövde `{ branchLessonId: int|null }`: yalnız öğretmen hesabı, null ile kaldırma serbest, müdür yetkisi. Kullanıcıda RowVersion yok; Identity `ConcurrencyStamp` çakışması 409.
+- `AdminUserDto` artık `branchLessonId` ve `branchLessonName` döner. Migration yok (kolon ve FK mevcut).
+- Branş değişince mevcut `DailyTopicPlan` kayıtlarına dokunulmaz; eski derse ait kullanılmamış planlar kalır, öğretmen yeni branşı dışında olduğu için onları düzenleyemez, müdür düzenleyebilir.
+
+### Zamanlayıcı yeniden deneme
+- Generate "bitti": Succeeded veya PartiallySucceeded (eksikleri 18:15 Complete tamamlar). Failed ve Interrupted bitmiş sayılmaz.
+- Complete "bitti": yalnız Succeeded. Failed/PartiallySucceeded ise `RetryDelayMinutes` sonra yeniden denenir.
+- Sınırlar: aynı TR gününde, tür başına en fazla `MaxTimerAttemptsPerDay` zamanlayıcı denemesi; manuel çalıştırmalar sayıya girmez ama başarıyla bitmişse "bitti" sayılır; Generate ve Complete 23:00 (`CatchUpGenerateUntil`) sonrası başlatılmaz. Ertesi gün sayaç sıfırlanır.
+- `soruUretimAktifMi=0` Succeeded (0 üretim) biter; AI yapılandırılmamışsa Failed olur ve deneme sınırı tür başına günde en fazla 3 run ile keser.
+- Yeniden deneme mevcut eksik-slot algoritmasıyla yalnız eksikleri üretir.

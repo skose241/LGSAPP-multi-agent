@@ -71,12 +71,95 @@ public class SchedulerPlannerTests
     }
 
     [Fact]
-    public void Failed_generate_counts_as_done_and_is_not_repeated()
+    public void Failed_generate_is_not_retried_before_delay_and_is_retried_after()
     {
         var generate = Run(GenerationKind.Generate, GenerationRunStatus.Failed, At(17, 30), At(17, 31));
-        var plan = SchedulerPlanner.Plan(Options, At(17, 50), Today, [AssignmentsDone(), generate]);
+
+        var early = SchedulerPlanner.Plan(Options, At(17, 35), Today, [AssignmentsDone(), generate]);
+        Assert.DoesNotContain(GenerationKind.Generate, early.Due);
+        Assert.Equal(At(17, 41), early.NextWakeUtc);
+
+        var ready = SchedulerPlanner.Plan(Options, At(17, 41), Today, [AssignmentsDone(), generate]);
+        Assert.Contains(GenerationKind.Generate, ready.Due);
+    }
+
+    [Fact]
+    public void Failed_generate_stops_after_max_timer_attempts()
+    {
+        var runs = new List<RunInfo> { AssignmentsDone() };
+        for (var i = 0; i < Options.MaxTimerAttemptsPerDay; i++)
+        {
+            runs.Add(Run(GenerationKind.Generate, GenerationRunStatus.Failed, At(17, 30 + i * 12), At(17, 31 + i * 12)));
+        }
+
+        var plan = SchedulerPlanner.Plan(Options, At(20, 0), Today, runs);
 
         Assert.DoesNotContain(GenerationKind.Generate, plan.Due);
+    }
+
+    [Fact]
+    public void Failed_generate_is_not_retried_after_catch_up_limit()
+    {
+        var generate = Run(GenerationKind.Generate, GenerationRunStatus.Failed, At(22, 40), At(22, 41));
+
+        var plan = SchedulerPlanner.Plan(Options, At(23, 1), Today, [AssignmentsDone(), generate]);
+
+        Assert.DoesNotContain(GenerationKind.Generate, plan.Due);
+    }
+
+    [Fact]
+    public void Failed_generate_attempts_reset_on_next_day()
+    {
+        var tomorrow = Today.AddDays(1);
+        var plan = SchedulerPlanner.Plan(Options, At(17, 30, day: tomorrow), tomorrow, []);
+
+        Assert.Contains(GenerationKind.Generate, plan.Due);
+    }
+
+    [Fact]
+    public void Partially_succeeded_generate_is_left_to_complete()
+    {
+        var generate = Run(GenerationKind.Generate, GenerationRunStatus.PartiallySucceeded, At(17, 30), At(17, 40), 3);
+
+        var plan = SchedulerPlanner.Plan(Options, At(18, 0), Today, [AssignmentsDone(), generate]);
+
+        Assert.DoesNotContain(GenerationKind.Generate, plan.Due);
+        Assert.DoesNotContain(GenerationKind.Complete, plan.Due);
+        var atComplete = SchedulerPlanner.Plan(Options, At(18, 15), Today, [AssignmentsDone(), generate]);
+        Assert.Contains(GenerationKind.Complete, atComplete.Due);
+    }
+
+    [Theory]
+    [InlineData(GenerationRunStatus.Failed)]
+    [InlineData(GenerationRunStatus.PartiallySucceeded)]
+    public void Unsuccessful_complete_is_retried_after_delay(GenerationRunStatus status)
+    {
+        var generate = Run(GenerationKind.Generate, GenerationRunStatus.Succeeded, At(17, 30), At(17, 40), 3);
+        var complete = Run(GenerationKind.Complete, status, At(18, 15), At(18, 20), 1);
+        var runs = new[] { AssignmentsDone(), generate, complete };
+
+        var early = SchedulerPlanner.Plan(Options, At(18, 25), Today, runs);
+        Assert.DoesNotContain(GenerationKind.Complete, early.Due);
+        Assert.Equal(At(18, 30), early.NextWakeUtc);
+
+        var ready = SchedulerPlanner.Plan(Options, At(18, 30), Today, runs);
+        Assert.Contains(GenerationKind.Complete, ready.Due);
+    }
+
+    [Fact]
+    public void Complete_stops_after_max_attempts_and_after_catch_up_limit()
+    {
+        var generate = Run(GenerationKind.Generate, GenerationRunStatus.Succeeded, At(17, 30), At(17, 40), 3);
+        var runs = new List<RunInfo> { AssignmentsDone(), generate };
+        for (var i = 0; i < Options.MaxTimerAttemptsPerDay; i++)
+        {
+            runs.Add(Run(GenerationKind.Complete, GenerationRunStatus.Failed, At(18, 15 + i * 12), At(18, 16 + i * 12)));
+        }
+
+        Assert.DoesNotContain(GenerationKind.Complete, SchedulerPlanner.Plan(Options, At(20, 0), Today, runs).Due);
+
+        var oneFailure = new[] { AssignmentsDone(), generate, Run(GenerationKind.Complete, GenerationRunStatus.Failed, At(22, 40), At(22, 41)) };
+        Assert.DoesNotContain(GenerationKind.Complete, SchedulerPlanner.Plan(Options, At(23, 5), Today, oneFailure).Due);
     }
 
     [Fact]

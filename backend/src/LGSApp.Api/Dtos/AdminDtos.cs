@@ -7,7 +7,10 @@ public record CreateUserRequest(
     [Required(ErrorMessage = "Ad zorunludur."), StringLength(100, ErrorMessage = "Ad en fazla {1} karakter olabilir.")] string FirstName,
     [Required(ErrorMessage = "Soyad zorunludur."), StringLength(100, ErrorMessage = "Soyad en fazla {1} karakter olabilir.")] string LastName,
     [Required(ErrorMessage = "Rol zorunludur.")] string Role,
-    [StringLength(50, ErrorMessage = "Sınıf en fazla {1} karakter olabilir.")] string? ClassName);
+    [StringLength(50, ErrorMessage = "Sınıf en fazla {1} karakter olabilir.")] string? ClassName,
+    int? BranchLessonId = null);
+
+public record UpdateBranchLessonRequest(int? BranchLessonId);
 
 public record AdminUserDto(
     int Id,
@@ -21,7 +24,9 @@ public record AdminUserDto(
     DateTime CreatedAt,
     DateTime? LastLoginAt,
     int? CreatedByUserId,
-    bool IsSystemAccount);
+    bool IsSystemAccount,
+    int? BranchLessonId,
+    string? BranchLessonName);
 
 public record CreatedUserResponse(AdminUserDto User, string OneTimePassword);
 

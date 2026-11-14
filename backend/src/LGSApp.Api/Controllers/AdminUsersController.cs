@@ -41,18 +41,57 @@ public class AdminUsersController : ControllerBase
         }
 
         var rows = await query.OrderBy(x => x.User.Id).ToListAsync(cancellationToken);
-        return Ok(rows.Select(x => ToDto(x.User, x.RoleName)));
+        var names = await LessonNamesAsync(cancellationToken);
+        return Ok(rows.Select(x => ToDto(x.User, x.RoleName, names)));
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<AdminUserDto>> Get(int id, CancellationToken cancellationToken)
     {
         var row = await UserRows().Where(x => x.User.Id == id).FirstOrDefaultAsync(cancellationToken);
-        return row is null ? NotFound() : Ok(ToDto(row.User, row.RoleName));
+        if (row is null)
+        {
+            return NotFound();
+        }
+
+        var names = await LessonNamesAsync(cancellationToken);
+        return Ok(ToDto(row.User, row.RoleName, names));
+    }
+
+    [HttpPut("{id:int}/branch-lesson")]
+    public async Task<ActionResult<AdminUserDto>> SetBranchLesson(int id, UpdateBranchLessonRequest request, CancellationToken cancellationToken)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString(CultureInfo.InvariantCulture));
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        if (!await _userManager.IsInRoleAsync(user, Roles.Ogretmen))
+        {
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: BranchOnlyForTeacherMessage);
+        }
+
+        if (request.BranchLessonId is { } lessonId && !await LessonExistsAsync(lessonId, cancellationToken))
+        {
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: BranchLessonNotFoundMessage);
+        }
+
+        user.BranchLessonId = request.BranchLessonId;
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            return result.Errors.Any(e => e.Code == nameof(IdentityErrorDescriber.ConcurrencyFailure))
+                ? Problem(statusCode: StatusCodes.Status409Conflict, title: "Kullanıcı başka biri tarafından değiştirilmiş. Yeniden deneyin.")
+                : IdentityProblem(result);
+        }
+
+        var names = await LessonNamesAsync(cancellationToken);
+        return Ok(ToDto(user, Roles.Ogretmen, names));
     }
 
     [HttpPost]
-    public async Task<ActionResult<CreatedUserResponse>> Create(CreateUserRequest request)
+    public async Task<ActionResult<CreatedUserResponse>> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
         var role = request.Role.Trim().ToLowerInvariant();
         if (!Roles.All.Contains(role))
@@ -63,6 +102,19 @@ public class AdminUsersController : ControllerBase
         if (role == Roles.Ai)
         {
             return SystemAccountProblem();
+        }
+
+        if (request.BranchLessonId is { } branchLessonId)
+        {
+            if (role != Roles.Ogretmen)
+            {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: BranchOnlyForTeacherMessage);
+            }
+
+            if (!await LessonExistsAsync(branchLessonId, cancellationToken))
+            {
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: BranchLessonNotFoundMessage);
+            }
         }
 
         var userName = UserNameRules.Canonicalize(request.UserName);
@@ -108,7 +160,8 @@ public class AdminUsersController : ControllerBase
                     ClassName = string.IsNullOrWhiteSpace(request.ClassName) ? null : request.ClassName.Trim(),
                     MustChangePassword = true,
                     CreatedAt = DateTime.UtcNow,
-                    CreatedByUserId = createdBy
+                    CreatedByUserId = createdBy,
+                    BranchLessonId = request.BranchLessonId
                 };
 
                 var created = await _userManager.CreateAsync(candidate, password);
@@ -139,7 +192,8 @@ public class AdminUsersController : ControllerBase
             return IdentityProblem(failure ?? IdentityResult.Failed());
         }
 
-        return CreatedAtAction(nameof(Get), new { id = user.Id }, new CreatedUserResponse(ToDto(user, role), password));
+        var lessonNames = await LessonNamesAsync(cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = user.Id }, new CreatedUserResponse(ToDto(user, role, lessonNames), password));
     }
 
     [HttpPost("{id:int}/ban")]
@@ -213,8 +267,31 @@ public class AdminUsersController : ControllerBase
     private int? CurrentUserId() =>
         int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? id : null;
 
-    private static AdminUserDto ToDto(ApplicationUser u, string? role) =>
-        new(u.Id, u.UserName ?? string.Empty, u.FirstName, u.LastName, u.ClassName, role, u.IsBanned, u.MustChangePassword, u.CreatedAt, u.LastLoginAt, u.CreatedByUserId, role == Roles.Ai);
+    private const string BranchOnlyForTeacherMessage = "Branş dersi yalnızca öğretmen hesaplarına atanabilir.";
+    private const string BranchLessonNotFoundMessage = "Seçilen ders bulunamadı veya aktif değil.";
+
+    private Task<bool> LessonExistsAsync(int lessonId, CancellationToken cancellationToken) =>
+        _db.Lessons.AsNoTracking().AnyAsync(l => l.Id == lessonId && l.IsActive, cancellationToken);
+
+    private Task<Dictionary<int, string>> LessonNamesAsync(CancellationToken cancellationToken) =>
+        _db.Lessons.AsNoTracking().ToDictionaryAsync(l => l.Id, l => l.Name, cancellationToken);
+
+    private static AdminUserDto ToDto(ApplicationUser u, string? role, IReadOnlyDictionary<int, string> lessonNames) =>
+        new(
+            u.Id,
+            u.UserName ?? string.Empty,
+            u.FirstName,
+            u.LastName,
+            u.ClassName,
+            role,
+            u.IsBanned,
+            u.MustChangePassword,
+            u.CreatedAt,
+            u.LastLoginAt,
+            u.CreatedByUserId,
+            role == Roles.Ai,
+            u.BranchLessonId,
+            u.BranchLessonId is { } lessonId ? lessonNames.GetValueOrDefault(lessonId) : null);
 
     private ObjectResult SystemAccountProblem() =>
         Problem(statusCode: StatusCodes.Status400BadRequest, title: SystemAccounts.ManagedMessage);

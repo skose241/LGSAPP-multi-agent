@@ -58,7 +58,7 @@ public static class SchedulerPlanner
         if (generateFinished is not null)
         {
             var completeEarliest = Max(completeAt, generateFinished.FinishedAt!.Value.AddMinutes(o.CompleteMinGapMinutes));
-            Evaluate(GenerationKind.Complete, completeEarliest, IsDoneByFinish(runs, GenerationKind.Complete), true, generationGroupBusy);
+            Evaluate(GenerationKind.Complete, completeEarliest, IsDoneByFinish(runs, GenerationKind.Complete), nowUtc <= catchUpUntil, generationGroupBusy);
         }
         else if (!generateDone && nowUtc <= catchUpUntil)
         {
@@ -122,7 +122,7 @@ public static class SchedulerPlanner
 
             var ready = earliest;
             var lastFailure = runs
-                .Where(r => r.Kind == kind && r.Status is GenerationRunStatus.Failed or GenerationRunStatus.Interrupted && r.FinishedAt is not null)
+                .Where(r => r.Kind == kind && r.Status is GenerationRunStatus.Failed or GenerationRunStatus.Interrupted or GenerationRunStatus.PartiallySucceeded && r.FinishedAt is not null)
                 .Select(r => r.FinishedAt!.Value)
                 .DefaultIfEmpty()
                 .Max();
@@ -148,7 +148,9 @@ public static class SchedulerPlanner
     private static bool IsProduction(GenerationKind kind) => kind is GenerationKind.Generate or GenerationKind.Complete;
 
     private static bool IsDoneByFinish(IReadOnlyList<RunInfo> runs, GenerationKind kind) =>
-        runs.Any(r => r.Kind == kind && r.Status is not (GenerationRunStatus.Running or GenerationRunStatus.Interrupted));
+        runs.Any(r => r.Kind == kind && (kind == GenerationKind.Generate
+            ? r.Status is GenerationRunStatus.Succeeded or GenerationRunStatus.PartiallySucceeded
+            : r.Status == GenerationRunStatus.Succeeded));
 
     private static bool IsDoneBySuccess(IReadOnlyList<RunInfo> runs, GenerationKind kind) =>
         runs.Any(r => r.Kind == kind && r.Status is GenerationRunStatus.Succeeded or GenerationRunStatus.PartiallySucceeded);
