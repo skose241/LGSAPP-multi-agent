@@ -3,6 +3,7 @@ using System.Text.Json;
 using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
+using LGSApp.Infrastructure.Services.Ai;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Notifications;
 using LGSApp.Infrastructure.Services.Settings;
@@ -26,8 +27,6 @@ public sealed class AnswerKeyService(
     INotificationService notifications,
     TurkeyTime clock) : IAnswerKeyService
 {
-    private const int NoteMaxLength = 500;
-
     public async Task<ServiceResult<AnswerKeyChangeView>> ChangeAsync(Actor actor, int questionId, ChangeAnswerKeyCommand command, CancellationToken cancellationToken = default)
     {
         if (!actor.IsModerator)
@@ -45,10 +44,10 @@ public sealed class AnswerKeyService(
             return Fail.Validation("Sürüm bilgisi zorunludur.");
         }
 
-        var note = NormalizeNote(command.Note);
-        if (note is not null && note.Length > NoteMaxLength)
+        var invalidNote = AnswerKeyReviewNote.TryPrepare(command.Note, out var note);
+        if (invalidNote is { } noteFailure)
         {
-            return Fail.Validation($"Not en fazla {NoteMaxLength} karakter olabilir.");
+            return noteFailure;
         }
 
         var normalized = command with { Note = note };
@@ -76,6 +75,12 @@ public sealed class AnswerKeyService(
         if (question is null)
         {
             return Fail.NotFound("Soru bulunamadı.");
+        }
+
+        var denied = await AnswerKeyScope.AuthorizeAsync(db, actor, question.LessonId, cancellationToken);
+        if (denied is { } scopeFailure)
+        {
+            return scopeFailure;
         }
 
         if (command.RowVersion is not null && !question.RowVersion.AsSpan().SequenceEqual(command.RowVersion))
@@ -168,8 +173,19 @@ public sealed class AnswerKeyService(
         question.CorrectOption = newOption;
         question.CorrectOptionChangedAt = now;
         question.CorrectOptionChangedByUserId = actor.UserId;
+        var wasDisputed = question.IsAnswerDisputed;
         question.IsAnswerDisputed = false;
         question.AnswerDisputedAt = null;
+        question.AnswerKeyReviewedAt = now;
+        question.AnswerKeyReviewedByUserId = actor.UserId;
+        question.AnswerKeyReviewNote = null;
+
+        var aiSolution = await db.Solutions
+            .FirstOrDefaultAsync(s => s.QuestionId == questionId && s.Type == SolutionType.Ai && !s.IsDeleted, cancellationToken);
+        if (aiSolution is not null)
+        {
+            AnswerKeyAiSolutionRules.Apply(aiSolution, newOption, wasDisputed, now);
+        }
 
         db.PointTransactions.AddRange(corrections);
         await ApplyUserDeltasAsync(userDeltas, cancellationToken);
@@ -268,11 +284,5 @@ public sealed class AnswerKeyService(
             AssignmentId = assignmentId,
             CreatedAt = now
         };
-    }
-
-    private static string? NormalizeNote(string? note)
-    {
-        var trimmed = note?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 }

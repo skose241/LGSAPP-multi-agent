@@ -15,7 +15,7 @@ namespace LGSApp.Api.Controllers;
 [ApiController]
 [Route("api/questions")]
 [Authorize(Policy = Policies.Kullanici)]
-public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes, IAiSolutionService aiSolutions) : ControllerBase
+public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes, IAiSolutionService aiSolutions, IAnswerDisputeService disputes) : ControllerBase
 {
     [HttpPost]
     [EnableRateLimiting(RateLimitingExtensions.QuestionCreatePolicy)]
@@ -61,6 +61,11 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
         var command = new ChangeAnswerKeyCommand(request.CorrectOption, request.RowVersion, request.Note);
         return (await answerKeys.ChangeAsync(User.ToActor(), id, command, cancellationToken)).ToActionResult(this);
     }
+
+    [HttpPost("{id:int}/answer-dispute/dismiss")]
+    [Authorize(Policy = Policies.OgretmenOrMudur)]
+    public async Task<IActionResult> DismissAnswerDispute(int id, DismissAnswerDisputeRequest request, CancellationToken cancellationToken) =>
+        (await disputes.DismissAsync(User.ToActor(), id, new DismissDisputeCommand(request.RowVersion, request.Note), cancellationToken)).ToActionResult(this);
 
     [HttpPut("{id:int}/like")]
     public async Task<IActionResult> Like(int id, CancellationToken cancellationToken) =>

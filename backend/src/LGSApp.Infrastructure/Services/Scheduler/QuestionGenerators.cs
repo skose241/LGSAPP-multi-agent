@@ -137,11 +137,26 @@ public static class SchedulerMessages
     public const string AiInvalidOutput = "Yanıt beklenen biçimde değil.";
     public const string AiInvalidRequest = "Yapay zekâ isteği geçersiz.";
     public const string VerificationCallFailedPrefix = "Doğrulama çağrısı başarısız";
+    public const string UnexpectedError = "Beklenmeyen bir hata oluştu.";
     public const string NoTopic = "Bu ders için tanımlı konu yok.";
     public const string GenerationDisabled = "Soru üretimi kapalı.";
     public const string GenerationDisabledManual = "Soru üretimi ayarlardan kapatılmış.";
     public const string AlreadyRunning = "Bu görev şu anda çalışıyor.";
     public const string LeaseExpired = "Kira süresi doldu, devralındı.";
+
+    public static string RunFailureNotice(GenerationKind kind)
+    {
+        var name = kind switch
+        {
+            GenerationKind.Generate => "Günlük soru üretimi",
+            GenerationKind.Complete => "Günlük soru tamamlama",
+            GenerationKind.Publish => "Günlük soru yayınlama",
+            GenerationKind.CloseAssignments => "Ödev kapatma",
+            _ => "Zamanlayıcı"
+        };
+
+        return $"{name} görevi beklenmeyen bir hata nedeniyle tamamlanamadı.";
+    }
 
     public static string? TryForErrorKind(AiErrorKind kind) => kind switch
     {

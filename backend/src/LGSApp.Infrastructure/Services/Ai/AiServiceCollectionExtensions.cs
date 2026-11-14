@@ -62,6 +62,7 @@ public static class AiServiceCollectionExtensions
         services.AddScoped<IAiSolutionWriter, AiSolutionWriter>();
         services.AddScoped<IAiSolutionProducer, AiSolutionProducer>();
         services.AddScoped<IAiSolutionService, AiSolutionService>();
+        services.AddScoped<IAnswerDisputeService, AnswerDisputeService>();
         services.AddScoped<IAiPendingCleanupService, AiPendingCleanupService>();
         services.AddHostedService<AiPendingCleanupStartup>();
 

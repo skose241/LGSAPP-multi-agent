@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Options;
 using LGSApp.Infrastructure.Services.Common;
@@ -38,6 +39,7 @@ public sealed class SchedulerService(
     ISchedulerQueryService queries,
     SchedulerSignals signals,
     IServiceProvider services,
+    IRunNotifier notifier,
     TurkeyTime clock,
     TimeProvider timeProvider,
     IOptions<SchedulerOptions> options,
@@ -77,6 +79,7 @@ public sealed class SchedulerService(
         GenerationRunStatus status;
         JobOutcome outcome;
         var interrupted = false;
+        var runFaulted = false;
         try
         {
             var job = ResolveJob(claim.Kind);
@@ -96,7 +99,8 @@ public sealed class SchedulerService(
         {
             logger.LogError(ex, "Zamanlayıcı görevi başarısız oldu. Çalıştırma {RunId}, tür {Kind}", claim.RunId, claim.Kind);
             status = GenerationRunStatus.Failed;
-            outcome = new JobOutcome(0, 1, $"Beklenmeyen hata: {ex.Message}");
+            outcome = new JobOutcome(0, 1, SchedulerMessages.UnexpectedError);
+            runFaulted = true;
         }
 
         await heartbeatCts.CancelAsync();
@@ -130,6 +134,24 @@ public sealed class SchedulerService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Çalıştırma kapatılamadı; kira süresi dolunca devralınacak. Çalıştırma {RunId}", claim.RunId);
+        }
+
+        if (runFaulted)
+        {
+            using var notifyCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            try
+            {
+                await notifier.NotifyRoleAsync(
+                    Roles.MudurId,
+                    NotificationType.GenerationReport,
+                    SchedulerMessages.RunFailureNotice(claim.Kind),
+                    claim.RunId,
+                    notifyCts.Token);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Görev hata bildirimi gönderilemedi. Çalıştırma {RunId}", claim.RunId);
+            }
         }
     }
 

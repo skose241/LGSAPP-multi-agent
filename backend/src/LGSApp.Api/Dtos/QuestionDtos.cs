@@ -21,6 +21,10 @@ public record ChangeCorrectOptionRequest(
     [Required(ErrorMessage = "Sürüm bilgisi zorunludur.")] byte[] RowVersion,
     [NoControlChars, StringLength(500, ErrorMessage = "Not en fazla {1} karakter olabilir.")] string? Note);
 
+public record DismissAnswerDisputeRequest(
+    [Required(ErrorMessage = "Sürüm bilgisi zorunludur.")] byte[] RowVersion,
+    [NoControlChars, StringLength(500, ErrorMessage = "Not en fazla {1} karakter olabilir.")] string? Note);
+
 public record CreateQuestionRequest(
     [Range(1, int.MaxValue, ErrorMessage = "Ders seçimi zorunludur.")] int LessonId,
     int? TopicId,

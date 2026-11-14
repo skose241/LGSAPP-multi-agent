@@ -24,6 +24,7 @@ public class QuestionConfiguration : IEntityTypeConfiguration<Question>
         b.Property(x => x.OptionC).HasMaxLength(500);
         b.Property(x => x.OptionD).HasMaxLength(500);
         b.Property(x => x.Description).HasMaxLength(4000);
+        b.Property(x => x.AnswerKeyReviewNote).HasMaxLength(500);
         b.Property(x => x.ScheduledPublishDate).HasColumnType("date");
         b.Property(x => x.GenerationDate).HasColumnType("date");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");

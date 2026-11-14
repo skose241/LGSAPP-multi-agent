@@ -27,6 +27,7 @@ public class Question
     public byte? AiSuggestedOption { get; set; }
     public DateTime? AnswerKeyReviewedAt { get; set; }
     public int? AnswerKeyReviewedByUserId { get; set; }
+    public string? AnswerKeyReviewNote { get; set; }
     public bool SolutionNotNeeded { get; set; }
     public DateTime? CorrectOptionChangedAt { get; set; }
     public int? CorrectOptionChangedByUserId { get; set; }

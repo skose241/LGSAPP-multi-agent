@@ -256,7 +256,7 @@ public sealed class GenerationJob(
             logger.LogError(ex, "Soru üretimi beklenmeyen şekilde başarısız oldu. Ders {LessonId}, slot {Slot}", slot.LessonId, slot.Slot);
             try
             {
-                await writer.WriteFailureAsync(slot, $"Beklenmeyen hata: {ex.Message}", null, null, cancellationToken);
+                await writer.WriteFailureAsync(slot, SchedulerMessages.UnexpectedError, null, null, cancellationToken);
             }
             catch (Exception inner) when (inner is not OperationCanceledException)
             {

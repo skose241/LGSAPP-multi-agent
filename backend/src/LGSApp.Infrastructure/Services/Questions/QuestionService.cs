@@ -44,7 +44,9 @@ public sealed record QuestionDetailView(
     bool LikedByMe,
     byte[]? RowVersion,
     string AiSolutionState,
-    DateTime? AnswerKeyReviewedAt);
+    DateTime? AnswerKeyReviewedAt,
+    UserRefView? AnswerKeyReviewedBy,
+    string? AnswerKeyReviewNote);
 
 public interface IQuestionService
 {
@@ -84,6 +86,8 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
                 x.IsAnswerDisputed,
                 x.AiSuggestedOption,
                 x.AnswerKeyReviewedAt,
+                x.AnswerKeyReviewedByUserId,
+                x.AnswerKeyReviewNote,
                 x.RowVersion
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -102,7 +106,8 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        var people = await users.GetAsync([q.AuthorUserId], actor.IsModerator, cancellationToken);
+        var peopleIds = actor.IsModerator && q.AnswerKeyReviewedByUserId is int reviewerId ? new[] { q.AuthorUserId, reviewerId } : [q.AuthorUserId];
+        var people = await users.GetAsync(peopleIds, actor.IsModerator, cancellationToken);
         people.TryGetValue(q.AuthorUserId, out var author);
 
         var currentUserId = actor.UserId;
@@ -174,7 +179,9 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             likedByMe,
             actor.IsModerator ? q.RowVersion : null,
             aiState.State,
-            actor.IsModerator ? q.AnswerKeyReviewedAt : null);
+            actor.IsModerator ? q.AnswerKeyReviewedAt : null,
+            actor.IsModerator && q.AnswerKeyReviewedByUserId is int reviewedBy ? people.GetValueOrDefault(reviewedBy) : null,
+            actor.IsModerator ? q.AnswerKeyReviewNote : null);
 
         return ServiceResult<QuestionDetailView>.Ok(view);
     }

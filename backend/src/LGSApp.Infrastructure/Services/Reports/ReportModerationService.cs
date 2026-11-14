@@ -20,6 +20,14 @@ public enum ReportResolveAction
     BanUser = 3
 }
 
+public static class ReportResolveRules
+{
+    public static bool TouchesAnswerKey(ReportTargetType targetType, ReportResolveAction action, bool groupHasWrongAnswerKey) =>
+        targetType == ReportTargetType.Question
+        && (action == ReportResolveAction.ChangeAnswerKey
+            || (action is ReportResolveAction.Reject or ReportResolveAction.HideContent && groupHasWrongAnswerKey));
+}
+
 public sealed record ReportListQuery(ReportStatus? Status, ReportTargetType? TargetType, ReportReason? Reason, int? QuestionId, int Page, int PageSize);
 
 public sealed record ResolveReportCommand(ReportResolveAction Action, string? Note, byte? CorrectOption, byte[] RowVersion);
@@ -68,6 +76,9 @@ public sealed record ReportQuestionTarget(
     DateTime? PublishedAt,
     int AnswerCount,
     IReadOnlyList<AnswerDistributionView> AnswerDistribution,
+    DateTime? AnswerKeyReviewedAt,
+    UserRefView? AnswerKeyReviewedBy,
+    string? AnswerKeyReviewNote,
     byte[] RowVersion);
 
 public sealed record ReportCommentTarget(
@@ -295,6 +306,28 @@ public sealed class ReportModerationService(
         var group = await SameTarget(db.Reports, report)
             .Where(r => r.Status == ReportStatus.Pending)
             .ToListAsync(token);
+
+        var touchesAnswerKey = ReportResolveRules.TouchesAnswerKey(
+            report.TargetType,
+            command.Action,
+            group.Any(r => r.Reason == ReportReason.WrongAnswerKey));
+        if (touchesAnswerKey)
+        {
+            var lessonId = await db.Questions.AsNoTracking()
+                .Where(q => q.Id == report.QuestionId)
+                .Select(q => (int?)q.LessonId)
+                .FirstOrDefaultAsync(token);
+            if (lessonId is null)
+            {
+                return Fail.NotFound("Soru bulunamadı.");
+            }
+
+            var denied = await AnswerKeyScope.AuthorizeAsync(db, actor, lessonId.Value, token);
+            if (denied is { } scopeFailure)
+            {
+                return scopeFailure;
+            }
+        }
 
         AnswerKeyChangeView? keyChange = null;
 
@@ -588,7 +621,8 @@ public sealed class ReportModerationService(
             .GroupBy(a => a.SelectedOption)
             .Select(g => new AnswerDistributionView(g.Key, g.Count()))
             .ToListAsync(cancellationToken);
-        var people = await users.GetAsync([q.AuthorUserId], true, cancellationToken);
+        var peopleIds = q.AnswerKeyReviewedByUserId is int reviewerId ? new[] { q.AuthorUserId, reviewerId } : [q.AuthorUserId];
+        var people = await users.GetAsync(peopleIds, true, cancellationToken);
 
         return new ReportQuestionTarget(
             q.Id,
@@ -610,6 +644,9 @@ public sealed class ReportModerationService(
             q.PublishedAt,
             distribution.Sum(d => d.Count),
             distribution.OrderBy(d => d.Option).ToList(),
+            q.AnswerKeyReviewedAt,
+            q.AnswerKeyReviewedByUserId is int reviewedBy ? people.GetValueOrDefault(reviewedBy) : null,
+            q.AnswerKeyReviewNote,
             q.RowVersion);
     }
 

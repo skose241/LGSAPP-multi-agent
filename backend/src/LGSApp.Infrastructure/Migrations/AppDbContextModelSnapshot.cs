@@ -979,6 +979,10 @@ namespace LGSApp.Infrastructure.Migrations
                     b.Property<DateTime?>("AnswerDisputedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("AnswerKeyReviewNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime?>("AnswerKeyReviewedAt")
                         .HasColumnType("datetime2");
 
