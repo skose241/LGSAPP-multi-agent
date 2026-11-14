@@ -244,6 +244,101 @@ public class OpenApiContractTests
     }
 
     [Fact]
+    public void Student_endpoints_are_documented()
+    {
+        var pool = Paths["/api/questions"]!["get"]!["responses"]!.AsObject();
+        var stats = Paths["/api/me/stats"]!["get"]!["responses"]!.AsObject();
+        var settings = Paths["/api/settings/public"]!["get"]!["responses"]!.AsObject();
+        var edit = Paths["/api/solutions/{id}"]!["patch"]!["responses"]!.AsObject();
+
+        Assert.True(pool.ContainsKey("200") && pool.ContainsKey("400"));
+        Assert.True(stats.ContainsKey("200") && stats.ContainsKey("403"));
+        Assert.True(settings.ContainsKey("200"));
+        Assert.True(edit.ContainsKey("200") && edit.ContainsKey("404") && edit.ContainsKey("409"));
+    }
+
+    [Fact]
+    public void Pool_query_parameters_are_typed()
+    {
+        var parameters = Paths["/api/questions"]!["get"]!["parameters"]!.AsArray().ToDictionary(p => p!["name"]!.GetValue<string>(), p => p!.AsObject());
+
+        foreach (var name in new[] { "lessonId", "topicId", "source", "answered", "since", "includeHidden", "scheduled", "page", "pageSize" })
+        {
+            Assert.True(parameters.ContainsKey(name), name);
+        }
+
+        Assert.Equal("#/components/schemas/QuestionSource", parameters["source"]["schema"]!["$ref"]!.GetValue<string>());
+        Assert.Equal(["ai", "student", "teacher"], Schema("QuestionSource")["enum"]!.AsArray().Select(v => v!.GetValue<string>()).Order().ToArray());
+    }
+
+    [Fact]
+    public void Pool_item_hides_answer_dependent_fields_as_nullable()
+    {
+        var item = Schema("QuestionPoolItemView")["properties"]!.AsObject();
+
+        Assert.Contains("null", TypesOf(item["correctOption"]));
+        Assert.Contains("null", TypesOf(item["commentCount"]));
+        Assert.Contains(item["myAnswer"]!["oneOf"]!.AsArray(), v => v!["type"]?.GetValue<string>() == "null");
+        Assert.Contains("null", TypesOf(item["isHidden"]));
+        Assert.DoesNotContain("null", TypesOf(item["likeCount"]));
+    }
+
+    [Fact]
+    public void Public_settings_expose_only_the_agreed_keys()
+    {
+        var keys = Schema("PublicSettingsView")["properties"]!.AsObject().Select(p => p.Key).Order().ToArray();
+        string[] expected =
+        [
+            "aciklamaMinKarakter", "aiCozumAktifMi", "cozumMaxKarakter", "gunlukDosyaLimiti", "gunlukSoruYuklemeLimiti",
+            "sikayetMinKarakter", "yorumDuzenlemeDk", "yorumGorunurDerinlik", "yorumMaxDerinlik", "yorumMaxKarakter"
+        ];
+
+        Assert.Equal(expected.Order().ToArray(), keys);
+    }
+
+    [Fact]
+    public void Student_solutions_are_edited_not_deleted()
+    {
+        var properties = Schema("SolutionView")["properties"]!.AsObject();
+        var solution = Paths["/api/solutions/{id}"]!;
+
+        Assert.False(properties.ContainsKey("canDelete"));
+        Assert.Equal("boolean", TypesOf(properties["canEdit"]).Single());
+        Assert.Contains("null", TypesOf(properties["rowVersion"]));
+        Assert.Null(solution["delete"]);
+        Assert.True(solution["patch"]!["responses"]!.AsObject().ContainsKey("409"));
+        Assert.True(solution["patch"]!["responses"]!.AsObject().ContainsKey("404"));
+    }
+
+    [Fact]
+    public void Solution_edit_lock_and_report_target_update_time_are_documented()
+    {
+        var solution = Schema("SolutionView")["properties"]!.AsObject();
+        var target = Schema("ReportSolutionTarget")["properties"]!.AsObject();
+
+        Assert.Contains("string", TypesOf(solution["editLockedReason"]));
+        Assert.Contains("null", TypesOf(solution["editLockedReason"]));
+        Assert.Contains("null", TypesOf(target["updatedAt"]));
+        Assert.Equal("date-time", target["updatedAt"]!["format"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Image_views_expose_optional_thumbnail_fields()
+    {
+        var image = Schema("ImageView");
+        var properties = image["properties"]!.AsObject();
+        var required = image["required"]!.AsArray().Select(v => v!.GetValue<string>()).ToList();
+
+        Assert.Contains("null", TypesOf(properties["thumbnailUrl"]));
+        Assert.Contains("null", TypesOf(properties["thumbnailWidth"]));
+        Assert.Contains("null", TypesOf(properties["thumbnailHeight"]));
+        Assert.Contains("url", required);
+
+        var file = Schema("FileView")["properties"]!.AsObject();
+        Assert.Contains("null", TypesOf(file["thumbnailUrl"]));
+    }
+
+    [Fact]
     public void Problem_schemas_exist()
     {
         Assert.True(Schemas.ContainsKey("ProblemDetails"));

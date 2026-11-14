@@ -9,6 +9,10 @@ public class StoredFile
     public long SizeBytes { get; set; }
     public int? Width { get; set; }
     public int? Height { get; set; }
+    public string? ThumbnailBlobName { get; set; }
+    public int? ThumbnailWidth { get; set; }
+    public int? ThumbnailHeight { get; set; }
+    public long? ThumbnailSizeBytes { get; set; }
     public FilePurpose Purpose { get; set; }
     public FileStatus Status { get; set; } = FileStatus.Pending;
     public int UploadedByUserId { get; set; }

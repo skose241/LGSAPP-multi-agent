@@ -5239,6 +5239,55 @@
         }
       }
     },
+    "/api/me/stats": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentStatsView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/notifications": {
       "get": {
         "tags": [
@@ -5491,6 +5540,137 @@
       }
     },
     "/api/questions": {
+      "get": {
+        "tags": [
+          "Questions"
+        ],
+        "parameters": [
+          {
+            "name": "lessonId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "topicId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QuestionSource"
+            }
+          },
+          {
+            "name": "answered",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "includeHidden",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "scheduled",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionPoolListView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Questions"
@@ -6949,6 +7129,55 @@
         }
       }
     },
+    "/api/settings/public": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSettingsView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/solutions/{id}": {
       "patch": {
         "tags": [
@@ -8174,6 +8403,36 @@
           }
         }
       },
+      "AnswerTotalsView": {
+        "required": [
+          "answered",
+          "correct",
+          "wrong",
+          "successRate"
+        ],
+        "type": "object",
+        "properties": {
+          "answered": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "correct": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wrong": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "successRate": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "AssignmentChangeView": {
         "required": [
           "id",
@@ -8448,6 +8707,38 @@
           "answeredAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "AssignmentParticipationView": {
+        "required": [
+          "assigned",
+          "completed",
+          "partial",
+          "missed",
+          "notStarted"
+        ],
+        "type": "object",
+        "properties": {
+          "assigned": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "partial": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "missed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notStarted": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -9368,6 +9659,23 @@
           }
         }
       },
+      "ContributionStatsView": {
+        "required": [
+          "questionsUploaded",
+          "solutionsWritten"
+        ],
+        "type": "object",
+        "properties": {
+          "questionsUploaded": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "solutionsWritten": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "CreateAssignmentRequest": {
         "required": [
           "lessonId",
@@ -9895,6 +10203,26 @@
           "urlExpiresAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "thumbnailUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "thumbnailWidth": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "thumbnailHeight": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -10020,6 +10348,26 @@
           "expiresAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "thumbnailUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "thumbnailWidth": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "thumbnailHeight": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -10153,6 +10501,40 @@
           "sayisal"
         ],
         "type": "string"
+      },
+      "LessonStatsView": {
+        "required": [
+          "lesson",
+          "answered",
+          "correct",
+          "wrong",
+          "successRate"
+        ],
+        "type": "object",
+        "properties": {
+          "lesson": {
+            "$ref": "#/components/schemas/LessonRefView"
+          },
+          "answered": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "correct": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wrong": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "successRate": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
       },
       "LessonView": {
         "required": [
@@ -10582,6 +10964,67 @@
           }
         }
       },
+      "PeriodStandingView": {
+        "required": [
+          "points",
+          "rank"
+        ],
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rank": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PointsStatsView": {
+        "required": [
+          "total",
+          "weekly",
+          "monthly"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "weekly": {
+            "$ref": "#/components/schemas/PeriodStandingView"
+          },
+          "monthly": {
+            "$ref": "#/components/schemas/PeriodStandingView"
+          }
+        }
+      },
+      "PoolMyAnswerView": {
+        "required": [
+          "selectedOption",
+          "isCorrect",
+          "answeredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "selectedOption": {
+            "type": "integer",
+            "format": "uint8"
+          },
+          "isCorrect": {
+            "type": "boolean"
+          },
+          "answeredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -10621,6 +11064,62 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "PublicSettingsView": {
+        "required": [
+          "aciklamaMinKarakter",
+          "cozumMaxKarakter",
+          "yorumMaxKarakter",
+          "yorumDuzenlemeDk",
+          "yorumMaxDerinlik",
+          "yorumGorunurDerinlik",
+          "sikayetMinKarakter",
+          "gunlukSoruYuklemeLimiti",
+          "gunlukDosyaLimiti",
+          "aiCozumAktifMi"
+        ],
+        "type": "object",
+        "properties": {
+          "aciklamaMinKarakter": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cozumMaxKarakter": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yorumMaxKarakter": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yorumDuzenlemeDk": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yorumMaxDerinlik": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yorumGorunurDerinlik": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sikayetMinKarakter": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gunlukSoruYuklemeLimiti": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gunlukDosyaLimiti": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aiCozumAktifMi": {
+            "type": "boolean"
           }
         }
       },
@@ -10878,6 +11377,167 @@
           },
           "canRequestAiSolution": {
             "type": "boolean"
+          }
+        }
+      },
+      "QuestionPoolItemView": {
+        "required": [
+          "id",
+          "source",
+          "lesson",
+          "topic",
+          "author",
+          "publishedAt",
+          "scheduledPublishDate",
+          "isHidden",
+          "previewText",
+          "image",
+          "optionCount",
+          "hasTextOptions",
+          "isMine",
+          "myAnswer",
+          "correctOption",
+          "likeCount",
+          "likedByMe",
+          "commentCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "source": {
+            "$ref": "#/components/schemas/QuestionSource"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/LessonRefView"
+          },
+          "topic": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TopicRefView"
+              }
+            ]
+          },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserRefView"
+              }
+            ]
+          },
+          "publishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "scheduledPublishDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "isHidden": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "previewText": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "image": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImageView"
+              }
+            ]
+          },
+          "optionCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasTextOptions": {
+            "type": "boolean"
+          },
+          "isMine": {
+            "type": "boolean"
+          },
+          "myAnswer": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PoolMyAnswerView"
+              }
+            ]
+          },
+          "correctOption": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "uint8"
+          },
+          "likeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "likedByMe": {
+            "type": "boolean"
+          },
+          "commentCount": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "QuestionPoolListView": {
+        "required": [
+          "page",
+          "pageSize",
+          "totalCount",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuestionPoolItemView"
+            }
           }
         }
       },
@@ -11550,6 +12210,7 @@
           "isHidden",
           "isDeleted",
           "createdAt",
+          "updatedAt",
           "rowVersion"
         ],
         "type": "object",
@@ -11602,6 +12263,13 @@
           },
           "createdAt": {
             "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "rowVersion": {
@@ -12143,6 +12811,7 @@
           "commentCount",
           "isMine",
           "canEdit",
+          "editLockedReason",
           "rowVersion"
         ],
         "type": "object",
@@ -12211,6 +12880,12 @@
           "canEdit": {
             "type": "boolean"
           },
+          "editLockedReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "rowVersion": {
             "type": [
               "null",
@@ -12231,6 +12906,36 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "StudentStatsView": {
+        "required": [
+          "totals",
+          "lessons",
+          "assignments",
+          "points",
+          "contributions"
+        ],
+        "type": "object",
+        "properties": {
+          "totals": {
+            "$ref": "#/components/schemas/AnswerTotalsView"
+          },
+          "lessons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonStatsView"
+            }
+          },
+          "assignments": {
+            "$ref": "#/components/schemas/AssignmentParticipationView"
+          },
+          "points": {
+            "$ref": "#/components/schemas/PointsStatsView"
+          },
+          "contributions": {
+            "$ref": "#/components/schemas/ContributionStatsView"
           }
         }
       },
@@ -12759,6 +13464,9 @@
       "name": "Lessons"
     },
     {
+      "name": "Me"
+    },
+    {
       "name": "Notifications"
     },
     {
@@ -12769,6 +13477,9 @@
     },
     {
       "name": "Reports"
+    },
+    {
+      "name": "Settings"
     },
     {
       "name": "Solutions"

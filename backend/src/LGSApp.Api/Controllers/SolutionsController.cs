@@ -9,7 +9,7 @@ namespace LGSApp.Api.Controllers;
 
 [ApiController]
 [Route("api/solutions")]
-[Authorize(Policy = Policies.OgretmenOrMudur)]
+[Authorize(Policy = Policies.Kullanici)]
 public class SolutionsController(ISolutionService solutions) : ControllerBase
 {
     [HttpPatch("{id:int}")]

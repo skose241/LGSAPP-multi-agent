@@ -199,7 +199,13 @@ public sealed class ReportService(
             ReportedUserId = solution.AuthorUserId
         };
         var snapshot = solution.Text is null ? "[Metinsiz çözüm]" : Truncate(solution.Text, SnapshotMaxLength);
-        return await SaveAsync(report, actor, command.Reason, description, snapshot, "Bu çözümü zaten şikayet ettiniz.", cancellationToken);
+        return await db.ExecuteInTransactionAsync<ServiceResult<ReportCreatedView>>(async token =>
+        {
+            await db.Solutions
+                .Where(s => s.Id == solutionId)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsHidden, x => x.IsHidden), token);
+            return await SaveAsync(report, actor, command.Reason, description, snapshot, "Bu çözümü zaten şikayet ettiniz.", token);
+        }, cancellationToken);
     }
 
     private async Task<ServiceResult<string>> PrepareAsync(Actor actor, CreateReportCommand command, ReportReason[]? allowedReasons, string invalidReasonMessage, CancellationToken cancellationToken)

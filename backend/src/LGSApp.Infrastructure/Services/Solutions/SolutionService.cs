@@ -24,6 +24,7 @@ public sealed record SolutionView(
     int CommentCount,
     bool IsMine,
     bool CanEdit,
+    string? EditLockedReason,
     byte[]? RowVersion);
 
 public sealed record SolutionListView(int QuestionId, IReadOnlyList<SolutionView> Items);
@@ -49,6 +50,8 @@ public sealed class SolutionService(
     IFileUrlService urls,
     TurkeyTime clock) : ISolutionService
 {
+    private const string StaleSolutionMessage = "Çözüm başka bir işlemle değiştirilmiş. Sayfayı yenileyip tekrar deneyin.";
+
     private static readonly FilePurpose[] SolutionPurposes = [FilePurpose.SolutionImage];
 
     public async Task<ServiceResult<SolutionListView>> ListAsync(Actor actor, int questionId, CancellationToken cancellationToken = default)
@@ -89,6 +92,19 @@ public sealed class SolutionService(
         var people = await users.GetAsync(rows.Select(r => r.AuthorUserId), actor.IsModerator, cancellationToken);
         var images = await urls.GetAsync(rows.Select(r => r.ImageFileId), cancellationToken);
 
+        var reported = new HashSet<int>();
+        if (actor.IsStudent)
+        {
+            var ownIds = rows.Where(r => r.AuthorUserId == userId && r.Type == SolutionType.Student).Select(r => r.Id).ToList();
+            if (ownIds.Count > 0)
+            {
+                reported = (await db.Reports.AsNoTracking()
+                    .Where(r => r.SolutionId != null && ownIds.Contains(r.SolutionId.Value) && r.Status == ReportStatus.Pending)
+                    .Select(r => r.SolutionId!.Value)
+                    .ToListAsync(cancellationToken)).ToHashSet();
+            }
+        }
+
         var ordered = rows
             .OrderBy(s => s.Type switch
             {
@@ -98,7 +114,7 @@ public sealed class SolutionService(
             })
             .ThenBy(s => s.CreatedAt)
             .ThenBy(s => s.Id)
-            .Select(s => ToView(s, actor, people, countBySolution.GetValueOrDefault(s.Id), images.Find(s.ImageFileId)))
+            .Select(s => ToView(s, actor, people, countBySolution.GetValueOrDefault(s.Id), images.Find(s.ImageFileId), reported.Contains(s.Id)))
             .ToList();
 
         return ServiceResult<SolutionListView>.Ok(new SolutionListView(questionId, ordered));
@@ -173,9 +189,9 @@ public sealed class SolutionService(
 
     public async Task<ServiceResult<SolutionView>> UpdateAsync(Actor actor, int solutionId, UpdateSolutionCommand command, CancellationToken cancellationToken = default)
     {
-        if (!actor.IsModerator)
+        if (!actor.IsModerator && !actor.IsStudent)
         {
-            return Fail.Forbidden("Yalnızca öğretmen veya müdür çözümü düzenleyebilir.");
+            return Fail.Forbidden("Bu işlem için yetkiniz yok.");
         }
 
         var solution = await db.Solutions.FirstOrDefaultAsync(s => s.Id == solutionId && !s.IsDeleted, cancellationToken);
@@ -184,14 +200,30 @@ public sealed class SolutionService(
             return Fail.NotFound("Çözüm bulunamadı.");
         }
 
-        if (solution.Type != SolutionType.Teacher || (!actor.IsMudur && solution.AuthorUserId != actor.UserId))
+        if (actor.IsStudent)
+        {
+            var ownVisible = solution.Type == SolutionType.Student
+                && solution.AuthorUserId == actor.UserId
+                && !solution.IsHidden
+                && !await db.Questions.AsNoTracking().AnyAsync(q => q.Id == solution.QuestionId && q.IsHidden, cancellationToken);
+            if (!ownVisible)
+            {
+                return Fail.NotFound("Çözüm bulunamadı.");
+            }
+
+            if (await db.Reports.AsNoTracking().AnyAsync(r => r.SolutionId == solution.Id && r.Status == ReportStatus.Pending, cancellationToken))
+            {
+                return Fail.Conflict(SolutionEditRules.PendingReportMessage);
+            }
+        }
+        else if (solution.Type != SolutionType.Teacher || (!actor.IsMudur && solution.AuthorUserId != actor.UserId))
         {
             return Fail.Forbidden("Bu çözümü düzenleme yetkiniz yok.");
         }
 
-        if (!solution.RowVersion.SequenceEqual(command.RowVersion))
+        if (!solution.RowVersion.AsSpan().SequenceEqual(command.RowVersion))
         {
-            return Fail.Conflict("Çözüm başka bir işlemle değiştirilmiş. Sayfayı yenileyip tekrar deneyin.");
+            return Fail.Conflict(StaleSolutionMessage);
         }
 
         var validation = await ValidateContentAsync(actor, command.Text, command.ImageFileId, solution.Id, cancellationToken);
@@ -211,14 +243,14 @@ public sealed class SolutionService(
         }
         catch (DbUpdateConcurrencyException)
         {
-            return Fail.Conflict("Çözüm başka bir işlemle değiştirilmiş. Sayfayı yenileyip tekrar deneyin.");
+            return Fail.Conflict(StaleSolutionMessage);
         }
         catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             return Fail.Conflict("Seçilen fotoğraf daha önce kullanılmış.");
         }
 
-        var people = await users.GetAsync([solution.AuthorUserId], true, cancellationToken);
+        var people = await users.GetAsync([solution.AuthorUserId], actor.IsModerator, cancellationToken);
         var commentCount = await db.Comments.CountAsync(c => c.SolutionId == solution.Id && c.Status == CommentStatus.Active, cancellationToken);
         return ServiceResult<SolutionView>.Ok(ToView(solution, actor, people, commentCount, await urls.GetOneAsync(solution.ImageFileId, cancellationToken)));
     }
@@ -229,6 +261,7 @@ public sealed class SolutionService(
     {
         var maxLength = await settings.GetIntAsync(SettingKeys.CozumMaxKarakter, cancellationToken);
         var text = string.IsNullOrWhiteSpace(rawText) ? null : rawText.Trim();
+        var minLength = actor.IsStudent ? await settings.GetIntAsync(SettingKeys.AciklamaMinKarakter, cancellationToken) : 0;
 
         if (text is null && imageId is null)
         {
@@ -238,6 +271,11 @@ public sealed class SolutionService(
         if (text is not null && text.Length > maxLength)
         {
             return new ContentCheck(null, Fail.Validation($"Çözüm metni en fazla {maxLength} karakter olabilir."));
+        }
+
+        if (text is not null && imageId is null && text.Length < minLength)
+        {
+            return new ContentCheck(null, Fail.Validation($"Çözüm açıklaması en az {minLength} karakter olmalıdır."));
         }
 
         if (imageId is int fileId)
@@ -252,10 +290,12 @@ public sealed class SolutionService(
         return new ContentCheck(text, null);
     }
 
-    internal static SolutionView ToView(Solution s, Actor actor, IReadOnlyDictionary<int, UserRefView> people, int commentCount, ImageView? image)
+    internal static SolutionView ToView(Solution s, Actor actor, IReadOnlyDictionary<int, UserRefView> people, int commentCount, ImageView? image, bool hasPendingReport = false)
     {
         var isMine = s.AuthorUserId == actor.UserId;
-        var canEdit = actor.IsModerator && s.Type == SolutionType.Teacher && (actor.IsMudur || isMine);
+        var canEdit = (actor.IsModerator && s.Type == SolutionType.Teacher && (actor.IsMudur || isMine))
+            || SolutionEditRules.CanEdit(actor.IsStudent, isMine, s.Type, s.IsDeleted, s.IsHidden, hasPendingReport);
+        var lockReason = SolutionEditRules.LockReason(actor.IsStudent, isMine, s.Type, s.IsDeleted, s.IsHidden, hasPendingReport);
         people.TryGetValue(s.AuthorUserId, out var author);
 
         return new SolutionView(
@@ -271,6 +311,7 @@ public sealed class SolutionService(
             commentCount,
             isMine,
             canEdit,
+            lockReason,
             canEdit ? s.RowVersion : null);
     }
 }

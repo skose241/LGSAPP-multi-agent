@@ -48,7 +48,7 @@ public sealed class FileCleanupService(
             var rows = await db.StoredFiles.AsNoTracking()
                 .Where(f => f.Status == FileStatus.Pending && f.CreatedAt < cutoff)
                 .OrderBy(f => f.Id)
-                .Select(f => new { f.Id, f.BlobName })
+                .Select(f => new { f.Id, f.BlobName, f.ThumbnailBlobName })
                 .Take(o.CleanupBatchSize)
                 .ToListAsync(cancellationToken);
             if (rows.Count == 0)
@@ -70,6 +70,10 @@ public sealed class FileCleanupService(
                 if (updated > 0)
                 {
                     await DeleteBlobAsync(row.BlobName);
+                    if (row.ThumbnailBlobName is not null)
+                    {
+                        await DeleteBlobAsync(row.ThumbnailBlobName);
+                    }
                     total++;
                 }
             }
@@ -96,7 +100,7 @@ public sealed class FileCleanupService(
                     && !db.Questions.Any(q => q.ImageFileId == f.Id)
                     && !db.Solutions.Any(s => s.ImageFileId == f.Id))
                 .OrderBy(f => f.Id)
-                .Select(f => new { f.Id, f.BlobName })
+                .Select(f => new { f.Id, f.BlobName, f.ThumbnailBlobName })
                 .Take(o.CleanupBatchSize)
                 .ToListAsync(cancellationToken);
             if (rows.Count == 0)
@@ -122,6 +126,10 @@ public sealed class FileCleanupService(
                 if (updated > 0)
                 {
                     await DeleteBlobAsync(row.BlobName);
+                    if (row.ThumbnailBlobName is not null)
+                    {
+                        await DeleteBlobAsync(row.ThumbnailBlobName);
+                    }
                     changed++;
                 }
             }

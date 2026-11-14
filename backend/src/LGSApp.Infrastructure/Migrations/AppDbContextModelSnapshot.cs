@@ -1676,6 +1676,19 @@ namespace LGSApp.Infrastructure.Migrations
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
 
+                    b.Property<string>("ThumbnailBlobName")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<int?>("ThumbnailHeight")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ThumbnailSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("ThumbnailWidth")
+                        .HasColumnType("int");
+
                     b.Property<int>("UploadedByUserId")
                         .HasColumnType("int");
 
@@ -1687,6 +1700,11 @@ namespace LGSApp.Infrastructure.Migrations
                     b.HasIndex("BlobName")
                         .IsUnique()
                         .HasDatabaseName("UX_StoredFiles_BlobName");
+
+                    b.HasIndex("ThumbnailBlobName")
+                        .IsUnique()
+                        .HasDatabaseName("UX_StoredFiles_ThumbnailBlobName")
+                        .HasFilter("[ThumbnailBlobName] IS NOT NULL");
 
                     b.HasIndex("Status", "CreatedAt")
                         .HasDatabaseName("IX_StoredFiles_Status_CreatedAt");
@@ -1702,6 +1720,8 @@ namespace LGSApp.Infrastructure.Migrations
                     b.ToTable("StoredFiles", null, t =>
                         {
                             t.HasCheckConstraint("CK_StoredFiles_ReadyHasMetadata", "[Status] <> 1 OR ([Width] IS NOT NULL AND [Height] IS NOT NULL AND [ConfirmedAt] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_StoredFiles_ThumbnailComplete", "([ThumbnailBlobName] IS NULL AND [ThumbnailWidth] IS NULL AND [ThumbnailHeight] IS NULL AND [ThumbnailSizeBytes] IS NULL) OR ([ThumbnailBlobName] IS NOT NULL AND [ThumbnailWidth] IS NOT NULL AND [ThumbnailHeight] IS NOT NULL AND [ThumbnailSizeBytes] IS NOT NULL)");
                         });
                 });
 

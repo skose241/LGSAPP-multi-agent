@@ -100,6 +100,7 @@ public sealed record ReportSolutionTarget(
     bool IsHidden,
     bool IsDeleted,
     DateTime CreatedAt,
+    DateTime? UpdatedAt,
     byte[] RowVersion);
 
 public sealed record ReportDetailView(
@@ -671,7 +672,7 @@ public sealed class ReportModerationService(
         }
 
         var people = await users.GetAsync([s.AuthorUserId], true, cancellationToken);
-        return new ReportSolutionTarget(s.Id, s.Type, people.GetValueOrDefault(s.AuthorUserId), s.Text, s.ImageFileId, await urls.GetOneAsync(s.ImageFileId, cancellationToken), s.IsHidden, s.IsDeleted, s.CreatedAt, s.RowVersion);
+        return new ReportSolutionTarget(s.Id, s.Type, people.GetValueOrDefault(s.AuthorUserId), s.Text, s.ImageFileId, await urls.GetOneAsync(s.ImageFileId, cancellationToken), s.IsHidden, s.IsDeleted, s.CreatedAt, s.UpdatedAt, s.RowVersion);
     }
 
     private static string? Summarize(string? snapshot)

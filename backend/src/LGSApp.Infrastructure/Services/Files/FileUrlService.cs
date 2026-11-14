@@ -39,7 +39,7 @@ public sealed class FileUrlService(AppDbContext db, IBlobStore blobs, TurkeyTime
 
         var rows = await db.StoredFiles.AsNoTracking()
             .Where(f => ids.Contains(f.Id) && f.Status == FileStatus.Ready && f.Width != null && f.Height != null)
-            .Select(f => new { f.Id, f.BlobName, Width = f.Width!.Value, Height = f.Height!.Value })
+            .Select(f => new { f.Id, f.BlobName, Width = f.Width!.Value, Height = f.Height!.Value, f.ThumbnailBlobName, f.ThumbnailWidth, f.ThumbnailHeight })
             .ToListAsync(cancellationToken);
 
         var now = new DateTimeOffset(clock.UtcNow, TimeSpan.Zero);
@@ -47,7 +47,18 @@ public sealed class FileUrlService(AppDbContext db, IBlobStore blobs, TurkeyTime
         foreach (var row in rows)
         {
             var uri = blobs.GetReadUri(row.BlobName, now);
-            result[row.Id] = new ImageView(row.Id, uri.Url, row.Width, row.Height, uri.ExpiresAt);
+            var thumbnail = row.ThumbnailBlobName is null || row.ThumbnailWidth is null || row.ThumbnailHeight is null
+                ? null
+                : blobs.GetReadUri(row.ThumbnailBlobName, now);
+            result[row.Id] = new ImageView(
+                row.Id,
+                uri.Url,
+                row.Width,
+                row.Height,
+                uri.ExpiresAt,
+                thumbnail?.Url,
+                thumbnail is null ? null : row.ThumbnailWidth,
+                thumbnail is null ? null : row.ThumbnailHeight);
         }
 
         return result;

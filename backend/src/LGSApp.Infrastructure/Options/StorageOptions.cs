@@ -48,6 +48,8 @@ public class UploadOptions
     public int MinEdge { get; set; } = 200;
     public int MaxEdge { get; set; } = 2000;
     public int JpegQuality { get; set; } = 82;
+    public int ThumbnailEdge { get; set; } = 480;
+    public int ThumbnailQuality { get; set; } = 75;
     public int MaxConcurrentProcessing { get; set; } = 2;
     public int PendingTimeoutMinutes { get; set; } = 30;
     public int UnusedRetentionDays { get; set; } = 7;
@@ -70,6 +72,11 @@ public class UploadOptions
         if (o.JpegQuality is < 30 or > 100)
         {
             return "Uploads:JpegQuality 30 ile 100 arasında olmalıdır.";
+        }
+
+        if (o.ThumbnailEdge < 64 || o.ThumbnailEdge > o.MaxEdge || o.ThumbnailQuality is < 30 or > 100)
+        {
+            return "Uploads:ThumbnailEdge 64 ile MaxEdge arasında, ThumbnailQuality 30 ile 100 arasında olmalıdır.";
         }
 
         if (o.MaxConcurrentProcessing is < 1 or > 16)

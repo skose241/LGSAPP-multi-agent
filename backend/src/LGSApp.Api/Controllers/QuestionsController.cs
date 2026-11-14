@@ -1,6 +1,7 @@
 using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
 using LGSApp.Api.Extensions;
+using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Services.Ai;
 using LGSApp.Infrastructure.Services.Answers;
 using LGSApp.Infrastructure.Services.Likes;
@@ -15,8 +16,26 @@ namespace LGSApp.Api.Controllers;
 [ApiController]
 [Route("api/questions")]
 [Authorize(Policy = Policies.Kullanici)]
-public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes, IAiSolutionService aiSolutions, IAnswerDisputeService disputes) : ControllerBase
+public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes, IAiSolutionService aiSolutions, IAnswerDisputeService disputes, IQuestionPoolService pool) : ControllerBase
 {
+    [HttpGet]
+    [ProducesResponseType<QuestionPoolListView>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> List(
+        [FromQuery] int? lessonId,
+        [FromQuery] int? topicId,
+        [FromQuery] QuestionSource? source,
+        [FromQuery] bool? answered,
+        [FromQuery] int? since,
+        [FromQuery] bool includeHidden = false,
+        [FromQuery] bool scheduled = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = QuestionPoolRules.DefaultPageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new QuestionPoolQuery(lessonId, topicId, source, answered, since, includeHidden, scheduled, page, pageSize);
+        return (await pool.ListAsync(User.ToActor(), query, cancellationToken)).ToActionResult(this);
+    }
+
     [HttpPost]
     [EnableRateLimiting(RateLimitingExtensions.QuestionCreatePolicy)]
     [ProducesResponseType<QuestionDetailView>(StatusCodes.Status201Created)]

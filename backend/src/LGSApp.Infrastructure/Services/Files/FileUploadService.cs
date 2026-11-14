@@ -100,11 +100,18 @@ public sealed class FileUploadService(
         }
 
         var image = processed.Value!;
+        var thumbnail = await TryCreateThumbnailAsync(image, cancellationToken);
         var now = clock.UtcNow;
+        var blobName = $"{prefix}/{now:yyyy}/{now:MM}/{Guid.NewGuid():N}.jpg";
+        var thumbnailBlobName = thumbnail is null ? null : ThumbnailSizing.BlobName(blobName);
         var file = new StoredFile
         {
             Container = blobs.ContainerName,
-            BlobName = $"{prefix}/{now:yyyy}/{now:MM}/{Guid.NewGuid():N}.jpg",
+            BlobName = blobName,
+            ThumbnailBlobName = thumbnailBlobName,
+            ThumbnailWidth = thumbnail?.Width,
+            ThumbnailHeight = thumbnail?.Height,
+            ThumbnailSizeBytes = thumbnail?.Bytes.Length,
             ContentType = StoredContentType,
             SizeBytes = image.Bytes.Length,
             Purpose = purpose,
@@ -130,6 +137,14 @@ public sealed class FileUploadService(
             await using var stream = new MemoryStream(image.Bytes, writable: false);
             await blobs.UploadAsync(file.BlobName, stream, StoredContentType, CacheControl, cancellationToken);
 
+            if (thumbnail is not null && thumbnailBlobName is not null && !await TryUploadThumbnailAsync(thumbnailBlobName, thumbnail, cancellationToken))
+            {
+                file.ThumbnailBlobName = null;
+                file.ThumbnailWidth = null;
+                file.ThumbnailHeight = null;
+                file.ThumbnailSizeBytes = null;
+            }
+
             file.Width = image.Width;
             file.Height = image.Height;
             file.Status = FileStatus.Ready;
@@ -138,7 +153,7 @@ public sealed class FileUploadService(
         }
         catch
         {
-            await AbandonAsync(file);
+            await AbandonAsync(file, thumbnailBlobName);
             throw;
         }
 
@@ -163,6 +178,7 @@ public sealed class FileUploadService(
     public async Task<ServiceResult> DeleteAsync(Actor actor, int fileId, CancellationToken cancellationToken = default)
     {
         string? blobName = null;
+        string? thumbnailName = null;
         var result = await db.ExecuteInTransactionAsync<ServiceResult>(async token =>
         {
             var file = await db.StoredFiles
@@ -185,6 +201,7 @@ public sealed class FileUploadService(
             file.ClientUploadId = null;
             await db.SaveChangesAsync(token);
             blobName = file.BlobName;
+            thumbnailName = file.ThumbnailBlobName;
             return ServiceResult.Ok();
         }, cancellationToken);
 
@@ -197,6 +214,18 @@ public sealed class FileUploadService(
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Silinen dosyanın blob nesnesi kaldırılamadı: {BlobName}", blobName);
+            }
+
+            if (thumbnailName is not null)
+            {
+                try
+                {
+                    await blobs.DeleteIfExistsAsync(thumbnailName, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Silinen dosyanın küçük resmi kaldırılamadı: {BlobName}", thumbnailName);
+                }
             }
         }
 
@@ -211,11 +240,60 @@ public sealed class FileUploadService(
             return null;
         }
 
-        return new FileView(file.Id, file.Purpose, file.ContentType, file.SizeBytes, image.Width, image.Height, image.Url, image.ExpiresAt);
+        return new FileView(file.Id, file.Purpose, file.ContentType, file.SizeBytes, image.Width, image.Height, image.Url, image.ExpiresAt, image.ThumbnailUrl, image.ThumbnailWidth, image.ThumbnailHeight);
     }
 
-    private async Task AbandonAsync(StoredFile file)
+    private async Task<ProcessedImage?> TryCreateThumbnailAsync(ProcessedImage image, CancellationToken cancellationToken)
     {
+        try
+        {
+            return await processor.CreateThumbnailAsync(image.Bytes, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Küçük resim üretilemedi; yükleme küçük resimsiz sürdürülüyor.");
+            return null;
+        }
+    }
+
+    private async Task<bool> TryUploadThumbnailAsync(string thumbnailBlobName, ProcessedImage thumbnail, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var stream = new MemoryStream(thumbnail.Bytes, writable: false);
+            await blobs.UploadAsync(thumbnailBlobName, stream, StoredContentType, CacheControl, cancellationToken);
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Küçük resim yüklenemedi; yükleme küçük resimsiz sürdürülüyor: {BlobName}", thumbnailBlobName);
+            try
+            {
+                await blobs.DeleteIfExistsAsync(thumbnailBlobName, CancellationToken.None);
+            }
+            catch (Exception cleanup)
+            {
+                logger.LogWarning(cleanup, "Yarım kalan küçük resim kaldırılamadı: {BlobName}", thumbnailBlobName);
+            }
+
+            return false;
+        }
+    }
+
+    private async Task AbandonAsync(StoredFile file, string? thumbnailBlobName)
+    {
+        if (thumbnailBlobName is not null)
+        {
+            try
+            {
+                await blobs.DeleteIfExistsAsync(thumbnailBlobName, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Yarım kalan yüklemenin küçük resmi kaldırılamadı: {BlobName}", thumbnailBlobName);
+            }
+        }
+
         try
         {
             await blobs.DeleteIfExistsAsync(file.BlobName, CancellationToken.None);

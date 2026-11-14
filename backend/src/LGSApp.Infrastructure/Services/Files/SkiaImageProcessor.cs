@@ -113,6 +113,31 @@ public sealed class SkiaImageProcessor : IImageProcessor, IDisposable
         }
     }
 
+    public async Task<ProcessedImage?> CreateThumbnailAsync(byte[] processedJpeg, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(processedJpeg);
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            return await Task.Run(() =>
+            {
+                using var data = SKData.CreateCopy(processedJpeg);
+                using var codec = SKCodec.Create(data);
+                if (codec is null || ThumbnailSizing.Compute(codec.Info.Width, codec.Info.Height, options.ThumbnailEdge) is null)
+                {
+                    return null;
+                }
+
+                var result = Encode(processedJpeg, processedJpeg.Length, options.ThumbnailEdge, options.ThumbnailQuality, false);
+                return result.Succeeded ? result.Value : null;
+            }, cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     private async Task<ServiceResult<ProcessedImage>> DecodeAndEncodeAsync(MemoryStream buffer, CancellationToken cancellationToken)
     {
         try

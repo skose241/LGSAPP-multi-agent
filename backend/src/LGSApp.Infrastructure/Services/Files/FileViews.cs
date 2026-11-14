@@ -2,7 +2,15 @@ using LGSApp.Domain.Entities;
 
 namespace LGSApp.Infrastructure.Services.Files;
 
-public sealed record ImageView(int FileId, string Url, int Width, int Height, DateTimeOffset ExpiresAt);
+public sealed record ImageView(
+    int FileId,
+    string Url,
+    int Width,
+    int Height,
+    DateTimeOffset ExpiresAt,
+    string? ThumbnailUrl = null,
+    int? ThumbnailWidth = null,
+    int? ThumbnailHeight = null);
 
 public sealed record FileView(
     int Id,
@@ -12,7 +20,10 @@ public sealed record FileView(
     int Width,
     int Height,
     string Url,
-    DateTimeOffset UrlExpiresAt);
+    DateTimeOffset UrlExpiresAt,
+    string? ThumbnailUrl = null,
+    int? ThumbnailWidth = null,
+    int? ThumbnailHeight = null);
 
 public sealed record FileUploadOutcome(FileView File, bool Created);
 
