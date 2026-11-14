@@ -69,7 +69,7 @@ public static partial class AiPrompts
             builder.Append("</").Append(RecentTag).AppendLine(">");
         }
 
-        return builder.ToString().TrimEnd();
+        return Lf(builder.ToString()).TrimEnd();
     }
 
     public static string SolveSystem() =>
@@ -117,8 +117,10 @@ public static partial class AiPrompts
 
         builder.Append("Çözümü en fazla ").Append(AiRules.SolveMaxWords).AppendLine(" kelimeyle yaz ve diğer şıkların neden yanlış olduğunu kısaca belirt.");
         builder.AppendLine("Markdown kullanma. Matematiksel ifadeler için LaTeX kullan ($...$, $$...$$); küçüktür ve büyüktür için \\lt ve \\gt yaz.");
-        return builder.ToString().TrimEnd();
+        return Lf(builder.ToString()).TrimEnd();
     }
+
+    public static string Lf(string value) => value.Replace("\r\n", "\n").Replace('\r', '\n');
 
     public static string Neutralize(string value) => StripDelimiters(value).Trim();
 

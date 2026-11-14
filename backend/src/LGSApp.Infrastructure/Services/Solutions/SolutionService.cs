@@ -252,7 +252,7 @@ public sealed class SolutionService(
         return new ContentCheck(text, null);
     }
 
-    private static SolutionView ToView(Solution s, Actor actor, IReadOnlyDictionary<int, UserRefView> people, int commentCount, ImageView? image)
+    internal static SolutionView ToView(Solution s, Actor actor, IReadOnlyDictionary<int, UserRefView> people, int commentCount, ImageView? image)
     {
         var isMine = s.AuthorUserId == actor.UserId;
         var canEdit = actor.IsModerator && s.Type == SolutionType.Teacher && (actor.IsMudur || isMine);

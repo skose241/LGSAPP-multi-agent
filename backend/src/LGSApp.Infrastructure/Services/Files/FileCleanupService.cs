@@ -172,6 +172,12 @@ public sealed class FileCleanupWorker(IServiceScopeFactory scopes, IOptions<Uplo
                     {
                         logger.LogInformation("Dosya temizliği tamamlandı. Bekleyen: {Pending}, kullanılmayan: {Unused}", result.PendingDeleted, result.UnusedDeleted);
                     }
+
+                    var released = await scope.ServiceProvider.GetRequiredService<Ai.IAiPendingCleanupService>().RunAsync(stoppingToken);
+                    if (released > 0)
+                    {
+                        logger.LogInformation("Yetim yapay zekâ rezervasyonu iade edildi: {Count}", released);
+                    }
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {

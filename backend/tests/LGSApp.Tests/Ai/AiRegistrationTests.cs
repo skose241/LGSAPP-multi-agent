@@ -70,4 +70,26 @@ public class AiRegistrationTests
         Assert.IsType<GeminiRestClient>(provider.GetRequiredService<IGeminiClient>());
         Assert.NotNull(provider.GetRequiredService<AiCostCalculator>());
     }
+
+    [Theory]
+    [InlineData("Fake", "Development", "", typeof(FakeAiSolver), true)]
+    [InlineData("None", "Production", "", typeof(NotConfiguredAiSolver), false)]
+    [InlineData("Gemini", "Production", "", typeof(NotConfiguredAiSolver), false)]
+    [InlineData("Gemini", "Production", "KEY", typeof(GeminiAiSolver), true)]
+    public void Solver_selection_follows_provider_and_key(string providerName, string environment, string key, Type expected, bool configured)
+    {
+        var values = new Dictionary<string, string?> { ["Ai:Provider"] = providerName, ["Ai:Question:Model"] = "m", ["Ai:Solution:Model"] = "m" };
+        if (key.Length > 0)
+        {
+            values["Ai:Gemini:SolutionApiKey"] = key;
+        }
+
+        using var provider = Build(environment, values);
+        using var scope = provider.CreateScope();
+
+        var solver = scope.ServiceProvider.GetRequiredService<IAiSolver>();
+
+        Assert.IsType(expected, solver);
+        Assert.Equal(configured, solver.IsConfigured);
+    }
 }

@@ -33,6 +33,29 @@ public static class AiServiceCollectionExtensions
                 ? sp.GetRequiredService<FakeQuestionGenerator>()
                 : sp.GetRequiredService<NotConfiguredQuestionGenerator>());
 
+        services.AddSingleton<IFakeAnswerKeySource, DbFakeAnswerKeySource>();
+        services.AddSingleton<FakeAiSolver>();
+        services.AddSingleton<NotConfiguredAiSolver>();
+        services.AddScoped<GeminiAiSolver>();
+        services.AddScoped<IAiSolver>(sp =>
+        {
+            var o = sp.GetRequiredService<IOptions<AiOptions>>().Value;
+            return o.Provider switch
+            {
+                AiProvider.Fake => sp.GetRequiredService<FakeAiSolver>(),
+                AiProvider.Gemini when o.SolutionConfigured => sp.GetRequiredService<GeminiAiSolver>(),
+                _ => sp.GetRequiredService<NotConfiguredAiSolver>()
+            };
+        });
+        services.AddSingleton<AiSolutionCoordinator>();
+        services.AddScoped<IAiCallLogger, AiCallLogger>();
+        services.AddScoped<IAiQuotaService, AiQuotaService>();
+        services.AddScoped<IAiSolutionWriter, AiSolutionWriter>();
+        services.AddScoped<IAiSolutionProducer, AiSolutionProducer>();
+        services.AddScoped<IAiSolutionService, AiSolutionService>();
+        services.AddScoped<IAiPendingCleanupService, AiPendingCleanupService>();
+        services.AddHostedService<AiPendingCleanupStartup>();
+
         services.AddHostedService<AiStartupReporter>();
         return services;
     }

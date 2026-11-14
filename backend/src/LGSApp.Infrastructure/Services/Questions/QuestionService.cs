@@ -1,6 +1,7 @@
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Access;
+using LGSApp.Infrastructure.Services.Ai;
 using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Files;
@@ -18,7 +19,7 @@ public sealed record QuestionStatsView(int AnswerCount, int CorrectCount, int So
 
 public sealed record MyAnswerView(byte SelectedOption, bool IsCorrect, DateTime AnsweredAt, int? SolutionId);
 
-public sealed record QuestionPermissionsView(bool CanAnswer, bool CanSeeDiscussion, bool CanSeeOwnResult, bool CanReport, bool CanModerate);
+public sealed record QuestionPermissionsView(bool CanAnswer, bool CanSeeDiscussion, bool CanSeeOwnResult, bool CanReport, bool CanModerate, bool CanRequestAiSolution);
 
 public sealed record QuestionDetailView(
     int Id,
@@ -41,14 +42,16 @@ public sealed record QuestionDetailView(
     QuestionPermissionsView Permissions,
     int? LikeCount,
     bool LikedByMe,
-    byte[]? RowVersion);
+    byte[]? RowVersion,
+    string AiSolutionState,
+    DateTime? AnswerKeyReviewedAt);
 
 public interface IQuestionService
 {
     Task<ServiceResult<QuestionDetailView>> GetDetailAsync(Actor actor, int questionId, CancellationToken cancellationToken = default);
 }
 
-public sealed class QuestionService(AppDbContext db, IQuestionAccessService access, UserLookupService users, IFileUrlService urls) : IQuestionService
+public sealed class QuestionService(AppDbContext db, IQuestionAccessService access, UserLookupService users, IFileUrlService urls, IAiSolutionService aiSolutions) : IQuestionService
 {
     public async Task<ServiceResult<QuestionDetailView>> GetDetailAsync(Actor actor, int questionId, CancellationToken cancellationToken = default)
     {
@@ -80,6 +83,7 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
                 x.CreatedAt,
                 x.IsAnswerDisputed,
                 x.AiSuggestedOption,
+                x.AnswerKeyReviewedAt,
                 x.RowVersion
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -145,6 +149,8 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             }
         }
 
+        var aiState = await aiSolutions.GetStateAsync(actor, questionId, decision.CanSeeDiscussion, cancellationToken);
+
         var view = new QuestionDetailView(
             q.Id,
             q.Source,
@@ -163,10 +169,12 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             myAnswer,
             actor.IsModerator ? q.IsAnswerDisputed : null,
             actor.IsModerator ? q.AiSuggestedOption : null,
-            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanSeeOwnResult, decision.CanReport, decision.CanModerate),
+            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanSeeOwnResult, decision.CanReport, decision.CanModerate, aiState.CanRequest),
             likeCount,
             likedByMe,
-            actor.IsModerator ? q.RowVersion : null);
+            actor.IsModerator ? q.RowVersion : null,
+            aiState.State,
+            actor.IsModerator ? q.AnswerKeyReviewedAt : null);
 
         return ServiceResult<QuestionDetailView>.Ok(view);
     }

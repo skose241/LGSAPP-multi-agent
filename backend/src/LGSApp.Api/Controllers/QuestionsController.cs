@@ -1,6 +1,7 @@
 using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
 using LGSApp.Api.Extensions;
+using LGSApp.Infrastructure.Services.Ai;
 using LGSApp.Infrastructure.Services.Answers;
 using LGSApp.Infrastructure.Services.Likes;
 using LGSApp.Infrastructure.Services.Questions;
@@ -14,7 +15,7 @@ namespace LGSApp.Api.Controllers;
 [ApiController]
 [Route("api/questions")]
 [Authorize(Policy = Policies.Kullanici)]
-public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes) : ControllerBase
+public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes, IAiSolutionService aiSolutions) : ControllerBase
 {
     [HttpPost]
     [EnableRateLimiting(RateLimitingExtensions.QuestionCreatePolicy)]
@@ -80,5 +81,15 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
         var command = new CreateTeacherSolutionCommand(request.Text, request.ImageFileId);
         var result = await solutions.CreateTeacherAsync(User.ToActor(), id, command, cancellationToken);
         return result.ToActionResult(this, view => Created($"/api/questions/{id}/solutions", view));
+    }
+
+    [HttpPost("{id:int}/solutions/ai")]
+    [EnableRateLimiting(RateLimitingExtensions.AiSolutionPolicy)]
+    public async Task<IActionResult> RequestAiSolution(int id, CancellationToken cancellationToken)
+    {
+        var result = await aiSolutions.RequestAsync(User.ToActor(), id, cancellationToken);
+        return result.ToActionResult(this, response => response.Status == AiSolutionStatus.Created
+            ? Created($"/api/questions/{id}/solutions", response)
+            : Ok(response));
     }
 }
