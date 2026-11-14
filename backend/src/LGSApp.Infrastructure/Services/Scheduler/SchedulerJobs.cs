@@ -29,6 +29,7 @@ public interface ISchedulerJob
 public sealed class GenerationJob(
     IDailyGenerationPlanner planner,
     IQuestionGenerator generator,
+    IQuestionVerifier verifier,
     IAiQuestionWriter writer,
     IRunNotifier notifier,
     AppDbContext db,
@@ -64,6 +65,7 @@ public sealed class GenerationJob(
         var parts = new List<string>();
         var skippedForTime = 0;
         var firstCall = true;
+        var breaker = new GenerationCircuitBreaker();
 
         foreach (var lesson in plan.Lessons.Where(l => l.MissingSlots.Count > 0))
         {
@@ -86,14 +88,21 @@ public sealed class GenerationJob(
 
                 if (lesson.Topic.TopicId is not { } topicId)
                 {
-                    await writer.WriteFailureAsync(slotContext, SchedulerMessages.NoTopic, null, cancellationToken);
+                    await writer.WriteFailureAsync(slotContext, SchedulerMessages.NoTopic, null, null, cancellationToken);
                     lessonFailed++;
                     continue;
                 }
 
                 if (!generator.IsConfigured)
                 {
-                    await writer.WriteFailureAsync(slotContext, SchedulerMessages.AiNotConfigured, null, cancellationToken);
+                    await writer.WriteFailureAsync(slotContext, SchedulerMessages.AiNotConfigured, null, null, cancellationToken);
+                    lessonFailed++;
+                    continue;
+                }
+
+                if (breaker.Tripped)
+                {
+                    await writer.WriteFailureAsync(slotContext, breaker.Message!, null, null, cancellationToken);
                     lessonFailed++;
                     continue;
                 }
@@ -105,7 +114,7 @@ public sealed class GenerationJob(
 
                 firstCall = false;
 
-                var outcome = await GenerateSlotAsync(slotContext, lesson, topicId, attemptNo, cancellationToken);
+                var outcome = await GenerateSlotAsync(slotContext, lesson, topicId, attemptNo, context.DeadlineUtc, breaker, cancellationToken);
                 if (outcome == true)
                 {
                     lessonOk++;
@@ -133,14 +142,25 @@ public sealed class GenerationJob(
             summary += $" Süre sınırı aşıldı, {skippedForTime.ToString(CultureInfo.InvariantCulture)} slot atlandı.";
         }
 
+        if (breaker.Tripped)
+        {
+            summary += $" {breaker.Message}";
+        }
+
         if (succeeded + failed > 0)
         {
             try
             {
+                var report = $"Günlük soru üretimi: {succeeded.ToString(CultureInfo.InvariantCulture)} başarılı, {failed.ToString(CultureInfo.InvariantCulture)} hatalı.";
+                if (breaker.Tripped)
+                {
+                    report += $" {breaker.Message}";
+                }
+
                 await notifier.NotifyRoleAsync(
                     Roles.MudurId,
                     NotificationType.GenerationReport,
-                    $"Günlük soru üretimi: {succeeded.ToString(CultureInfo.InvariantCulture)} başarılı, {failed.ToString(CultureInfo.InvariantCulture)} hatalı.",
+                    report,
                     context.Claim.RunId,
                     cancellationToken);
             }
@@ -153,7 +173,14 @@ public sealed class GenerationJob(
         return new JobOutcome(succeeded, failed, summary);
     }
 
-    private async Task<bool?> GenerateSlotAsync(SlotContext slot, LessonGenerationPlan lesson, int topicId, int attemptNo, CancellationToken cancellationToken)
+    private async Task<bool?> GenerateSlotAsync(
+        SlotContext slot,
+        LessonGenerationPlan lesson,
+        int topicId,
+        int attemptNo,
+        DateTime deadlineUtc,
+        GenerationCircuitBreaker breaker,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -165,31 +192,57 @@ public sealed class GenerationJob(
                 return null;
             }
 
-            var recent = (await db.Questions.AsNoTracking()
-                    .Where(q => q.TopicId == topicId && q.Source == QuestionSource.Ai && q.Text != null)
-                    .OrderByDescending(q => q.CreatedAt).ThenByDescending(q => q.Id)
-                    .Select(q => q.Text!)
-                    .Take(5)
-                    .ToListAsync(cancellationToken))
-                .Select(t => t.Length > 180 ? t[..180] : t)
-                .ToList();
+            var recentFull = await db.Questions.AsNoTracking()
+                .Where(q => q.TopicId == topicId && q.Source == QuestionSource.Ai && q.Text != null)
+                .OrderByDescending(q => q.CreatedAt).ThenByDescending(q => q.Id)
+                .Select(q => q.Text!)
+                .Take(AiRules.RecentQuestionCount)
+                .ToListAsync(cancellationToken);
+            var recent = recentFull.Select(t => t.Length > AiRules.RecentQuestionMaxChars ? t[..AiRules.RecentQuestionMaxChars] : t).ToList();
 
-            var request = new QuestionGenerationRequest(lesson.LessonId, lesson.LessonName, topicId, lesson.TopicName ?? string.Empty, slot.Slot, attemptNo, recent);
+            var recentOptions = await db.Questions.AsNoTracking()
+                .Where(q => q.LessonId == slot.LessonId && q.Source == QuestionSource.Ai)
+                .OrderByDescending(q => q.CreatedAt).ThenByDescending(q => q.Id)
+                .Select(q => (int)q.CorrectOption)
+                .Take(AiRules.DistributionWindow)
+                .ToListAsync(cancellationToken);
+            var target = AnswerBalancer.PickTarget(recentOptions, (slot.Slot + slot.LessonId) % 4 + 1);
+
+            var request = new QuestionGenerationRequest(
+                lesson.LessonId, lesson.LessonName, topicId, lesson.TopicName ?? string.Empty, slot.Slot, attemptNo, recent, target, deadlineUtc);
             var result = await generator.GenerateAsync(request, cancellationToken);
             if (!result.Succeeded)
             {
-                await writer.WriteFailureAsync(slot, result.Error ?? "Soru üretilemedi.", result, cancellationToken);
+                breaker.Observe(result.ErrorKind);
+                await writer.WriteFailureAsync(slot, result.Error ?? "Soru üretilemedi.", result, null, cancellationToken);
                 return false;
             }
 
-            var (question, error) = AiQuestionValidator.Validate(result);
-            if (question is null)
+            var check = AiQuestionValidator.Check(result, recentFull, lesson.TopicName);
+            if (check.Value is not { } question)
             {
-                await writer.WriteFailureAsync(slot, error ?? "Soru doğrulanamadı.", result, cancellationToken);
+                await writer.WriteFailureAsync(slot, check.Error ?? "Soru doğrulanamadı.", result, null, cancellationToken);
                 return false;
             }
 
-            var written = await writer.WriteSuccessAsync(slot, result, question, cancellationToken);
+            foreach (var warning in check.Warnings)
+            {
+                logger.LogWarning("Üretilen soru uyarısı. Ders {LessonId}, slot {Slot}: {Warning}", slot.LessonId, slot.Slot, warning);
+            }
+
+            QuestionVerification? verification = null;
+            if (await verifier.IsEnabledAsync(cancellationToken))
+            {
+                verification = await verifier.VerifyAsync(request, question, cancellationToken);
+                if (!verification.Passed)
+                {
+                    breaker.Observe(verification.ErrorKind);
+                    await writer.WriteFailureAsync(slot, verification.Error ?? "Soru doğrulanamadı.", result, verification, cancellationToken);
+                    return false;
+                }
+            }
+
+            var written = await writer.WriteSuccessAsync(slot, result, question, verification, cancellationToken);
             if (written.Status == SlotWriteStatus.Skipped)
             {
                 await writer.WriteSkippedAsync(slot, "Slot başka bir çalıştırma tarafından dolduruldu.", cancellationToken);
@@ -203,7 +256,7 @@ public sealed class GenerationJob(
             logger.LogError(ex, "Soru üretimi beklenmeyen şekilde başarısız oldu. Ders {LessonId}, slot {Slot}", slot.LessonId, slot.Slot);
             try
             {
-                await writer.WriteFailureAsync(slot, $"Beklenmeyen hata: {ex.Message}", null, cancellationToken);
+                await writer.WriteFailureAsync(slot, $"Beklenmeyen hata: {ex.Message}", null, null, cancellationToken);
             }
             catch (Exception inner) when (inner is not OperationCanceledException)
             {

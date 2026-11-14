@@ -1,5 +1,7 @@
+using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
+using LGSApp.Infrastructure.Services.Ai;
 using LGSApp.Infrastructure.Services.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,8 +27,8 @@ public sealed record SlotWriteOutcome(SlotWriteStatus Status, int? QuestionId);
 
 public interface IAiQuestionWriter
 {
-    Task<SlotWriteOutcome> WriteSuccessAsync(SlotContext slot, QuestionGenerationResult result, ValidatedQuestion question, CancellationToken cancellationToken);
-    Task WriteFailureAsync(SlotContext slot, string error, QuestionGenerationResult? result, CancellationToken cancellationToken);
+    Task<SlotWriteOutcome> WriteSuccessAsync(SlotContext slot, QuestionGenerationResult result, ValidatedQuestion question, QuestionVerification? verification, CancellationToken cancellationToken);
+    Task WriteFailureAsync(SlotContext slot, string error, QuestionGenerationResult? result, QuestionVerification? verification, CancellationToken cancellationToken);
     Task WriteSkippedAsync(SlotContext slot, string reason, CancellationToken cancellationToken);
 }
 
@@ -35,7 +37,7 @@ public sealed class AiQuestionWriter(AppDbContext db, TurkeyTime clock) : IAiQue
     private const int ErrorMaxLength = 2000;
     private const int LogTextMaxLength = 4000;
 
-    public async Task<SlotWriteOutcome> WriteSuccessAsync(SlotContext slot, QuestionGenerationResult result, ValidatedQuestion question, CancellationToken cancellationToken)
+    public async Task<SlotWriteOutcome> WriteSuccessAsync(SlotContext slot, QuestionGenerationResult result, ValidatedQuestion question, QuestionVerification? verification, CancellationToken cancellationToken)
     {
         try
         {
@@ -76,6 +78,7 @@ public sealed class AiQuestionWriter(AppDbContext db, TurkeyTime clock) : IAiQue
                     QuestionId = entity.Id,
                     AuthorUserId = slot.AiUserId,
                     Type = SolutionType.Ai,
+                    StatedOption = question.CorrectOption,
                     Text = AiQuestionValidator.BuildSolutionText(question.CorrectOption, question.Explanation),
                     CreatedAt = now
                 });
@@ -100,12 +103,22 @@ public sealed class AiQuestionWriter(AppDbContext db, TurkeyTime clock) : IAiQue
                     Output = result.RawOutput,
                     InputTokens = result.InputTokens,
                     OutputTokens = result.OutputTokens,
+                    ThinkingTokens = result.ThinkingTokens,
+                    CostUsd = result.CostUsd,
                     DurationMs = result.DurationMs,
+                    AttemptCount = ClampAttempts(result.AttemptCount),
+                    HttpStatus = (short?)result.HttpStatus,
+                    ModelVersion = Truncate(result.ModelVersion, AiRules.ModelVersionMaxLength),
                     Success = true,
                     Status = AiLogStatus.Succeeded,
                     CompletedAt = now,
                     CreatedAt = now
                 });
+                if (BuildVerificationLog(verification, entity.Id, now) is { } verificationLog)
+                {
+                    db.AiLogs.Add(verificationLog);
+                }
+
                 await db.SaveChangesAsync(token);
 
                 if (slot is { TopicSource: TopicSource.Plan, TopicId: { } topicId })
@@ -125,7 +138,7 @@ public sealed class AiQuestionWriter(AppDbContext db, TurkeyTime clock) : IAiQue
         }
     }
 
-    public async Task WriteFailureAsync(SlotContext slot, string error, QuestionGenerationResult? result, CancellationToken cancellationToken)
+    public async Task WriteFailureAsync(SlotContext slot, string error, QuestionGenerationResult? result, QuestionVerification? verification, CancellationToken cancellationToken)
     {
         db.ChangeTracker.Clear();
         var now = clock.UtcNow;
@@ -141,23 +154,14 @@ public sealed class AiQuestionWriter(AppDbContext db, TurkeyTime clock) : IAiQue
             ErrorMessage = Truncate(error, ErrorMaxLength),
             CreatedAt = now
         });
-        if (result is not null)
+        if (BuildGenerationFailureLog(result, error, now) is { } generationLog)
         {
-            db.AiLogs.Add(new AiLog
-            {
-                Operation = AiOperation.QuestionGeneration,
-                Model = Truncate(result.Model, 50),
-                Input = Truncate(result.Prompt, LogTextMaxLength),
-                Output = result.RawOutput ?? Truncate(error, ErrorMaxLength),
-                InputTokens = result.InputTokens,
-                OutputTokens = result.OutputTokens,
-                DurationMs = result.DurationMs,
-                Success = false,
-                Status = AiLogStatus.Failed,
-                ErrorMessage = Truncate(error, ErrorMaxLength),
-                CompletedAt = now,
-                CreatedAt = now
-            });
+            db.AiLogs.Add(generationLog);
+        }
+
+        if (BuildVerificationLog(verification, null, now) is { } verificationLog)
+        {
+            db.AiLogs.Add(verificationLog);
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -182,6 +186,72 @@ public sealed class AiQuestionWriter(AppDbContext db, TurkeyTime clock) : IAiQue
         await db.SaveChangesAsync(cancellationToken);
         db.ChangeTracker.Clear();
     }
+
+    public static bool HasProviderCall(int attemptCount) => attemptCount > 0;
+
+    public static AiLog? BuildGenerationFailureLog(QuestionGenerationResult? result, string error, DateTime now)
+    {
+        if (result is null || !HasProviderCall(result.AttemptCount))
+        {
+            return null;
+        }
+
+        var rejected = result.Succeeded;
+        return new AiLog
+        {
+            Operation = AiOperation.QuestionGeneration,
+            Model = Truncate(result.Model, 50),
+            Input = Truncate(result.Prompt, LogTextMaxLength),
+            Output = result.RawOutput ?? Truncate(error, ErrorMaxLength),
+            InputTokens = result.InputTokens,
+            OutputTokens = result.OutputTokens,
+            ThinkingTokens = result.ThinkingTokens,
+            CostUsd = result.CostUsd,
+            DurationMs = result.DurationMs,
+            AttemptCount = ClampAttempts(result.AttemptCount),
+            HttpStatus = (short?)result.HttpStatus,
+            ModelVersion = Truncate(result.ModelVersion, AiRules.ModelVersionMaxLength),
+            Success = false,
+            Status = rejected ? AiLogStatus.Rejected : AiLogStatus.Failed,
+            ErrorKind = rejected && result.ErrorKind == AiErrorKind.None ? AiErrorKind.InvalidOutput : result.ErrorKind,
+            ErrorMessage = AiErrorText.Sanitize(result.RawError) ?? Truncate(error, ErrorMaxLength),
+            CompletedAt = now,
+            CreatedAt = now
+        };
+    }
+
+    public static AiLog? BuildVerificationLog(QuestionVerification? v, int? questionId, DateTime now)
+    {
+        if (v is null || !HasProviderCall(v.AttemptCount))
+        {
+            return null;
+        }
+
+        return new AiLog
+        {
+            QuestionId = questionId,
+            Operation = AiOperation.SolutionVerification,
+            Model = Truncate(v.Model, 50),
+            Input = Truncate(v.Prompt, LogTextMaxLength),
+            Output = v.RawOutput,
+            InputTokens = v.InputTokens,
+            OutputTokens = v.OutputTokens,
+            ThinkingTokens = v.ThinkingTokens,
+            CostUsd = v.CostUsd,
+            DurationMs = v.DurationMs,
+            AttemptCount = ClampAttempts(v.AttemptCount),
+            HttpStatus = (short?)v.HttpStatus,
+            ModelVersion = Truncate(v.ModelVersion, AiRules.ModelVersionMaxLength),
+            Success = v.Status == AiLogStatus.Succeeded,
+            Status = v.Status,
+            ErrorKind = v.ErrorKind,
+            ErrorMessage = AiErrorText.Sanitize(v.RawError) ?? Truncate(v.Error, ErrorMaxLength),
+            CompletedAt = now,
+            CreatedAt = now
+        };
+    }
+
+    private static byte ClampAttempts(int attempts) => (byte)Math.Clamp(attempts, 1, byte.MaxValue);
 
     private static string? Truncate(string? value, int max) =>
         value is { Length: > 0 } && value.Length > max ? value[..max] : value;

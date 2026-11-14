@@ -1,11 +1,12 @@
 using System.Text.Json;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Options;
+using LGSApp.Infrastructure.Services.Scheduler;
 using Microsoft.Extensions.Options;
 
 namespace LGSApp.Infrastructure.Services.Ai;
 
-public sealed class GeminiAiSolver(IGeminiClient client, IOptions<AiOptions> options) : IAiSolver
+public sealed class GeminiAiSolver(IGeminiClient client, IOptions<AiOptions> options, AiProviderGate gate) : IAiSolver
 {
     public const int TotalBudgetSeconds = 90;
     public const string ImageMimeType = "image/jpeg";
@@ -20,6 +21,14 @@ public sealed class GeminiAiSolver(IGeminiClient client, IOptions<AiOptions> opt
         }
 
         var o = options.Value.Solution;
+        if (gate.Check(AiKeyPurpose.Solution) is { } open)
+        {
+            return AiSolveResult.Failure(open.Kind, SchedulerMessages.ForErrorKind(open.Kind, null), o.Model) with
+            {
+                RetryAfter = TimeSpan.FromSeconds(open.RetryAfterSeconds)
+            };
+        }
+
         var prompt = AiPrompts.SolveUser(input.ToPromptData(mode));
         var parts = new List<GeminiPart> { GeminiPart.Text(prompt) };
         if (input.Image is { Length: > 0 } image)
@@ -42,10 +51,14 @@ public sealed class GeminiAiSolver(IGeminiClient client, IOptions<AiOptions> opt
         var call = await client.GenerateAsync(request, AiKeyPurpose.Solution, cancellationToken);
         if (!call.Succeeded)
         {
+            gate.Observe(AiKeyPurpose.Solution, call.ErrorKind);
+            var retryAfter = AiProviderGate.Trips(call.ErrorKind) && gate.Check(AiKeyPurpose.Solution) is { } tripped
+                ? TimeSpan.FromSeconds(tripped.RetryAfterSeconds)
+                : call.RetryAfter;
             return new AiSolveResult(
                 call.ErrorKind, call.ErrorMessage, false, 0, null, null, null, o.Model, prompt, null,
                 call.InputTokens, call.OutputTokens, call.ThinkingTokens, call.HttpStatus, call.Attempts, call.DurationMs,
-                call.ModelVersion, call.RetryAfter, call.FinishReason);
+                call.ModelVersion, retryAfter, call.FinishReason);
         }
 
         return Parse(call, o.Model, prompt, mode);

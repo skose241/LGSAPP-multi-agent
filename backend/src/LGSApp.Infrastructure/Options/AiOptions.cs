@@ -1,4 +1,5 @@
 using System.Globalization;
+using LGSApp.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -31,6 +32,7 @@ public sealed class AiQuestionOptions
     public int SlotBudgetSeconds { get; set; } = 240;
     public int Max429WaitSeconds { get; set; } = 40;
     public bool VerifyEnabled { get; set; } = true;
+    public int AuthFailedPauseMinutes { get; set; } = 10;
 }
 
 public sealed class AiSolutionOptions
@@ -43,6 +45,7 @@ public sealed class AiSolutionOptions
     public int Max429WaitSeconds { get; set; } = 5;
     public int ImageMaxEdge { get; set; } = 1536;
     public int ImageJpegQuality { get; set; } = 80;
+    public int AuthFailedPauseMinutes { get; set; } = 10;
 }
 
 public sealed class AiPricingOptions
@@ -57,6 +60,13 @@ public sealed class AiFakeOptions
     public int DelayMs { get; set; }
     public int MismatchEveryNth { get; set; }
     public string UnreadableQuestionIds { get; set; } = string.Empty;
+    public string FailErrorKind { get; set; } = string.Empty;
+
+    public AiErrorKind FailKind =>
+        Enum.TryParse<AiErrorKind>(FailErrorKind, true, out var kind) && Enum.IsDefined(kind) ? kind : AiErrorKind.None;
+
+    public bool FailErrorKindValid =>
+        string.IsNullOrWhiteSpace(FailErrorKind) || (Enum.TryParse<AiErrorKind>(FailErrorKind, true, out var kind) && Enum.IsDefined(kind) && kind != AiErrorKind.None && !int.TryParse(FailErrorKind, out _));
 
     public IReadOnlySet<int> FailSlotSet => FakeGeneratorOptions.ParseSlots(FailSlots) ?? [];
 
@@ -176,6 +186,11 @@ public sealed class AiOptions
             return "Ai:Question:Max429WaitSeconds ve Ai:Solution:Max429WaitSeconds 0 ile 120 arasında olmalıdır.";
         }
 
+        if (o.Question.AuthFailedPauseMinutes is < 1 or > 1440 || o.Solution.AuthFailedPauseMinutes is < 1 or > 1440)
+        {
+            return "Ai:Question:AuthFailedPauseMinutes ve Ai:Solution:AuthFailedPauseMinutes 1 ile 1440 arasında olmalıdır.";
+        }
+
         if (o.Solution.ImageMaxEdge is < 256 or > 4096 || o.Solution.ImageJpegQuality is < 30 or > 100)
         {
             return "Ai:Solution:ImageMaxEdge 256-4096, ImageJpegQuality 30-100 arasında olmalıdır.";
@@ -191,10 +206,11 @@ public sealed class AiOptions
 
         if (o.Fake.DelayMs is < 0 or > 60000
             || o.Fake.MismatchEveryNth is < 0 or > 1000
+            || !o.Fake.FailErrorKindValid
             || FakeGeneratorOptions.ParseSlots(o.Fake.FailSlots) is null
             || AiFakeOptions.ParseIds(o.Fake.UnreadableQuestionIds) is null)
         {
-            return "Ai:Fake ayarları geçersiz (FailSlots 1-20 arası virgülle ayrılmış sayılar, DelayMs 0-60000, MismatchEveryNth 0-1000, UnreadableQuestionIds soru numaraları).";
+            return "Ai:Fake ayarları geçersiz (FailSlots 1-20 arası virgülle ayrılmış sayılar, FailErrorKind boş veya bir AiErrorKind adı, DelayMs 0-60000, MismatchEveryNth 0-1000, UnreadableQuestionIds soru numaraları).";
         }
 
         if (o.Provider == AiProvider.Gemini)

@@ -17,6 +17,7 @@ public static class AiServiceCollectionExtensions
 
         services.AddSingleton<IGeminiJitter, RandomGeminiJitter>();
         services.AddSingleton<AiCostCalculator>();
+        services.AddSingleton<AiProviderGate>();
 
         services.AddHttpClient<IGeminiClient, GeminiRestClient>(client => client.Timeout = Timeout.InfiniteTimeSpan)
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
@@ -28,10 +29,18 @@ public static class AiServiceCollectionExtensions
 
         services.AddSingleton<NotConfiguredQuestionGenerator>();
         services.AddSingleton<FakeQuestionGenerator>();
-        services.AddSingleton<IQuestionGenerator>(sp =>
-            sp.GetRequiredService<IOptions<AiOptions>>().Value.Provider == AiProvider.Fake
-                ? sp.GetRequiredService<FakeQuestionGenerator>()
-                : sp.GetRequiredService<NotConfiguredQuestionGenerator>());
+        services.AddScoped<GeminiQuestionGenerator>();
+        services.AddScoped<IQuestionGenerator>(sp =>
+        {
+            var o = sp.GetRequiredService<IOptions<AiOptions>>().Value;
+            return o.Provider switch
+            {
+                AiProvider.Fake => sp.GetRequiredService<FakeQuestionGenerator>(),
+                AiProvider.Gemini when o.QuestionConfigured => sp.GetRequiredService<GeminiQuestionGenerator>(),
+                _ => sp.GetRequiredService<NotConfiguredQuestionGenerator>()
+            };
+        });
+        services.AddScoped<IQuestionVerifier, QuestionVerifier>();
 
         services.AddSingleton<IFakeAnswerKeySource, DbFakeAnswerKeySource>();
         services.AddSingleton<FakeAiSolver>();

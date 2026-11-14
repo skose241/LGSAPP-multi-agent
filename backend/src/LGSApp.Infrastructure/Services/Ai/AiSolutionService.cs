@@ -49,6 +49,7 @@ public sealed class AiSolutionService(
     IOptions<AiOptions> options,
     IAiQuotaService quota,
     AiSolutionCoordinator coordinator,
+    AiProviderGate gate,
     UserLookupService users,
     TurkeyTime clock) : IAiSolutionService
 {
@@ -74,6 +75,11 @@ public sealed class AiSolutionService(
         if (await UnreadableCachedAsync(questionId, cancellationToken))
         {
             return Fail.Unprocessable(AiMessages.Unreadable);
+        }
+
+        if (gate.Check(AiKeyPurpose.Solution) is { } open)
+        {
+            return Fail.Unavailable(AiMessages.ProviderFailure, open.RetryAfterSeconds);
         }
 
         var running = coordinator.TryJoin(questionId);

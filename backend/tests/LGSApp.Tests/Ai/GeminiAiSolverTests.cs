@@ -17,7 +17,7 @@ public class GeminiAiSolverTests
         var handler = new StubHandler(clock);
         var options = AiTestData.GeminiOptions();
         var client = AiTestData.CreateClient(handler, clock, options);
-        return (new GeminiAiSolver(client, Options.Create(options)), handler);
+        return (new GeminiAiSolver(client, Options.Create(options), new AiProviderGate(clock, Options.Create(options))), handler);
     }
 
     private static AiSolveInput Input(byte[]? image = null, int? verified = null) =>

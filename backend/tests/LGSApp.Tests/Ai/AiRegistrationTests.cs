@@ -18,6 +18,15 @@ public class AiRegistrationTests
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 
+    private sealed class NoSettings : LGSApp.Infrastructure.Services.Settings.ISettingsService
+    {
+        public Task<int> GetIntAsync(string key, CancellationToken cancellationToken = default) => Task.FromResult(0);
+
+        public void Invalidate()
+        {
+        }
+    }
+
     private static ServiceProvider Build(string environment, Dictionary<string, string?> values)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
@@ -25,6 +34,7 @@ public class AiRegistrationTests
         services.AddSingleton<IHostEnvironment>(new Env(environment));
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton(TimeProvider.System);
+        services.AddScoped<LGSApp.Infrastructure.Services.Settings.ISettingsService, NoSettings>();
         services.AddAiOptions(configuration);
         services.AddAiServices(configuration);
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = false, ValidateScopes = true });
@@ -35,31 +45,50 @@ public class AiRegistrationTests
     {
         using var provider = Build("Development", new() { ["Ai:Provider"] = "Fake" });
 
-        var generator = provider.GetRequiredService<IQuestionGenerator>();
+        using var scope = provider.CreateScope();
+        var generator = scope.ServiceProvider.GetRequiredService<IQuestionGenerator>();
 
         Assert.IsType<FakeQuestionGenerator>(generator);
         Assert.True(generator.IsConfigured);
     }
 
     [Theory]
-    [InlineData("Gemini")]
-    [InlineData("None")]
-    public void Other_providers_fall_back_to_not_configured_until_gemini_generator_exists(string providerName)
+    [InlineData("Gemini", "", typeof(NotConfiguredQuestionGenerator), false)]
+    [InlineData("None", "KEY", typeof(NotConfiguredQuestionGenerator), false)]
+    [InlineData("Gemini", "KEY", typeof(GeminiQuestionGenerator), true)]
+    public void Question_generator_selection_follows_provider_and_key(string providerName, string key, Type expected, bool configured)
     {
-        using var provider = Build("Production", new() { ["Ai:Provider"] = providerName, ["Ai:Question:Model"] = "m", ["Ai:Solution:Model"] = "m" });
+        var values = new Dictionary<string, string?> { ["Ai:Provider"] = providerName, ["Ai:Question:Model"] = "m", ["Ai:Solution:Model"] = "m" };
+        if (key.Length > 0)
+        {
+            values["Ai:Gemini:QuestionApiKey"] = key;
+        }
 
-        var generator = provider.GetRequiredService<IQuestionGenerator>();
+        using var provider = Build("Production", values);
+        using var scope = provider.CreateScope();
 
-        Assert.IsType<NotConfiguredQuestionGenerator>(generator);
-        Assert.False(generator.IsConfigured);
+        var generator = scope.ServiceProvider.GetRequiredService<IQuestionGenerator>();
+
+        Assert.IsType(expected, generator);
+        Assert.Equal(configured, generator.IsConfigured);
+    }
+
+    [Fact]
+    public void Verifier_resolves_in_scope()
+    {
+        using var provider = Build("Production", new() { ["Ai:Provider"] = "Gemini", ["Ai:Question:Model"] = "m", ["Ai:Solution:Model"] = "m" });
+        using var scope = provider.CreateScope();
+
+        Assert.IsType<QuestionVerifier>(scope.ServiceProvider.GetRequiredService<IQuestionVerifier>());
     }
 
     [Fact]
     public void Legacy_flag_selects_fake_generator()
     {
         using var provider = Build("Development", new() { ["Scheduler:UseFakeGenerator"] = "true" });
+        using var scope = provider.CreateScope();
 
-        Assert.IsType<FakeQuestionGenerator>(provider.GetRequiredService<IQuestionGenerator>());
+        Assert.IsType<FakeQuestionGenerator>(scope.ServiceProvider.GetRequiredService<IQuestionGenerator>());
     }
 
     [Fact]

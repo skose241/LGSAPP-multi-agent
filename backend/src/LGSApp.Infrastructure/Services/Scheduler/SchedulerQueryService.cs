@@ -93,6 +93,8 @@ public sealed record SchedulerStatusView(
     DateTime NowUtc,
     DateOnly Today,
     bool AiConfigured,
+    bool AiVerificationEnabled,
+    bool AiSolutionConfigured,
     bool GenerationEnabled,
     bool FakeGenerator,
     IReadOnlyList<SchedulerJobStatus> Jobs,
@@ -111,11 +113,15 @@ public sealed class SchedulerQueryService(
     IGenerationRunStore store,
     IDailyGenerationPlanner planner,
     IQuestionGenerator generator,
+    IQuestionVerifier verifier,
     TurkeyTime clock,
     IOptions<SchedulerOptions> options,
     IOptions<AiOptions> aiOptions) : ISchedulerQueryService
 {
     private const int MaxPageSize = 50;
+
+    public static bool ComputeAiConfigured(bool generatorConfigured, bool verificationEnabled, bool solutionConfigured) =>
+        generatorConfigured && (!verificationEnabled || solutionConfigured);
 
     public async Task<SchedulerStatusView> GetStatusAsync(CancellationToken cancellationToken)
     {
@@ -150,7 +156,11 @@ public sealed class SchedulerQueryService(
                 l.MissingSlots.Count))
             .ToList();
 
-        return new SchedulerStatusView(now, today, generator.IsConfigured, dailyPlan.Enabled, aiOptions.Value.Provider == AiProvider.Fake, jobs, lessons);
+        var verificationEnabled = await verifier.IsEnabledAsync(cancellationToken);
+        var solutionConfigured = aiOptions.Value.SolutionConfigured;
+        var aiConfigured = ComputeAiConfigured(generator.IsConfigured, verificationEnabled, solutionConfigured);
+
+        return new SchedulerStatusView(now, today, aiConfigured, verificationEnabled, solutionConfigured, dailyPlan.Enabled, aiOptions.Value.Provider == AiProvider.Fake, jobs, lessons);
     }
 
     public async Task<RunPage> ListRunsAsync(RunFilter filter, CancellationToken cancellationToken)
