@@ -81,10 +81,10 @@ export async function createTextQuestion(
   return { id: result.body.id, text, correctOption };
 }
 
-export async function answerQuestion(student: ActiveUser, questionId: number, option: number, text: string) {
+export async function answerQuestion(student: ActiveUser, questionId: number, option: number, text: string, solutionImageFileId: number | null = null) {
   const result = await backend<{ isCorrect: boolean; pointsEarned: number; solutionId: number }>("POST", `/api/questions/${questionId}/answers`, {
     token: student.token,
-    body: { selectedOption: option, solutionText: text, solutionImageFileId: null },
+    body: { selectedOption: option, solutionText: text, solutionImageFileId },
   });
   if (result.status !== 200) throw new Error(`Cevap verilemedi: ${result.status} ${JSON.stringify(result.body)}`);
   return result.body;
@@ -169,9 +169,9 @@ export function makePng(width = 640, height = 480): Buffer {
   ]);
 }
 
-export async function uploadQuestionImage(user: ActiveUser): Promise<number> {
+export async function uploadQuestionImage(user: ActiveUser, purpose: "questionImage" | "solutionImage" = "questionImage"): Promise<number> {
   const form = new FormData();
-  form.set("purpose", "questionImage");
+  form.set("purpose", purpose);
   form.set("clientUploadId", crypto.randomUUID());
   form.set("file", new Blob([new Uint8Array(makePng())], { type: "image/png" }), "soru.png");
   const response = await fetch(`${apiUrl()}/api/files`, {

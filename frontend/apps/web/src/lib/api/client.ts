@@ -1,3 +1,4 @@
+import { clearAllDrafts } from "@/lib/session/draft";
 import { createApiClient, parseProblem, type ApiClient, type ParsedProblem } from "@lgs/api";
 
 let client: ApiClient | null = null;
@@ -8,6 +9,7 @@ const SESSION_EXEMPT = ["/api/auth/login", "/api/auth/refresh", "/api/auth/logou
 export function endSession(reason: "oturum" | null = "oturum") {
   if (typeof window === "undefined" || expiring) return;
   expiring = true;
+  clearAllDrafts();
   const target = reason ? `/giris?neden=${reason}` : "/giris";
   fetch("/api/auth/logout", { method: "POST", headers: { "content-type": "application/json" } })
     .catch(() => null)

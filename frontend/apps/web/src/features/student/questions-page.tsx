@@ -152,7 +152,7 @@ export function QuestionsPage() {
           <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Sorular" aria-busy={questions.isPlaceholderData || undefined}>
             {data.items.map((item) => (
               <li key={item.id}>
-                <PoolQuestionCard item={item} onImageExpired={() => void queryClient.invalidateQueries({ queryKey: questionKeys.all })} />
+                <PoolQuestionCard item={item} onImageExpired={() => queryClient.invalidateQueries({ queryKey: questionKeys.all })} />
               </li>
             ))}
           </ul>

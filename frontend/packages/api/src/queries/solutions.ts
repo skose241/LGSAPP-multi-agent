@@ -19,11 +19,11 @@ export function solutionsQuery(client: ApiClient, questionId: number, enabled = 
 }
 
 export const solutionMutations = {
-  update: (client: ApiClient, id: number, text: string, rowVersion: string) =>
+  update: (client: ApiClient, id: number, text: string, imageFileId: number | null, rowVersion: string) =>
     unwrap(
       client.PATCH("/api/solutions/{id}", {
         params: { path: { id } },
-        body: { text, imageFileId: null, rowVersion },
+        body: { text, imageFileId, rowVersion },
       }),
     ),
   report: (client: ApiClient, id: number, reason: components["schemas"]["ReportReason"], description: string) =>

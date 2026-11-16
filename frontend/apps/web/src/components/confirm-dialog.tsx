@@ -16,6 +16,7 @@ interface ConfirmDialogProps {
   error?: ProblemState | null;
   conflictAsMessage?: boolean;
   onConfirm: () => void;
+  onCloseAutoFocus?: (event: Event) => void;
   children?: ReactNode;
 }
 
@@ -30,11 +31,12 @@ export function ConfirmDialog({
   error = null,
   conflictAsMessage = false,
   onConfirm,
+  onCloseAutoFocus,
   children,
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
-      <DialogContent title={title} description={description}>
+      <DialogContent title={title} description={description} onCloseAutoFocus={onCloseAutoFocus}>
         <ProblemBanner state={error} conflictAsMessage={conflictAsMessage} />
         {children}
         <DialogFooter>

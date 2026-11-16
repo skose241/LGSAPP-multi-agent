@@ -85,7 +85,7 @@ export function StudentDashboard() {
             <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3" aria-label="Son sorular listesi">
               {recent.data.items.map((item) => (
                 <li key={item.id}>
-                  <PoolQuestionCard item={item} onImageExpired={() => void queryClient.invalidateQueries({ queryKey: questionKeys.all })} />
+                  <PoolQuestionCard item={item} onImageExpired={() => queryClient.invalidateQueries({ queryKey: questionKeys.all })} />
                 </li>
               ))}
             </ul>

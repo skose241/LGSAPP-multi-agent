@@ -419,3 +419,28 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 2. F4 yükleme hattı (HEIC, küçültme, yeniden deneme, çözüm görseli, sorularım; büyük yüklemede "tekrar dene").
 3. F5 AI ekranları, F6 öğretmen (önce `GET /api/students`, `/students/{id}/stats`, `needs-solution` uçları), F7 müdür operasyon, F8 sertleştirme + yayın.
 4. Gerçek Gemini duman testi (onayla), Key Vault, veri taşıma, Azure deploy.
+
+## Oturum 7 — 2026-11-16
+
+### Önceki oturumdan not alınamayanlar
+- F3 düzeltme görevi frontend-agent'a gönderilemedi; kodda değişiklik olmamıştı.
+- `appsettings.Development.json` içindeki `RecoveryCodes:Pepper` yalnız geliştirme içindir ve repoda duruyor. Yayında `RecoveryCodes__Pepper` mutlaka farklı bir değer olmalı (`openssl rand -base64 48`); bu değer bir kez belirlenip sabit kalmalı.
+
+### Bu oturumda
+- F3 düzeltmeleri frontend-agent'a verildi: kart önizlemesinde KaTeX (satır sınırı korunacak, yarım formül düz metin), derin yorum düğmeleri tek satır ve "..." menüsü. Ardından tüm testler baştan koşulacak, F3 reviewer turu yapılacak, sonra commit + push.
+- frontend-agent iki düzeltmeyi yaptı: `MathText` `compact` modu + `tokenizeMathPreview` (display→inline, yarım formül `$` ile birlikte düz metin kalır), yeni `ActionMenu` (Düzenle/Şikâyet et/Sil her genişlikte "..." menüsünde, Yanıtla görünür).
+- F3 reviewer turu yapıldı (backend 682/682). Bulgular kapatıldı:
+  - Süresi dolan görselde yeniden çekme artık yeni URL ile çalışıyor (E2E ile doğrulandı).
+  - Çözüm düzenleme görseli silmiyor (`imageFileId` korunuyor).
+  - Menüden açılan diyaloglarda odak dönüşü.
+  - Taslaklar çıkışta ve farklı kullanıcı girişinde temizleniyor (`lgs:taslak-sahibi`).
+  - Liderlik offset ≤ 12.
+  - `line-clamp`/`block` çakışması giderildi.
+  - Menü sol kenar taşması önlendi.
+  - 409 sonrası taslak temizliği ve beğeni çift tıklama kilidi.
+- Son tam koşu: lint/typecheck temiz, vitest 138, E2E 199/199 (Chromium + WebKit iPhone), axe 0.
+- Açık kalanlar: `ActionMenu` sol hizalama dalı ve 409/çift beğeni E2E ile zorlanmadı; eski iOS Safari'de `line-clamp` gerçek cihazda denenmedi; E2E'de Azurite `--skipApiVersionCheck` gerekebiliyor; aynı E2E DB'de art arda tam koşu müdür girişi testlerini bozabiliyor (temiz DB ile koşulmalı).
+
+### Sıradaki adımlar
+1. F4 yükleme hattı (HEIC, küçültme, yeniden deneme, çözüm görseli, sorularım).
+2. İsteğe bağlı: yayında geliştirme pepper'ının reddedilmesi için başlangıç kontrolü.

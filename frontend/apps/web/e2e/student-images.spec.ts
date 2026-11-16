@@ -42,6 +42,42 @@ test.describe("görselli sorular ve ödev kartı", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
+  test("süresi dolan görsel bir kez yenilenir ve yeni adresle yüklenir", async ({ page }) => {
+    const w = await world();
+    const imageId = await uploadQuestionImage(w.teacher);
+    const question = await createTextQuestion(w.teacher, w.lessons[0]!.id, "Süre dolumu sorusu", 2, {
+      text: null,
+      imageFileId: imageId,
+      optionA: null,
+      optionB: null,
+      optionC: null,
+      optionD: null,
+    });
+    await studentLogin(page);
+
+    let detailCalls = 0;
+    await page.route(`**/api/questions/${question.id}`, async (route) => {
+      if (route.request().method() !== "GET") return route.continue();
+      detailCalls += 1;
+      if (detailCalls > 1) return route.continue();
+      const response = await route.fetch();
+      const body = (await response.json()) as { image: { url: string; thumbnailUrl?: string | null } };
+      const mark = (url: string) => `${url}${url.includes("?") ? "&" : "?"}expiredprobe=1`;
+      body.image.url = mark(body.image.url);
+      if (body.image.thumbnailUrl) body.image.thumbnailUrl = mark(body.image.thumbnailUrl);
+      return route.fulfill({ response, json: body });
+    });
+    await page.route(/expiredprobe=1/, (route) => route.abort());
+
+    await page.goto(`/sorular/${question.id}`);
+    const picture = page.locator("img[alt$='sorusu']").first();
+    await expect(picture).toBeVisible();
+    await expect.poll(() => picture.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    expect(await picture.getAttribute("src")).not.toContain("expiredprobe");
+    await expect(page.getByText("Görsel yüklenemedi")).toHaveCount(0);
+    expect(detailCalls).toBe(2);
+  });
+
   test("pano açık ödevleri ilerlemeyle gösterir", async ({ page }) => {
     const w = await world();
     const today = todayInIstanbul();

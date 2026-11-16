@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 
 type Period = "weekly" | "monthly";
 
+const MAX_OFFSET = 12;
+
 export function LeaderboardPage() {
   const me = useMe();
   const [period, setPeriod] = useState<Period>("weekly");
@@ -54,7 +56,7 @@ export function LeaderboardPage() {
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <Button type="button" variant="secondary" size="icon" aria-label="Önceki dönem" onClick={() => setOffset((value) => value + 1)}>
+        <Button type="button" variant="secondary" size="icon" aria-label="Önceki dönem" disabled={offset >= MAX_OFFSET} onClick={() => setOffset((value) => Math.min(MAX_OFFSET, value + 1))}>
           <ChevronLeft aria-hidden="true" />
         </Button>
         <p className="text-center text-sm font-semibold" data-testid="period-range">

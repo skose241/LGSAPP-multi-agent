@@ -59,7 +59,9 @@ function LikeButton({ question }: { question: QuestionDetailData }) {
       type="button"
       variant={question.likedByMe ? "primary" : "secondary"}
       aria-pressed={question.likedByMe}
-      onClick={() => mutation.mutate(!question.likedByMe)}
+      onClick={() => {
+        if (!mutation.isPending) mutation.mutate(!question.likedByMe);
+      }}
       data-testid="like-button"
     >
       <ThumbsUp aria-hidden="true" />
@@ -133,7 +135,7 @@ export function QuestionDetail({ id }: { id: number }) {
   const aiState = normalizeAiState(q.aiSolutionState);
   const hasTextOptions = Object.values(q.options).some(Boolean);
   const optionEntries = (["a", "b", "c", "d"] as const).map((key, index) => ({ letter: "ABCD"[index] ?? "", text: q.options[key] }));
-  const refresh = () => void queryClient.invalidateQueries({ queryKey: questionKeys.detail(id) });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: questionKeys.detail(id) });
 
   return (
     <div className="flex flex-col gap-5">

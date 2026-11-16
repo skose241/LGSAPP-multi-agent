@@ -1,4 +1,4 @@
-import { answerQuestion, LONG_TEXT, reportSolution, rejectPendingReports } from "./support/student-data";
+import { answerQuestion, LONG_TEXT, reportSolution, rejectPendingReports, uploadQuestionImage } from "./support/student-data";
 import { expect, test } from "./support/fixtures";
 import { freshQuestion, studentLogin, validExplanation, world } from "./support/world";
 import { activeUser } from "./support/student-data";
@@ -33,6 +33,28 @@ test.describe("soru listesi", () => {
     await page.getByLabel("Ders").selectOption(String(second.lesson.id));
     await expect(page.getByLabel("Konu")).toBeEnabled();
     expect(w.lessons.length).toBeGreaterThan(1);
+  });
+
+  test("kart önizlemesi formülü KaTeX ile gösterir, yarım formül hata vermez", async ({ page }) => {
+    const stamp = Date.now().toString(36);
+    const closed = await freshQuestion(`Formül ${stamp}: $$\\frac{1}{2}$$ ve $x^2$ değeri kaçtır?`);
+    const cut = await freshQuestion(`Yarım ${stamp} ${"uzun ".repeat(25)}$\\frac{1}{2} + x^2 + 3 değeri`);
+    await studentLogin(page);
+    await page.goto("/sorular?durum=tumu");
+
+    const closedCard = page.getByTestId("pool-question").filter({ hasText: `Formül ${stamp}` });
+    await expect(closedCard.locator(".katex").first()).toBeVisible();
+    await expect(closedCard.locator(".katex-display")).toHaveCount(0);
+    await expect(closedCard.locator(".katex-error")).toHaveCount(0);
+
+    const cutCard = page.getByTestId("pool-question").filter({ hasText: `Yarım ${stamp}` });
+    await expect(cutCard).toBeVisible();
+    await expect(cutCard.locator(".katex-error")).toHaveCount(0);
+    const box = await cutCard.boundingBox();
+    const scroll = await cutCard.evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(scroll).toBeLessThanOrEqual(1);
+    expect(box?.width ?? 0).toBeGreaterThan(0);
+    expect(closed.question.id).not.toBe(cut.question.id);
   });
 
   test("çözülen soru çözdüklerimde görünür, çözmediklerimden düşer", async ({ page }) => {
@@ -158,6 +180,29 @@ test.describe("çözümler", () => {
     await page.getByRole("button", { name: "Kaydet" }).click();
     await expect(mine.getByTestId("solution-edited")).toBeVisible();
     await expect(mine).toContainText("Düzenlenmiş çözüm:");
+  });
+
+  test("çözüm metni düzenlenince görsel korunur", async ({ page }) => {
+    const { question, world: w } = await freshQuestion(`Görsel koruma ${Date.now().toString(36)}`);
+    const student = await studentLogin(page);
+    const imageId = await uploadQuestionImage(student, "solutionImage");
+    await answerQuestion(student, question.id, 2, validExplanation(w.settings.aciklamaMinKarakter), imageId);
+
+    await page.goto(`/sorular/${question.id}`);
+    const mine = page.getByTestId("solution").filter({ hasText: "(Sen)" });
+    await expect(mine.locator("img[alt='Çözüm görseli']")).toBeVisible();
+    await mine.getByTestId("solution-edit").click();
+    await page.getByLabel("Çözümü düzenle").fill(`Görsel kalmalı: ${validExplanation(w.settings.aciklamaMinKarakter)}`);
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(mine.getByTestId("solution-edited")).toBeVisible();
+
+    const list = (await (await page.request.get(`/api/questions/${question.id}/solutions`)).json()) as {
+      items: { isMine: boolean; imageFileId: number | null; image: unknown }[];
+    };
+    const own = list.items.find((item) => item.isMine);
+    expect(own?.imageFileId).toBe(imageId);
+    expect(own?.image).toBeTruthy();
+    await expect(mine.locator("img[alt='Çözüm görseli']")).toBeVisible();
   });
 
   test("şikâyet edilen çözüm düzenlenemez, öğretmen reddedince düzenleme açılır", async ({ page }) => {

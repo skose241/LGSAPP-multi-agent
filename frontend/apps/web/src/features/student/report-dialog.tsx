@@ -12,6 +12,7 @@ import { SelectField } from "@/components/ui/select-field";
 interface ReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCloseAutoFocus?: (event: Event) => void;
   target: "question" | "solution" | "comment";
   minLength: number;
   submit: (reason: ReportReasonValue, description: string) => Promise<unknown>;
@@ -19,7 +20,7 @@ interface ReportDialogProps {
 
 const titles = { question: "Soruyu şikâyet et", solution: "Çözümü şikâyet et", comment: "Yorumu şikâyet et" } as const;
 
-export function ReportDialog({ open, onOpenChange, target, minLength, submit }: ReportDialogProps) {
+export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, minLength, submit }: ReportDialogProps) {
   const reasons = reportReasonsFor(target);
   const [reason, setReason] = useState<ReportReasonValue>(reasons[0] ?? "other");
   const [description, setDescription] = useState("");
@@ -47,7 +48,7 @@ export function ReportDialog({ open, onOpenChange, target, minLength, submit }: 
 
   return (
     <Dialog open={open} onOpenChange={(next) => (mutation.isPending ? undefined : onOpenChange(next))}>
-      <DialogContent title={titles[target]} description="Şikâyetin inceleme için öğretmenlere gider. Nedenini kısaca açıkla.">
+      <DialogContent title={titles[target]} description="Şikâyetin inceleme için öğretmenlere gider. Nedenini kısaca açıkla." onCloseAutoFocus={onCloseAutoFocus}>
         <ProblemBanner state={error} conflictAsMessage />
         <SelectField label="Neden" value={reason} onChange={(event) => setReason(event.target.value as ReportReasonValue)}>
           {reasons.map((value) => (

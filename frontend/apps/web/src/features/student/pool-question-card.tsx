@@ -5,10 +5,11 @@ import type { QuestionPoolItem } from "@lgs/api/queries";
 import { CheckCircle2, ImageIcon, MessageSquare, ThumbsUp, XCircle } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { MathText } from "@/components/math-text";
 import { QuestionImage } from "@/components/question-image";
 import { cn } from "@/lib/utils";
 
-export function PoolQuestionCard({ item, onImageExpired }: { item: QuestionPoolItem; onImageExpired?: () => void }) {
+export function PoolQuestionCard({ item, onImageExpired }: { item: QuestionPoolItem; onImageExpired?: () => void | Promise<unknown> }) {
   const answered = item.myAnswer !== null;
 
   return (
@@ -34,7 +35,7 @@ export function PoolQuestionCard({ item, onImageExpired }: { item: QuestionPoolI
         </span>
       )}
 
-      {item.previewText ? <span className="line-clamp-4 max-w-prose text-base">{item.previewText}</span> : null}
+      {item.previewText ? <MathText text={item.previewText} compact className="line-clamp-4 max-w-prose overflow-hidden text-base" /> : null}
 
       <span className="mt-auto flex items-center justify-between gap-2 text-sm">
         {answered ? (

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { decodeJwt, ROLE_CLAIM, secondsUntilExpiry } from "./jwt";
 import { decideRoute } from "./route-guard";
 import { maskRecoveryCode, minPasswordLength, passwordRuleErrors, safeNextPath, changePasswordSchema, recoverSchema } from "./auth/schemas";
-import { clearDraft, loadDraft, saveDraft } from "./session/draft";
+import { adoptDraftOwner, clearAllDrafts, clearDraft, loadDraft, saveDraft } from "./session/draft";
 
 function jwt(payload: Record<string, unknown>) {
   const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -107,6 +107,10 @@ describe("taslak", () => {
   function memory() {
     const data = new Map<string, string>();
     return {
+      get length() {
+        return data.size;
+      },
+      key: (index: number) => Array.from(data.keys())[index] ?? null,
       getItem: (key: string) => data.get(key) ?? null,
       setItem: (key: string, value: string) => void data.set(key, value),
       removeItem: (key: string) => void data.delete(key),
@@ -119,6 +123,27 @@ describe("taslak", () => {
     expect(loadDraft("yorum:1", storage)).toBe("merhaba");
     clearDraft("yorum:1", storage);
     expect(loadDraft("yorum:1", storage)).toBe("");
+  });
+
+  it("clearAllDrafts yalnızca taslak önekli kayıtları siler", () => {
+    const storage = memory();
+    saveDraft("cevap:1", "a", storage);
+    saveDraft("yanit:2:3", "b", storage);
+    storage.setItem("baska", "korunur");
+    clearAllDrafts(storage);
+    expect(loadDraft("cevap:1", storage)).toBe("");
+    expect(loadDraft("yanit:2:3", storage)).toBe("");
+    expect(storage.getItem("baska")).toBe("korunur");
+  });
+
+  it("farklı kullanıcı girince taslaklar silinir, aynı kullanıcıda korunur", () => {
+    const storage = memory();
+    adoptDraftOwner(1, storage);
+    saveDraft("yorum:5:s", "birinci", storage);
+    adoptDraftOwner(1, storage);
+    expect(loadDraft("yorum:5:s", storage)).toBe("birinci");
+    adoptDraftOwner(2, storage);
+    expect(loadDraft("yorum:5:s", storage)).toBe("");
   });
 
   it("boş metin taslağı siler", () => {

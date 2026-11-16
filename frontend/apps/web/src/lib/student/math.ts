@@ -59,3 +59,19 @@ export function tokenizeMath(text: string): MathSegment[] {
 
   return segments;
 }
+
+export function tokenizeMathPreview(text: string): MathSegment[] {
+  const segments: MathSegment[] = [];
+  for (const segment of tokenizeMath(text)) {
+    const value = segment.type === "text" ? segment.value : segment.value.replace(/\s+/g, " ").trim();
+    const type = segment.type === "display" ? "inline" : segment.type;
+    if (type === "text") {
+      const last = segments[segments.length - 1];
+      if (last?.type === "text") last.value += value;
+      else segments.push({ type, value });
+    } else if (value) {
+      segments.push({ type, value });
+    }
+  }
+  return segments;
+}

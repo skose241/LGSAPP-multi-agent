@@ -39,7 +39,7 @@ function EditSolution({ solution, questionId, onDone }: { solution: Solution; qu
   const length = text.trim().length;
 
   const mutation = useMutation({
-    mutationFn: () => solutionMutations.update(api(), solution.id, text.trim(), solution.rowVersion ?? ""),
+    mutationFn: () => solutionMutations.update(api(), solution.id, text.trim(), solution.imageFileId ?? null, solution.rowVersion ?? ""),
     onSuccess: async () => {
       toast.success("Çözümün güncellendi.");
       await queryClient.invalidateQueries({ queryKey: solutionKeys.list(questionId) });
@@ -111,7 +111,7 @@ function SolutionCard({ solution, questionId, minReport }: { solution: Solution;
                   alt="Çözüm görseli"
                   variant="full"
                   zoomable
-                  onExpired={() => void queryClient.invalidateQueries({ queryKey: solutionKeys.list(questionId) })}
+                  onExpired={() => queryClient.invalidateQueries({ queryKey: solutionKeys.list(questionId) })}
                 />
               ) : null}
             </>

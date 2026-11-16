@@ -5,10 +5,11 @@ import { commentKeys, commentMutations, questionKeys, solutionKeys, type Comment
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CornerDownRight, Flag, Pencil, Reply, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ProblemBanner, type ProblemState } from "@/components/problem-banner";
+import { ActionMenu, type ActionMenuItem } from "@/components/ui/action-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReportDialog } from "@/features/student/report-dialog";
@@ -166,6 +167,7 @@ function EditForm({ comment, ctx, onDone }: { comment: Comment; ctx: CommentCont
       <ProblemBanner state={error} />
       <textarea
         aria-label="Yorumu düzenle"
+        autoFocus
         value={text}
         onChange={(event) => setText(event.target.value)}
         className="min-h-24 w-full resize-y rounded-md border border-border-strong bg-surface px-4 py-3 text-base focus-visible:border-primary"
@@ -195,6 +197,20 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
   const [deleteError, setDeleteError] = useState<ProblemState | null>(null);
   const invalidate = useInvalidateDiscussion(ctx.questionId);
   const remaining = useSecondsUntil(comment.editableUntil);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
+
+  useEffect(() => {
+    if (!editing && restoreFocus.current) {
+      restoreFocus.current = false;
+      triggerRef.current?.focus();
+    }
+  }, [editing]);
+
+  const returnFocus = (event: Event) => {
+    event.preventDefault();
+    triggerRef.current?.focus();
+  };
 
   const removal = useMutation({
     mutationFn: () => commentMutations.remove(api(), comment.id),
@@ -212,6 +228,36 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
   const gone = comment.status !== "active";
   const level = Math.min(depth, 3);
   const canEdit = comment.canEdit && !gone && (comment.editableUntil === null || remaining > 0);
+
+  const menuItems: ActionMenuItem[] = [];
+  if (canEdit) {
+    menuItems.push({
+      key: "edit",
+      icon: <Pencil aria-hidden="true" />,
+      label: (
+        <>
+          Düzenle
+          {comment.editableUntil && remaining > 0 ? <span className="text-xs font-normal text-muted-foreground">({formatRemaining(remaining)})</span> : null}
+        </>
+      ),
+      onSelect: () => setEditing(true),
+    });
+  }
+  if (comment.canReport) {
+    menuItems.push({ key: "report", icon: <Flag aria-hidden="true" />, label: "Şikâyet et", onSelect: () => setReporting(true) });
+  }
+  if (comment.canDelete) {
+    menuItems.push({
+      key: "delete",
+      icon: <Trash2 aria-hidden="true" />,
+      label: "Sil",
+      tone: "danger",
+      onSelect: () => {
+        setDeleteError(null);
+        setConfirmDelete(true);
+      },
+    });
+  }
 
   return (
     <li
@@ -235,7 +281,14 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
         </header>
 
         {editing ? (
-          <EditForm comment={comment} ctx={ctx} onDone={() => setEditing(false)} />
+          <EditForm
+            comment={comment}
+            ctx={ctx}
+            onDone={() => {
+              restoreFocus.current = true;
+              setEditing(false);
+            }}
+          />
         ) : gone ? (
           <p className="text-sm italic text-muted-foreground" data-testid="comment-body">
             [silindi]
@@ -248,40 +301,14 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
         )}
 
         {!gone && !editing ? (
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-nowrap items-center gap-1">
             {ctx.canComment ? (
-              <Button type="button" variant="ghost" className="h-11 px-3" onClick={() => setReplying((value) => !value)}>
+              <Button type="button" variant="ghost" className="h-11 shrink-0 px-3" onClick={() => setReplying((value) => !value)}>
                 <Reply aria-hidden="true" />
                 Yanıtla
               </Button>
             ) : null}
-            {canEdit ? (
-              <Button type="button" variant="ghost" className="h-11 px-3" onClick={() => setEditing(true)}>
-                <Pencil aria-hidden="true" />
-                Düzenle
-                {comment.editableUntil && remaining > 0 ? <span className="text-xs text-muted-foreground">({formatRemaining(remaining)})</span> : null}
-              </Button>
-            ) : null}
-            {comment.canDelete ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-11 px-3 text-danger"
-                onClick={() => {
-                  setDeleteError(null);
-                  setConfirmDelete(true);
-                }}
-              >
-                <Trash2 aria-hidden="true" />
-                Sil
-              </Button>
-            ) : null}
-            {comment.canReport ? (
-              <Button type="button" variant="ghost" className="h-11 px-3" onClick={() => setReporting(true)}>
-                <Flag aria-hidden="true" />
-                Şikâyet et
-              </Button>
-            ) : null}
+            <ActionMenu label="Diğer işlemler" items={menuItems} triggerRef={triggerRef} />
           </div>
         ) : null}
 
@@ -323,6 +350,7 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
         description="Yorumun yerinde [silindi] yazacak. Bu işlem geri alınamaz."
         confirmLabel="Evet, sil"
         tone="danger"
+        onCloseAutoFocus={returnFocus}
         pending={removal.isPending}
         error={deleteError}
         onConfirm={() => {
@@ -333,6 +361,7 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
       <ReportDialog
         open={reporting}
         onOpenChange={setReporting}
+        onCloseAutoFocus={returnFocus}
         target="comment"
         minLength={ctx.reportMinLength}
         submit={(reason, description) => commentMutations.report(api(), comment.id, reason, description)}

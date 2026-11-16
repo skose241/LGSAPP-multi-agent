@@ -59,6 +59,7 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
       setTextError(fieldError(state.problem, "solutionText"));
       setError(state);
       if (isApiError(e) && e.status === 409) {
+        clearDraft(draftKey);
         await queryClient.invalidateQueries({ queryKey: questionKeys.detail(question.id) });
       }
     },

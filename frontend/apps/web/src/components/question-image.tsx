@@ -11,7 +11,7 @@ interface QuestionImageProps {
   image: ImageInfo | null | undefined;
   alt: string;
   variant: "thumb" | "full";
-  onExpired?: () => void;
+  onExpired?: () => void | Promise<unknown>;
   zoomable?: boolean;
   className?: string;
   priority?: boolean;
@@ -20,20 +20,36 @@ interface QuestionImageProps {
 export function QuestionImage({ image, alt, variant, onExpired, zoomable = false, className, priority = false }: QuestionImageProps) {
   const source = imageSource(image, variant);
   const retried = useRef(false);
-  const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
+  const [erroredUrl, setErroredUrl] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [open, setOpen] = useState(false);
   if (!source) return null;
   const full = imageSource(image, "full");
+  const failed = erroredUrl === source.url && !refreshing;
 
   function handleError() {
+    const erroredSource = source?.url ?? null;
+    setErroredUrl(erroredSource);
     if (!retried.current && onExpired) {
       retried.current = true;
-      onExpired();
-      setAttempt((value) => value + 1);
-      return;
+      setRefreshing(true);
+      Promise.resolve(onExpired())
+        .catch(() => null)
+        .finally(() => setRefreshing(false));
     }
-    setFailed(true);
+  }
+
+  if (refreshing && erroredUrl === source.url) {
+    return (
+      <div
+        role="img"
+        aria-label={alt}
+        aria-busy="true"
+        className={cn("bg-placeholder flex aspect-[4/3] w-full items-center justify-center rounded-md border border-border text-sm text-muted-foreground", className)}
+      >
+        Görsel yenileniyor
+      </div>
+    );
   }
 
   if (failed) {
@@ -50,7 +66,7 @@ export function QuestionImage({ image, alt, variant, onExpired, zoomable = false
 
   const picture = (
     <Image
-      key={`${source.url}-${attempt}`}
+      key={source.url}
       src={source.url}
       alt={alt}
       width={source.width}

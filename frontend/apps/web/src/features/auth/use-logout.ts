@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api, run } from "@/lib/api/client";
+import { clearAllDrafts } from "@/lib/session/draft";
 
 export function useLogout() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export function useLogout() {
   async function logout() {
     setPending("one");
     await run(() => api().POST("/api/auth/logout", { body: { refreshToken: null } }));
+    clearAllDrafts();
     queryClient.clear();
     router.replace("/giris");
   }
@@ -26,6 +28,7 @@ export function useLogout() {
       toast.error(result.problem.message);
       return;
     }
+    clearAllDrafts();
     queryClient.clear();
     router.replace("/giris");
   }
