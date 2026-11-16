@@ -333,3 +333,89 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 4. Havuz soru listesi `GET /api/questions`; çözüm silme ucu (bağlı yorumlar); öğretmenin öğrenci profili istatistikleri; ayar düzenleme ucu (`soruUretimAktifMi`, `soruCarpani`).
 5. Frontend (Next.js) — sözleşme notları: enum camelCase, `Z`'li UTC, `rowVersion` base64, `image.url` (Next.js `unoptimized`), yükleme istemcide küçültme + HEIC çevirme, `DataTransfer` yok, 2–3 eşzamanlı yükleme, aynı `clientUploadId` ile 1/3/9 sn yeniden deneme, müdür `recoveryCodesMissing` yönlendirmesi.
 6. Key Vault, Managed Identity, MSSQL'den veri taşıma, Azure'a deploy.
+
+## Oturum 6 — 2026-11-14 / 2026-11-16
+
+### Yapılanlar (commit sırasıyla)
+- `33cd61a` Öğretmen branş ataması (`branchLessonId`, `PUT /api/admin/users/{id}/branch-lesson`) ve zamanlayıcıda sınırlı yeniden deneme (günde en fazla 3, 10 dk ara, 23:00 sınırı).
+- AI modülü (plan: `.claude/plan-ai-modulu.md`, tasarım: `tasarim-domain.md` Revizyon 7):
+  - `ef1fbd1` altyapı ve veri modeli: `IGeminiClient`/`GeminiRestClient` doğrudan REST, yeniden deneme, AiLog, maliyet.
+  - `ce93586` öğrenci istekli çözüm: kota (öğrenci 5/gün, global 150), Blind/Verified mod, `aiSolutionState`.
+  - `c78f6c6` Gemini ile soru üretimi ve doğrulama, `AiProviderGate` devre kesici.
+  - `616dd15` şüpheli cevap anahtarı: AI çözümü gizlenir, `GET /api/admin/disputed-questions`, dismiss, branş yetkisi, inceleme notu, run düzeyi hata bildirimi.
+  - `272441c` yönetim: `GET /api/admin/ai/usage`, `GET /api/admin/ai/status`, `GET/PUT /api/admin/settings` (beyaz liste); uyuşmazlık sonrası bekleme süresi.
+  - `db8769f` tasarım belgesine Revizyon 7 eklendi.
+- Frontend (plan: `.claude/plan-frontend.md`):
+  - `a1b791c` F0, backend hazırlığı:
+    - `contracts/openapi.json` build'de üretiliyor.
+    - BFF istemci IP'si (`Bff:ProxyKey`, `X-LGS-Client-IP`).
+    - Dönen refresh token: öğrenci/öğretmen 30 gün kayan + 90 gün mutlak, müdür 12 saat; reuse tespiti, 30 sn tolerans ve en fazla 3 kardeş; must_change oturumlarında refresh yok.
+  - `9b696bd` F1a: pnpm monorepo (`frontend/apps/web`, `frontend/packages/api`), Next 16, Tailwind v4, yeni tasarım sistemi (gece mavisi #3548c4 + mercan #f98640, Bricolage Grotesque + Figtree), `/tasarim` vitrini, geniş masaüstü düzeni, `dev:lan`.
+  - `22ea5ed` F1b: BFF (httpOnly `__Host-` çerezler, otomatik yenileme, CSRF, `TRUST_PROXY`), `proxy.ts`, auth ekranları, rol menülü kabuk. Reviewer bulguları (open redirect vb.) kapatıldı. `logout-all` artık security stamp'i yeniliyor.
+  - `2b947e0` F2: müdür kullanıcı yönetimi (liste + 25'lik sayfalama, oluşturma, tek seferlik şifre + yazdırılabilir giriş kartı, ban, şifre yenileme, branş) ve şifre talepleri.
+  - `dc46300` F3 backend:
+    - `GET /api/questions` havuz listesi, `GET /api/me/stats`, `GET /api/settings/public`.
+    - Öğrenci çözümünü düzenleme (`PATCH /api/solutions/{id}`, silme yok); bekleyen şikayet varken kilitli (409, `editLockedReason`).
+    - 480 px thumbnail (`ImageView.thumbnailUrl`, migration `StoredFileThumbnails`).
+- Testler: backend 682, frontend vitest ~114, E2E Chromium + WebKit iPhone. Her aşamada reviewer turu yapıldı.
+
+### Alınan kararlar
+- AI: doğrudan REST (SK yok), uyuşmazlıkta AI çözümü gizlenir ve öğretmen inceler, ikinci doğrulama açık, ücretli katman + `gemini-3.8-flash`. Tarihe bağlı fiyat ertelendi.
+- Frontend:
+  - httpOnly cookie + Next.js BFF, CSR.
+  - Dönen refresh token.
+  - Eksik backend uçları ihtiyaç anında yazılır.
+  - Tamamen yeni görsel kimlik (kullanıcı onayladı, PC ve Android'de denendi); masaüstünde yan boşluk yok.
+- Öğrenci çözümü silinemez, düzenlenebilir (açıklama zorunlu). Açık şikayet varken düzenleme kilitli.
+- Thumbnail yüklemede üretilir; eski dosyalarda yok, istemci `thumbnailUrl ?? url` kullanır.
+- frontend-agent'a Write aracı eklendi.
+
+### Açık kalanlar / bilinenler
+- Gerçek Gemini anahtarıyla duman testi kullanıcı onayı bekliyor (anahtarlar canlıyla ortak; ayrı v2 anahtarı önerildi).
+- Zamanlayıcı düşük bulguları:
+  - NotConfigured iken manuel tetikleme kabul ediliyor.
+  - Interrupted run'da müdüre bildirim gitmiyor.
+  - Boş Publish run kaydı oluşuyor.
+  - MARS uyarısı.
+  - Ödev bildirimleri RunId'siz.
+- AI: devre kesici bellek içi (tek örnek). Usage `limitConsumed` ile kota sayacı Pending'i farklı sayıyor (normal akışta fark yok).
+- Öğretmen çözümlerine şikayet kilidi uygulanmadı (görsel kanıt kaybolabilir, risk düşük).
+- Thumbnail backfill komutu yok. Çözüm düzenleme geçmişi tutulmuyor.
+- `ErrorResponseConvention` sezgisel: yeni `Fail.Conflict` yolları elle eklenmeli.
+- Yayın (F8) için gerekli ayarlar:
+  - Next.js: `TRUST_PROXY=true`, `APP_ORIGIN`, `BFF_PROXY_KEY` (backend `Bff__ProxyKey` ile aynı, ≥32 karakter).
+  - Migration'lar koddan önce uygulanmalı.
+  - CSP ve güvenlik başlıkları.
+  - Front Door eklenirse `TRUSTED_PROXY_HOPS` güncellenmeli.
+- `contracts/openapi.json` LF/CRLF uyarısı veriyor; CI diff kontrolü için `.gitattributes` gerekebilir.
+- Yerel geliştirme:
+  - Kullanıcının 3000 portunda dev sunucusu var.
+  - Telefondan erişim için `npx pnpm@10 dev:lan` ve `http://192.168.1.117:3000`. `.env.development.local` içinde `DEV_ALLOWED_ORIGINS` var.
+  - pnpm `npx pnpm@10` ile çalıştırılıyor.
+
+### F3 frontend (öğrenci ekranları) — 2026-11-16, commit edildi
+- Ekranlar:
+  - pano (açık ödevler, son 7 gün soruları, haftalık puan/sıra, bildirim özeti, gerçek zil sayacı)
+  - `/sorular` (sekmeler, ders/konu/kaynak filtresi URL'de, 12'lik sayfalama)
+  - soru detayı (KaTeX `MathText` self-host `trust:false`, cevaplama + sayaç + sessionStorage taslağı, sonuç kartı, tartışma kilidi, çözümler + düzenleme + `pendingReport` kilidi, beğeni, şikayet, salt-okunur AI paneli)
+  - yorum ağacı + `/yorumlar/[id]`
+  - bildirimler
+  - liderlik (haftalık/aylık, offset)
+  - istatistikli profil
+- Test: vitest 129; E2E Chromium + WebKit iPhone 182 geçti, 3 test hatası düzeltilip yeniden koşuldu (tam paket baştan koşulmadı); axe 0. Şikayet kilidi DB ile ilk kez uçtan uca doğrulandı.
+- Reviewer turu bu aşama için YAPILMADI (kullanıcı doğrudan commit istedi).
+- Bilinen küçük sorunlar:
+  - Pano/liste kart önizlemesinde formüller ham (`$x^2$`) görünüyor; MathText kullanılmalı.
+  - Masaüstünde dar yorum sütununda derin yanıtların "Yanıtla/Şikâyet et" düğmeleri alt alta kırılıyor.
+  - Süresi dolan görsel için "üst sorguyu bir kez yeniden çek" davranışı kodda var ama E2E ile doğrulanmadı.
+  - Ödev ekranları (`/odevler`, ödev detayı) "Çok yakında"; pano ödev kartları şimdilik `/sorular?ders=`'e gidiyor.
+  - Görselli açıklama F4'te.
+  - E2E'de Turbopack önbelleği için koşu öncesi `.next-e2e` silinmeli.
+- Backend gözlemleri: öğretmen soru oluşturma 10/dk limiti testte doluyor; yanıtsız yorum silinince tamamen kayboluyor, yanıtlı yorum "[silindi]" kalıyor.
+- GitHub: `origin` = github.com/skose241/LGSAPP-multi-agent. Bu oturumdaki commit'ler 2026-11-16'ya kadar push edilmemişti (kurala göre yalnız istekle push).
+
+### Sıradaki adımlar
+1. F3 küçük düzeltmeleri (kart önizlemesinde KaTeX, yorum düğmeleri) + F3 için reviewer turu.
+2. F4 yükleme hattı (HEIC, küçültme, yeniden deneme, çözüm görseli, sorularım; büyük yüklemede "tekrar dene").
+3. F5 AI ekranları, F6 öğretmen (önce `GET /api/students`, `/students/{id}/stats`, `needs-solution` uçları), F7 müdür operasyon, F8 sertleştirme + yayın.
+4. Gerçek Gemini duman testi (onayla), Key Vault, veri taşıma, Azure deploy.

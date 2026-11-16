@@ -54,8 +54,7 @@ test.describe("kullanıcı oluşturma", () => {
     const userName = `ogretmen.${Date.now().toString(36)}`;
     await fillCreateForm(page, { userName, firstName: "Ayşe", lastName: "Öğretmen" });
     const branch = page.getByLabel(/^Branş dersi/);
-    const optionCount = await branch.locator("option").count();
-    expect(optionCount).toBeGreaterThan(1);
+    await expect(branch.locator("option")).not.toHaveCount(1);
     const branchName = (await branch.locator("option").nth(1).textContent()) ?? "";
     await branch.selectOption({ index: 1 });
     await page.getByRole("button", { name: "Hesap oluştur" }).click();

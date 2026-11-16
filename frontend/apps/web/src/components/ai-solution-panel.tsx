@@ -57,14 +57,16 @@ export function AiSolutionPanel({ state, quotaLeft, onRequest, solution }: AiSol
   if (state === "none") {
     return (
       <PanelFrame tone="border-primary-200 bg-primary-soft text-primary-soft-foreground" icon={Sparkles} title="Yapay zekâ çözümü">
-        <p className="text-sm">Takıldığın yerde yapay zekâdan adım adım çözüm isteyebilirsin.</p>
+        <p className="text-sm">{onRequest ? "Takıldığın yerde yapay zekâdan adım adım çözüm isteyebilirsin." : "Bu soru için henüz yapay zekâ çözümü istenmedi."}</p>
         {quotaLeft !== undefined ? (
           <p className="text-xs font-semibold">Bugün kalan hakkın: {quotaLeft}</p>
         ) : null}
-        <Button onClick={onRequest} className="mt-1 self-start">
-          <Bot aria-hidden="true" />
-          Çözüm İste
-        </Button>
+        {onRequest ? (
+          <Button onClick={onRequest} className="mt-1 self-start">
+            <Bot aria-hidden="true" />
+            Çözüm İste
+          </Button>
+        ) : null}
       </PanelFrame>
     );
   }

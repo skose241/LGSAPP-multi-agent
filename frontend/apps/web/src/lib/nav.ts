@@ -37,7 +37,7 @@ const menu = item("menu", "Menü", "/menu", LayoutGrid);
 
 const studentItems: NavItem[] = [
   pano,
-  item("coz", "Soru Çöz", "/soru-coz", ListChecks),
+  item("coz", "Soru Çöz", "/sorular", ListChecks),
   item("yukle", "Soru Yükle", "/soru-yukle", ImagePlus),
   item("odevler", "Ödevler", "/odevler", ClipboardList),
   liderlik,

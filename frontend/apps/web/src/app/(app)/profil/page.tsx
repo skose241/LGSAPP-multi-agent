@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangePasswordForm } from "@/features/auth/change-password-form";
+import { ProfileStats } from "@/features/student/profile-stats";
 import { SessionActions } from "@/features/auth/session-actions";
 import { useMe } from "@/features/auth/use-me";
 import { minPasswordLength } from "@/lib/auth/schemas";
@@ -69,6 +70,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+      {user?.role === "ogrenci" ? <ProfileStats /> : null}
     </div>
   );
 }

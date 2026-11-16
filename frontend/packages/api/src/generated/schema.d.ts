@@ -5009,6 +5009,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StudentStatsView"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications": {
         parameters: {
             query?: never;
@@ -5293,7 +5355,72 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: {
+                    lessonId?: number;
+                    topicId?: number;
+                    source?: components["schemas"]["QuestionSource"];
+                    answered?: boolean;
+                    since?: number;
+                    includeHidden?: boolean;
+                    scheduled?: boolean;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["QuestionPoolListView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -6707,6 +6834,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicSettingsView"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/solutions/{id}": {
         parameters: {
             query?: never;
@@ -7303,6 +7492,16 @@ export interface components {
             /** Format: int32 */
             solutionId: number;
         };
+        AnswerTotalsView: {
+            /** Format: int32 */
+            answered: number;
+            /** Format: int32 */
+            correct: number;
+            /** Format: int32 */
+            wrong: number;
+            /** Format: double */
+            successRate: null | number;
+        };
         AssignmentChangeView: {
             /** Format: int32 */
             id: number;
@@ -7385,6 +7584,18 @@ export interface components {
             correctOption: number;
             /** Format: date-time */
             answeredAt: string;
+        };
+        AssignmentParticipationView: {
+            /** Format: int32 */
+            assigned: number;
+            /** Format: int32 */
+            completed: number;
+            /** Format: int32 */
+            partial: number;
+            /** Format: int32 */
+            missed: number;
+            /** Format: int32 */
+            notStarted: number;
         };
         AssignmentQuestionIdsRequest: {
             questionIds: number[];
@@ -7636,6 +7847,12 @@ export interface components {
             hiddenReplyCount: number;
             replies: components["schemas"]["CommentView"][];
         };
+        ContributionStatsView: {
+            /** Format: int32 */
+            questionsUploaded: number;
+            /** Format: int32 */
+            solutionsWritten: number;
+        };
         CreateAssignmentRequest: {
             /** Format: int32 */
             lessonId: number;
@@ -7776,6 +7993,11 @@ export interface components {
             url: string;
             /** Format: date-time */
             urlExpiresAt: string;
+            thumbnailUrl?: null | string;
+            /** Format: int32 */
+            thumbnailWidth?: null | number;
+            /** Format: int32 */
+            thumbnailHeight?: null | number;
         };
         ForgotPasswordRequest: {
             userName: string;
@@ -7809,6 +8031,11 @@ export interface components {
             height: number;
             /** Format: date-time */
             expiresAt: string;
+            thumbnailUrl?: null | string;
+            /** Format: int32 */
+            thumbnailWidth?: null | number;
+            /** Format: int32 */
+            thumbnailHeight?: null | number;
         };
         LeaderboardItemView: {
             /** Format: int32 */
@@ -7847,6 +8074,17 @@ export interface components {
         };
         /** @enum {string} */
         LessonSession: "sozel" | "sayisal";
+        LessonStatsView: {
+            lesson: components["schemas"]["LessonRefView"];
+            /** Format: int32 */
+            answered: number;
+            /** Format: int32 */
+            correct: number;
+            /** Format: int32 */
+            wrong: number;
+            /** Format: double */
+            successRate: null | number;
+        };
         LessonView: {
             /** Format: int32 */
             id: number;
@@ -7964,6 +8202,25 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        PeriodStandingView: {
+            /** Format: int32 */
+            points: number;
+            /** Format: int32 */
+            rank: null | number;
+        };
+        PointsStatsView: {
+            /** Format: int32 */
+            total: number;
+            weekly: components["schemas"]["PeriodStandingView"];
+            monthly: components["schemas"]["PeriodStandingView"];
+        };
+        PoolMyAnswerView: {
+            /** Format: uint8 */
+            selectedOption: number;
+            isCorrect: boolean;
+            /** Format: date-time */
+            answeredAt: string;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -7972,6 +8229,27 @@ export interface components {
             detail?: null | string;
             instance?: null | string;
             traceId?: null | string;
+        };
+        PublicSettingsView: {
+            /** Format: int32 */
+            aciklamaMinKarakter: number;
+            /** Format: int32 */
+            cozumMaxKarakter: number;
+            /** Format: int32 */
+            yorumMaxKarakter: number;
+            /** Format: int32 */
+            yorumDuzenlemeDk: number;
+            /** Format: int32 */
+            yorumMaxDerinlik: number;
+            /** Format: int32 */
+            yorumGorunurDerinlik: number;
+            /** Format: int32 */
+            sikayetMinKarakter: number;
+            /** Format: int32 */
+            gunlukSoruYuklemeLimiti: number;
+            /** Format: int32 */
+            gunlukDosyaLimiti: number;
+            aiCozumAktifMi: boolean;
         };
         QuestionDetailView: {
             /** Format: int32 */
@@ -8022,6 +8300,42 @@ export interface components {
             canReport: boolean;
             canModerate: boolean;
             canRequestAiSolution: boolean;
+        };
+        QuestionPoolItemView: {
+            /** Format: int32 */
+            id: number;
+            source: components["schemas"]["QuestionSource"];
+            lesson: components["schemas"]["LessonRefView"];
+            topic: null | components["schemas"]["TopicRefView"];
+            author: null | components["schemas"]["UserRefView"];
+            /** Format: date-time */
+            publishedAt: null | string;
+            /** Format: date */
+            scheduledPublishDate: null | string;
+            isHidden: null | boolean;
+            previewText: null | string;
+            image: null | components["schemas"]["ImageView"];
+            /** Format: int32 */
+            optionCount: number;
+            hasTextOptions: boolean;
+            isMine: boolean;
+            myAnswer: null | components["schemas"]["PoolMyAnswerView"];
+            /** Format: uint8 */
+            correctOption: null | number;
+            /** Format: int32 */
+            likeCount: number;
+            likedByMe: boolean;
+            /** Format: int32 */
+            commentCount: null | number;
+        };
+        QuestionPoolListView: {
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            items: components["schemas"]["QuestionPoolItemView"][];
         };
         /** @enum {string} */
         QuestionSource: "teacher" | "student" | "ai";
@@ -8190,6 +8504,8 @@ export interface components {
             isDeleted: boolean;
             /** Format: date-time */
             createdAt: string;
+            /** Format: date-time */
+            updatedAt: null | string;
             /** Format: byte */
             rowVersion: string;
         };
@@ -8356,11 +8672,19 @@ export interface components {
             commentCount: number;
             isMine: boolean;
             canEdit: boolean;
+            editLockedReason: null | string;
             /** Format: byte */
             rowVersion: null | string;
         };
         StartSchedulerRunRequest: {
             kind: null | string;
+        };
+        StudentStatsView: {
+            totals: components["schemas"]["AnswerTotalsView"];
+            lessons: components["schemas"]["LessonStatsView"][];
+            assignments: components["schemas"]["AssignmentParticipationView"];
+            points: components["schemas"]["PointsStatsView"];
+            contributions: components["schemas"]["ContributionStatsView"];
         };
         SubmitAnswerRequest: {
             /** Format: uint8 */

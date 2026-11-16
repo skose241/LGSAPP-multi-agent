@@ -1,6 +1,6 @@
 "use client";
 
-import { passwordResetRequestsQuery } from "@lgs/api/queries";
+import { passwordResetRequestsQuery, unreadCountQuery } from "@lgs/api/queries";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
@@ -33,6 +33,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const isMudur = me.data?.role === "mudur";
   const resets = useQuery({ ...passwordResetRequestsQuery(api()), enabled: isMudur && !target });
   const pendingResets = resets.data?.length ?? 0;
+  const unread = useQuery(unreadCountQuery(api(), Boolean(me.data) && !target));
 
   useEffect(() => {
     if (target) router.replace(target);
@@ -68,6 +69,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       userName={`${me.data.firstName} ${me.data.lastName}`.trim() || me.data.userName}
       roleLabel={roleLabel(me.data.role)}
       notificationsHref="/bildirimler"
+      notificationCount={unread.data?.count ?? 0}
       sidebarActions={<SessionActions />}
     >
       {children}

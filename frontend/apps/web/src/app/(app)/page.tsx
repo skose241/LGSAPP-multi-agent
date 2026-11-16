@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
+import { StudentDashboard } from "@/features/student/student-dashboard";
 import { MudurDashboard } from "@/features/admin/mudur-dashboard";
 import { useMe } from "@/features/auth/use-me";
 
@@ -82,15 +83,18 @@ const panels: Record<string, Panel[]> = {
 export default function DashboardPage() {
   const me = useMe();
   const role = me.data?.role ?? "ogrenci";
-  const items = role === "mudur" ? [] : (panels[role] ?? panels["ogrenci"] ?? []);
+  const items = role === "mudur" || role === "ogrenci" ? [] : (panels[role] ?? panels["ogrenci"] ?? []);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-3xl">Merhaba {me.data?.firstName ?? ""}</h1>
-        <p className="text-muted-foreground">Bu sayfa hazırlanıyor. Veriler ilgili ekranlar eklendikçe burada görünecek.</p>
+        {role === "ogrenci" || role === "mudur" ? null : (
+          <p className="text-muted-foreground">Bu sayfa hazırlanıyor. Veriler ilgili ekranlar eklendikçe burada görünecek.</p>
+        )}
       </div>
       {role === "mudur" ? <MudurDashboard /> : null}
+      {role === "ogrenci" ? <StudentDashboard /> : null}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {items.map((panel) => (
           <EmptyState
