@@ -3,6 +3,7 @@
 import { KeyRound } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { LicenseLink } from "@/components/license-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangePasswordForm } from "@/features/auth/change-password-form";
@@ -41,6 +42,7 @@ export default function ProfilePage() {
               <Info label="Kullanıcı adı" value={user?.userName ?? ""} />
               <Info label="Rol" value={roleLabel(user?.role)} />
               {user?.className ? <Info label="Sınıf" value={user.className} /> : null}
+              {user?.role === "ogretmen" ? <Info label="Branş" value={user.branchLessonName ?? "Atanmamış"} /> : null}
             </dl>
             {user?.role === "mudur" ? (
               <Button asChild variant="secondary" className="self-start">
@@ -71,6 +73,7 @@ export default function ProfilePage() {
         </Card>
       </div>
       {user?.role === "ogrenci" ? <ProfileStats /> : null}
+      <LicenseLink className="self-start" />
     </div>
   );
 }

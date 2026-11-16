@@ -8343,6 +8343,7 @@ export interface components {
             canReport: boolean;
             canModerate: boolean;
             canRequestAiSolution: boolean;
+            canResolveDispute: boolean;
         };
         QuestionPoolItemView: {
             /** Format: int32 */
@@ -8858,6 +8859,9 @@ export interface components {
             role: string;
             mustChangePassword: boolean;
             recoveryCodesMissing: boolean;
+            /** Format: int32 */
+            branchLessonId?: null | number;
+            branchLessonName?: null | string;
         };
         UserRefView: {
             /** Format: int32 */

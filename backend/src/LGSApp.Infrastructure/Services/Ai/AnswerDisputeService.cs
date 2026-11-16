@@ -304,6 +304,7 @@ public sealed class AnswerDisputeService(
         var now = clock.UtcNow;
         question.IsAnswerDisputed = false;
         question.AnswerDisputedAt = null;
+        question.AiSuggestedOption = null;
         question.AnswerKeyReviewedAt = now;
         question.AnswerKeyReviewedByUserId = actor.UserId;
         question.AnswerKeyReviewNote = command.Note;

@@ -471,3 +471,30 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 ### Sıradaki adımlar
 1. heic-to lisans kararı; WrongAnswerKey kuralı onayı.
 2. F5 AI ekranları, F6 öğretmen, F7 müdür operasyon, F8 sertleştirme + yayın.
+
+### F5 AI ekranları + lisans sayfası — 2026-11-16, commit edildi
+- Kullanıcı kararları: heic-to için lisans bildirimi eklenecek (alternatif aranmayacak); `WrongAnswerKey` şikâyeti yalnız cevaplamış öğrenciye açık kalacak.
+- F5 kapsamı tüm rollerin AI ekranları olarak tanımlandı; F6/F7'de kalanlar AI dışı ekranlar.
+- Lisans:
+  - `/lisanslar` herkese açık, tam eşleşme.
+  - `public/licenses/*` (heic-to, libheif 1.23.7, libde265 1.0.16, GPL-3.0); bilinmeyen dosya 404.
+  - `scripts/generate-licenses.mjs` prebuild'de `third-party.json` üretir.
+- Öğrenci AI paneli: istek, kota, 429/503 geri sayımı, durum metinleri.
+- `/ogretmen/supheli-anahtarlar` (+ detay): karar düğmeleri `permissions.canResolveDispute` ile; anahtar değiştir / dismiss, 409 bandı.
+- `/yonetim/yapay-zeka`: durum, kullanım (7/30/92 gün), 8 AI ayarı.
+- Backend:
+  - `canResolveDispute`; `aiSuggestedOption` ve gizli AI çözümü yalnız karar yetkilisine (soru detayı, çözümler, şikâyet detayı).
+  - Çözülünce `AiSuggestedOption` temizleniyor; anahtar değişim notu `answerKeyReviewNote`.
+  - `auth/me`'ye `branchLessonId`/`branchLessonName`.
+  - `TestDatabase` yardımcısı (seed hatasında DB siliniyor).
+- E2E artık tekrarlanabilir: `npx pnpm@10 e2e:run` (`e2e/run-e2e.mjs` + `e2e/README.md`). `global-setup` Fake AI değilse durur.
+- Son koşular: backend 708/708, vitest 232, `next build` başarılı, E2E (yeni betikle tek temiz koşu) 309 geçti / 0 hata / 3 skip.
+- Açık:
+  - LocalDB'de önceki kesilmiş koşudan 12 `LGSApp_Test_*` DB (silme onayı bekleniyor).
+  - libheif/libde265 telif yılı ve heic-to wasm içindeki ek bileşenler doğrulanmadı.
+  - Moderatörün kendi AI isteği ve fotoğraflı AI yolu UI'da denenmedi.
+  - `next build` varsayılan `.next`'e yazar; 3000'deki dev sunucusu yeniden derleyebilir.
+
+### Sıradaki adımlar
+1. F6 öğretmen (önce B4-öğretmen `GET /api/students`, `/students/{id}/stats`, B5 `needs-solution`).
+2. F7 müdür operasyon, F8 sertleştirme + yayın.

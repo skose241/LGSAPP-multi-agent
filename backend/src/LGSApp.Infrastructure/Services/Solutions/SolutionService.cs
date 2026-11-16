@@ -71,10 +71,18 @@ public sealed class SolutionService(
         }
 
         var userId = actor.UserId;
+        var canSeeHiddenAi = false;
+        if (actor.IsModerator)
+        {
+            var lessonId = await db.Questions.AsNoTracking().Where(q => q.Id == questionId).Select(q => q.LessonId).FirstAsync(cancellationToken);
+            canSeeHiddenAi = await AnswerKeyScope.CanResolveAsync(db, actor, lessonId, cancellationToken);
+        }
+
         var rows = await db.Solutions.AsNoTracking()
             .Where(s => s.QuestionId == questionId
                 && !s.IsDeleted
                 && (actor.IsModerator || !s.IsHidden)
+                && (canSeeHiddenAi || !(s.IsHidden && s.Type == SolutionType.Ai))
                 && (!ownOnly || (s.AuthorUserId == userId && s.Type == SolutionType.Student)))
             .ToListAsync(cancellationToken);
 

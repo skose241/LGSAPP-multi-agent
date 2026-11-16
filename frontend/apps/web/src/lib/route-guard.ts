@@ -11,13 +11,15 @@ export interface GuardInput {
 }
 
 const PUBLIC_PATHS = ["/giris", "/sifremi-unuttum", "/kurtarma"];
+const PUBLIC_EXACT = ["/lisanslar", "/tasarim"];
 
 function matches(pathname: string, base: string) {
   return pathname === base || pathname.startsWith(`${base}/`);
 }
 
 export function isPublicPath(pathname: string) {
-  return PUBLIC_PATHS.some((base) => matches(pathname, base)) || matches(pathname, "/tasarim");
+  const trimmed = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  return PUBLIC_PATHS.some((base) => matches(pathname, base)) || PUBLIC_EXACT.includes(trimmed);
 }
 
 export function decideRoute({ pathname, search, hasAccess, hasRefresh, info }: GuardInput): GuardDecision {

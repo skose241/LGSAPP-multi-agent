@@ -11,7 +11,6 @@ using LGSApp.Infrastructure.Services.Questions;
 using LGSApp.Infrastructure.Services.Settings;
 using LGSApp.Infrastructure.Services.Stats;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -19,53 +18,40 @@ namespace LGSApp.Tests.Questions;
 
 public sealed class QuestionIdempotencyTests : IAsyncLifetime
 {
-    private const string Server = "Server=(localdb)\\MSSQLLocalDB;Trusted_Connection=True;TrustServerCertificate=True;";
-    private readonly string _database = "LGSApp_Test_" + Guid.NewGuid().ToString("N");
+    private readonly string _database = TestDatabase.NewName();
     private readonly TurkeyTime _clock = new(TimeProvider.System);
     private readonly string _description = new('a', 40);
     private bool _available;
     private int _userId;
     private int _lessonId;
 
-    private string ConnectionString => $"{Server}Database={_database};";
-
-    private AppDbContext NewDb() =>
-        new(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(ConnectionString).Options);
+    private AppDbContext NewDb() => TestDatabase.Open(_database);
 
     public async Task InitializeAsync()
     {
-        try
+        _available = await TestDatabase.TryCreateAsync(_database, async seed =>
         {
-            await using var db = NewDb();
-            await db.Database.MigrateAsync();
-            _available = true;
-        }
-        catch (SqlException)
-        {
-            return;
-        }
-
-        await using var seed = NewDb();
-        var user = new ApplicationUser
-        {
-            UserName = "ogrenci1",
-            NormalizedUserName = "OGRENCI1",
-            SecurityStamp = Guid.NewGuid().ToString(),
-            FirstName = "Test",
-            LastName = "Ogrenci"
-        };
-        seed.Users.Add(user);
-        var lesson = new Lesson { Name = "Matematik", Session = LessonSession.Sayisal, OrderNo = 1, IsActive = true };
-        seed.Lessons.Add(lesson);
-        await seed.SaveChangesAsync();
-        seed.UserRoles.Add(new IdentityUserRole<int> { UserId = user.Id, RoleId = Roles.OgrenciId });
-        await seed.SaveChangesAsync();
-        await SetAsync(seed, SettingKeys.GunlukSoruYuklemeLimiti, "2");
-        await SetAsync(seed, SettingKeys.PuanliSoruYuklemeGunluk, "1");
-        await SetAsync(seed, SettingKeys.PuanSoruYukleme, "3");
-        await SetAsync(seed, SettingKeys.AciklamaMinKarakter, "10");
-        _userId = user.Id;
-        _lessonId = lesson.Id;
+            var user = new ApplicationUser
+            {
+                UserName = "ogrenci1",
+                NormalizedUserName = "OGRENCI1",
+                SecurityStamp = Guid.NewGuid().ToString(),
+                FirstName = "Test",
+                LastName = "Ogrenci"
+            };
+            seed.Users.Add(user);
+            var lesson = new Lesson { Name = "Matematik", Session = LessonSession.Sayisal, OrderNo = 1, IsActive = true };
+            seed.Lessons.Add(lesson);
+            await seed.SaveChangesAsync();
+            seed.UserRoles.Add(new IdentityUserRole<int> { UserId = user.Id, RoleId = Roles.OgrenciId });
+            await seed.SaveChangesAsync();
+            await SetAsync(seed, SettingKeys.GunlukSoruYuklemeLimiti, "2");
+            await SetAsync(seed, SettingKeys.PuanliSoruYuklemeGunluk, "1");
+            await SetAsync(seed, SettingKeys.PuanSoruYukleme, "3");
+            await SetAsync(seed, SettingKeys.AciklamaMinKarakter, "10");
+            _userId = user.Id;
+            _lessonId = lesson.Id;
+        });
     }
 
     private static async Task SetAsync(AppDbContext db, string key, string value)
@@ -85,13 +71,10 @@ public sealed class QuestionIdempotencyTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        if (!_available)
+        if (_available)
         {
-            return;
+            await TestDatabase.DropAsync(_database);
         }
-
-        await using var db = NewDb();
-        await db.Database.EnsureDeletedAsync();
     }
 
     private async Task<int> AddFileAsync(AppDbContext db)
@@ -360,7 +343,7 @@ public sealed class QuestionIdempotencyTests : IAsyncLifetime
             Task.FromResult(ServiceResult<QuestionDetailView>.Ok(new QuestionDetailView(
                 questionId, QuestionSource.Student, new LessonRefView(1, "x"), null, null, null, null, null,
                 new QuestionOptionsView(null, null, null, null), null, DateTime.UtcNow, null, null, null, null, null, null,
-                new QuestionPermissionsView(false, false, false, false, false, false), null, false, null, "none", null, null, null, false, null)));
+                new QuestionPermissionsView(false, false, false, false, false, false, false), null, false, null, "none", null, null, null, false, null)));
     }
 
     private sealed class StubFileUrls : IFileUrlService

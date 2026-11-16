@@ -87,7 +87,16 @@ export interface NotificationTarget {
   commentId?: number | null;
 }
 
-export function notificationHref(target: NotificationTarget): string | null {
+export interface NotificationHrefContext {
+  type?: string;
+  role?: string;
+}
+
+export function notificationHref(target: NotificationTarget, context: NotificationHrefContext = {}): string | null {
+  const moderator = context.role === "ogretmen" || context.role === "mudur";
+  if (context.type === "answerDisputed" && moderator && target.questionId) {
+    return `/ogretmen/supheli-anahtarlar/${target.questionId}`;
+  }
   if (target.commentId) return `/yorumlar/${target.commentId}`;
   if (target.questionId) return `/sorular/${target.questionId}`;
   if (target.assignmentId) return "/odevler";

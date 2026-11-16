@@ -11,11 +11,12 @@ import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useMe } from "@/features/auth/use-me";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
-function NotificationRow({ item, onRead }: { item: NotificationItem; onRead: (id: number) => void }) {
-  const href = notificationHref(item);
+function NotificationRow({ item, role, onRead }: { item: NotificationItem; role: string | undefined; onRead: (id: number) => void }) {
+  const href = notificationHref(item, { type: item.type, role });
   const body = (
     <span className="flex min-w-0 flex-1 flex-col gap-1">
       <span className="flex flex-wrap items-center gap-2">
@@ -51,6 +52,7 @@ function NotificationRow({ item, onRead }: { item: NotificationItem; onRead: (id
 
 export function NotificationsPage() {
   const queryClient = useQueryClient();
+  const me = useMe();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [page, setPage] = useState(1);
   const list = useQuery(notificationsQuery(api(), unreadOnly, page));
@@ -141,7 +143,7 @@ export function NotificationsPage() {
         <>
           <ul className="flex flex-col gap-2" aria-label="Bildirimler">
             {data.items.map((item) => (
-              <NotificationRow key={item.id} item={item} onRead={(id) => readOne.mutate(id)} />
+              <NotificationRow key={item.id} item={item} role={me.data?.role} onRead={(id) => readOne.mutate(id)} />
             ))}
           </ul>
           {slice ? <Pagination slice={slice} onPageChange={setPage} /> : null}

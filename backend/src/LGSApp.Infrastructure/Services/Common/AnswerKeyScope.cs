@@ -41,6 +41,9 @@ public static class AnswerKeyScope
         return Authorize(actor, branch, lessonId, wrongBranchMessage);
     }
 
+    public static async Task<bool> CanResolveAsync(AppDbContext db, Actor actor, int lessonId, CancellationToken cancellationToken) =>
+        await AuthorizeAsync(db, actor, lessonId, cancellationToken) is null;
+
     public static Task<int?> ReadBranchAsync(AppDbContext db, int userId, CancellationToken cancellationToken) =>
         db.Users.AsNoTracking()
             .Where(u => u.Id == userId)

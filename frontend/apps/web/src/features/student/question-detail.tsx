@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDateTimeShort, isApiError, normalizeAiState, optionToLetter, questionSourceLabel } from "@lgs/api";
+import { formatDateTimeShort, isApiError, optionToLetter, questionSourceLabel } from "@lgs/api";
 import {
   questionKeys,
   questionMutations,
@@ -9,10 +9,9 @@ import {
   type QuestionDetail as QuestionDetailData,
 } from "@lgs/api/queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, CloudOff, EyeOff, Flag, Lock, ThumbsUp, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CloudOff, EyeOff, Flag, Lock, ShieldQuestion, ThumbsUp, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { AiSolutionPanel } from "@/components/ai-solution-panel";
 import { EmptyState } from "@/components/empty-state";
 import { MathText } from "@/components/math-text";
 import { QuestionImage } from "@/components/question-image";
@@ -20,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { OptionPicker } from "@/components/ui/option-picker";
+import { AiSolutionSection } from "@/features/student/ai-solution-section";
 import { AnswerForm } from "@/features/student/answer-form";
 import { CommentSection } from "@/features/student/comment-section";
 import { ReportDialog } from "@/features/student/report-dialog";
@@ -132,7 +132,6 @@ export function QuestionDetail({ id }: { id: number }) {
   }
 
   const q = question.data;
-  const aiState = normalizeAiState(q.aiSolutionState);
   const hasTextOptions = Object.values(q.options).some(Boolean);
   const optionEntries = (["a", "b", "c", "d"] as const).map((key, index) => ({ letter: "ABCD"[index] ?? "", text: q.options[key] }));
   const refresh = () => queryClient.invalidateQueries({ queryKey: questionKeys.detail(id) });
@@ -180,6 +179,20 @@ export function QuestionDetail({ id }: { id: number }) {
       </Link>
 
       {hiddenBand}
+
+      {q.isAnswerDisputed && q.permissions.canModerate ? (
+        <div role="status" data-testid="disputed-banner" className="flex flex-wrap items-center gap-3 rounded-md border border-warning bg-warning-soft p-4 text-warning-soft-foreground">
+          <ShieldQuestion className="size-6 shrink-0" aria-hidden="true" />
+          <p className="flex-1 font-semibold">Bu sorunun cevap anahtarı şüpheli bulundu.</p>
+          {q.permissions.canResolveDispute ? (
+            <Button asChild variant="secondary">
+              <Link href={`/ogretmen/supheli-anahtarlar/${q.id}`}>İncele</Link>
+            </Button>
+          ) : (
+            <span className="text-sm">Karar branş öğretmenine ait.</span>
+          )}
+        </div>
+      ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-4">
@@ -252,12 +265,7 @@ export function QuestionDetail({ id }: { id: number }) {
             <>
               <SolutionsSection
                 questionId={q.id}
-                aiSlot={(aiSolution) => (
-                  <AiSolutionPanel
-                    state={aiState === "available" && !aiSolution ? "none" : aiState}
-                    solution={aiSolution?.text ? <MathText text={aiSolution.text} className="max-w-prose text-base" /> : undefined}
-                  />
-                )}
+                aiSlot={(aiSolution) => <AiSolutionSection question={q} aiSolution={aiSolution} />}
               />
               <CommentSection questionId={q.id} solutionId={null} label="Soru yorumları" />
             </>

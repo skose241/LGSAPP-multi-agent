@@ -19,7 +19,7 @@ public sealed record QuestionStatsView(int AnswerCount, int CorrectCount, int So
 
 public sealed record MyAnswerView(byte SelectedOption, bool IsCorrect, DateTime AnsweredAt, int? SolutionId);
 
-public sealed record QuestionPermissionsView(bool CanAnswer, bool CanSeeDiscussion, bool CanSeeOwnResult, bool CanReport, bool CanModerate, bool CanRequestAiSolution);
+public sealed record QuestionPermissionsView(bool CanAnswer, bool CanSeeDiscussion, bool CanSeeOwnResult, bool CanReport, bool CanModerate, bool CanRequestAiSolution, bool CanResolveDispute);
 
 public sealed record QuestionDetailView(
     int Id,
@@ -158,6 +158,8 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             }
         }
 
+        var canResolve = actor.IsModerator && await AnswerKeyScope.CanResolveAsync(db, actor, q.LessonId, cancellationToken);
+
         var aiState = await aiSolutions.GetStateAsync(actor, questionId, decision.CanSeeDiscussion, cancellationToken);
 
         var view = new QuestionDetailView(
@@ -177,8 +179,8 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             stats,
             myAnswer,
             actor.IsModerator ? q.IsAnswerDisputed : null,
-            actor.IsModerator ? q.AiSuggestedOption : null,
-            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanSeeOwnResult, decision.CanReport, decision.CanModerate, aiState.CanRequest),
+            canResolve ? q.AiSuggestedOption : null,
+            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanSeeOwnResult, decision.CanReport, decision.CanModerate, aiState.CanRequest, canResolve),
             likeCount,
             likedByMe,
             actor.IsModerator ? q.RowVersion : null,

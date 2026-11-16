@@ -68,6 +68,7 @@ const mudurItems: NavItem[] = [
   item("yapay-zeka", "Yapay Zekâ", "/yonetim/yapay-zeka", Sparkles),
   item("ayarlar", "Ayarlar", "/yonetim/ayarlar", Settings),
   item("sikayetler", "Şikâyetler", "/ogretmen/sikayetler", Flag),
+  item("supheli", "Şüpheli Anahtarlar", "/ogretmen/supheli-anahtarlar", ShieldQuestion),
   liderlik,
   profil,
 ];

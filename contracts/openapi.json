@@ -11439,7 +11439,8 @@
           "canSeeOwnResult",
           "canReport",
           "canModerate",
-          "canRequestAiSolution"
+          "canRequestAiSolution",
+          "canResolveDispute"
         ],
         "type": "object",
         "properties": {
@@ -11459,6 +11460,9 @@
             "type": "boolean"
           },
           "canRequestAiSolution": {
+            "type": "boolean"
+          },
+          "canResolveDispute": {
             "type": "boolean"
           }
         }
@@ -13504,6 +13508,19 @@
           },
           "recoveryCodesMissing": {
             "type": "boolean"
+          },
+          "branchLessonId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "branchLessonName": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

@@ -28,6 +28,11 @@ export default async function globalSetup() {
     if (!ready) throw new Error("Müdür yeni şifreyle giriş yapamadı.");
   }
 
+  const status = await backend<{ provider?: string }>("GET", "/api/admin/ai/status", { token: ready.token });
+  if (status.status !== 200 || status.body?.provider !== "fake") {
+    throw new Error("E2E backend yapay zekâ sağlayıcısı Fake olmalı (Ai__Provider=Fake). Gerçek Gemini çağrılmaması için çalıştırma durduruldu.");
+  }
+
   fs.mkdirSync(STATE_DIR, { recursive: true });
   const state: E2EState = { adminUserName: userName, adminPassword: FINAL_PASSWORD };
   fs.writeFileSync(STATE_FILE, JSON.stringify(state));

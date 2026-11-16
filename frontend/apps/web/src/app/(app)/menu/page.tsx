@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LicenseLink } from "@/components/license-link";
 import { useMe } from "@/features/auth/use-me";
 import { navFor } from "@/lib/nav";
 
@@ -27,6 +28,7 @@ export default function MenuPage() {
           );
         })}
       </ul>
+      <LicenseLink className="self-start" />
     </div>
   );
 }

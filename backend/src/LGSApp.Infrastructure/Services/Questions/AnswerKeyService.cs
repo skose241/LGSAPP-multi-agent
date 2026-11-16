@@ -176,9 +176,10 @@ public sealed class AnswerKeyService(
         var wasDisputed = question.IsAnswerDisputed;
         question.IsAnswerDisputed = false;
         question.AnswerDisputedAt = null;
+        question.AiSuggestedOption = null;
         question.AnswerKeyReviewedAt = now;
         question.AnswerKeyReviewedByUserId = actor.UserId;
-        question.AnswerKeyReviewNote = null;
+        question.AnswerKeyReviewNote = command.Note;
 
         var aiSolution = await db.Solutions
             .FirstOrDefaultAsync(s => s.QuestionId == questionId && s.Type == SolutionType.Ai && !s.IsDeleted, cancellationToken);

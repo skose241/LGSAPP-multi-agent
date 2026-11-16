@@ -15,7 +15,9 @@ public record UserInfoDto(
     string? ClassName,
     string Role,
     bool MustChangePassword,
-    bool RecoveryCodesMissing);
+    bool RecoveryCodesMissing,
+    int? BranchLessonId = null,
+    string? BranchLessonName = null);
 
 public record LoginResponse(
     string Token,

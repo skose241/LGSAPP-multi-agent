@@ -223,7 +223,7 @@ public sealed class ReportModerationService(
         switch (report.TargetType)
         {
             case ReportTargetType.Question:
-                question = await LoadQuestionTargetAsync(report.QuestionId, cancellationToken);
+                question = await LoadQuestionTargetAsync(actor, report.QuestionId, cancellationToken);
                 break;
             case ReportTargetType.Comment:
                 comment = await LoadCommentTargetAsync(report.CommentId!.Value, cancellationToken);
@@ -609,7 +609,7 @@ public sealed class ReportModerationService(
         }).ToList();
     }
 
-    private async Task<ReportQuestionTarget?> LoadQuestionTargetAsync(int questionId, CancellationToken cancellationToken)
+    private async Task<ReportQuestionTarget?> LoadQuestionTargetAsync(Actor actor, int questionId, CancellationToken cancellationToken)
     {
         var q = await db.Questions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == questionId, cancellationToken);
         if (q is null)
@@ -624,6 +624,7 @@ public sealed class ReportModerationService(
             .ToListAsync(cancellationToken);
         var peopleIds = q.AnswerKeyReviewedByUserId is int reviewerId ? new[] { q.AuthorUserId, reviewerId } : [q.AuthorUserId];
         var people = await users.GetAsync(peopleIds, true, cancellationToken);
+        var canResolve = await AnswerKeyScope.CanResolveAsync(db, actor, q.LessonId, cancellationToken);
 
         return new ReportQuestionTarget(
             q.Id,
@@ -641,7 +642,7 @@ public sealed class ReportModerationService(
             q.Description,
             q.IsHidden,
             q.IsAnswerDisputed,
-            q.AiSuggestedOption,
+            canResolve ? q.AiSuggestedOption : null,
             q.PublishedAt,
             distribution.Sum(d => d.Count),
             distribution.OrderBy(d => d.Option).ToList(),

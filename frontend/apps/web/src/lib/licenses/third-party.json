@@ -1,0 +1,156 @@
+{
+  "packages": [
+    {
+      "name": "@fontsource-variable/bricolage-grotesque",
+      "version": "5.3.0",
+      "license": "OFL-1.1",
+      "copyright": "Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)",
+      "repository": "https://github.com/fontsource/font-files",
+      "npm": "https://www.npmjs.com/package/@fontsource-variable/bricolage-grotesque/v/5.3.0"
+    },
+    {
+      "name": "@fontsource-variable/figtree",
+      "version": "5.3.0",
+      "license": "OFL-1.1",
+      "copyright": "Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree) Figtree-Italic[wght].ttf: Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)",
+      "repository": "https://github.com/fontsource/font-files",
+      "npm": "https://www.npmjs.com/package/@fontsource-variable/figtree/v/5.3.0"
+    },
+    {
+      "name": "@hookform/resolvers",
+      "version": "7.0.6",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2019-present Beier(Bill) Luo",
+      "repository": "https://github.com/react-hook-form/resolvers",
+      "npm": "https://www.npmjs.com/package/@hookform/resolvers/v/7.0.6"
+    },
+    {
+      "name": "@radix-ui/react-dialog",
+      "version": "1.3.1",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2022 WorkOS",
+      "repository": "https://github.com/radix-ui/primitives",
+      "npm": "https://www.npmjs.com/package/@radix-ui/react-dialog/v/1.3.1"
+    },
+    {
+      "name": "@radix-ui/react-label",
+      "version": "2.1.17",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2022 WorkOS",
+      "repository": "https://github.com/radix-ui/primitives",
+      "npm": "https://www.npmjs.com/package/@radix-ui/react-label/v/2.1.17"
+    },
+    {
+      "name": "@radix-ui/react-slot",
+      "version": "1.5.0",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2022 WorkOS",
+      "repository": "https://github.com/radix-ui/primitives",
+      "npm": "https://www.npmjs.com/package/@radix-ui/react-slot/v/1.5.0"
+    },
+    {
+      "name": "@tanstack/react-query",
+      "version": "5.107.1",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2021-present Tanner Linsley",
+      "repository": "https://github.com/TanStack/query",
+      "npm": "https://www.npmjs.com/package/@tanstack/react-query/v/5.107.1"
+    },
+    {
+      "name": "class-variance-authority",
+      "version": "0.7.1",
+      "license": "Apache-2.0",
+      "copyright": "copyright notice that is included in or attached to the work",
+      "repository": "https://github.com/joe-bell/cva",
+      "npm": "https://www.npmjs.com/package/class-variance-authority/v/0.7.1"
+    },
+    {
+      "name": "clsx",
+      "version": "2.1.1",
+      "license": "MIT",
+      "copyright": "Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)",
+      "repository": "https://github.com/lukeed/clsx",
+      "npm": "https://www.npmjs.com/package/clsx/v/2.1.1"
+    },
+    {
+      "name": "heic-to",
+      "version": "1.6.7",
+      "license": "LGPL-3.0",
+      "copyright": "Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>",
+      "repository": "https://github.com/hoppergee/heic-to",
+      "npm": "https://www.npmjs.com/package/heic-to/v/1.6.7"
+    },
+    {
+      "name": "katex",
+      "version": "0.19.1",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2013-2020 Khan Academy and other contributors",
+      "repository": "https://github.com/KaTeX/KaTeX",
+      "npm": "https://www.npmjs.com/package/katex/v/0.19.1"
+    },
+    {
+      "name": "lucide-react",
+      "version": "1.73.0",
+      "license": "ISC",
+      "copyright": "Copyright (c) 2026 Lucide Icons and Contributors",
+      "repository": "https://github.com/lucide-icons/lucide",
+      "npm": "https://www.npmjs.com/package/lucide-react/v/1.73.0"
+    },
+    {
+      "name": "next",
+      "version": "16.4.6",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2025 Vercel, Inc.",
+      "repository": "https://github.com/vercel/next.js",
+      "npm": "https://www.npmjs.com/package/next/v/16.4.6"
+    },
+    {
+      "name": "react",
+      "version": "19.3.1",
+      "license": "MIT",
+      "copyright": "Copyright (c) Meta Platforms, Inc. and affiliates.",
+      "repository": "https://github.com/react/react",
+      "npm": "https://www.npmjs.com/package/react/v/19.3.1"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.1",
+      "license": "MIT",
+      "copyright": "Copyright (c) Meta Platforms, Inc. and affiliates.",
+      "repository": "https://github.com/react/react",
+      "npm": "https://www.npmjs.com/package/react-dom/v/19.3.1"
+    },
+    {
+      "name": "react-hook-form",
+      "version": "7.92.0",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2019-present Beier(Bill) Luo",
+      "repository": "https://github.com/react-hook-form/react-hook-form",
+      "npm": "https://www.npmjs.com/package/react-hook-form/v/7.92.0"
+    },
+    {
+      "name": "sonner",
+      "version": "2.0.8",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2023 Emil Kowalski",
+      "repository": "https://github.com/emilkowalski/sonner",
+      "npm": "https://www.npmjs.com/package/sonner/v/2.0.8"
+    },
+    {
+      "name": "tailwind-merge",
+      "version": "3.7.0",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2021 Dany Castillo",
+      "repository": "https://github.com/dcastil/tailwind-merge",
+      "npm": "https://www.npmjs.com/package/tailwind-merge/v/3.7.0"
+    },
+    {
+      "name": "zod",
+      "version": "4.6.7",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2025 Colin McDonnell",
+      "repository": "https://github.com/colinhacks/zod",
+      "npm": "https://www.npmjs.com/package/zod/v/4.6.7"
+    }
+  ]
+}

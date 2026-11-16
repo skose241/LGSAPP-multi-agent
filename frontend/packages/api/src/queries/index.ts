@@ -6,3 +6,4 @@ export * from "./comments";
 export * from "./student";
 export { ApiError, isApiError, unwrap } from "../errors";
 export * from "./files";
+export * from "./ai";

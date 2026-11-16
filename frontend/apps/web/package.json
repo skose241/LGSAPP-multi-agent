@@ -9,7 +9,10 @@
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "e2e": "playwright test",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prebuild": "node scripts/generate-licenses.mjs",
+    "licenses:generate": "node scripts/generate-licenses.mjs",
+    "e2e:run": "node e2e/run-e2e.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "7.0.6",

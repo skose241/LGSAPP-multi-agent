@@ -323,6 +323,11 @@ public class AuthController : ControllerBase
     private async Task<UserInfoDto> ToUserInfo(ApplicationUser user)
     {
         var roles = await _userManager.GetRolesAsync(user);
+        var isTeacher = roles.Contains(Roles.Ogretmen);
+        var branchId = isTeacher ? user.BranchLessonId : null;
+        var branchName = branchId is int lessonId
+            ? await _db.Lessons.AsNoTracking().Where(l => l.Id == lessonId).Select(l => l.Name).FirstOrDefaultAsync()
+            : null;
         return new UserInfoDto(
             user.Id,
             user.UserName ?? string.Empty,
@@ -331,7 +336,9 @@ public class AuthController : ControllerBase
             user.ClassName,
             roles.FirstOrDefault() ?? string.Empty,
             user.MustChangePassword,
-            roles.Contains(Roles.Mudur) && await _recoveryCodes.RemainingAsync(user.Id) == 0);
+            roles.Contains(Roles.Mudur) && await _recoveryCodes.RemainingAsync(user.Id) == 0,
+            branchId,
+            branchName);
     }
 
     private async Task<LoginResponse> BuildLoginResponse(ApplicationUser user, IReadOnlyList<string>? recoveryCodes = null)
