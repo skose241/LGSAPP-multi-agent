@@ -9,7 +9,7 @@ import {
   type QuestionDetail as QuestionDetailData,
 } from "@lgs/api/queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, CloudOff, Flag, Lock, ThumbsUp, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CloudOff, EyeOff, Flag, Lock, ThumbsUp, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { AiSolutionPanel } from "@/components/ai-solution-panel";
@@ -137,12 +137,49 @@ export function QuestionDetail({ id }: { id: number }) {
   const optionEntries = (["a", "b", "c", "d"] as const).map((key, index) => ({ letter: "ABCD"[index] ?? "", text: q.options[key] }));
   const refresh = () => queryClient.invalidateQueries({ queryKey: questionKeys.detail(id) });
 
+  const hiddenBand = q.isHidden ? (
+    <div role="status" data-testid="hidden-banner" className="flex items-start gap-3 rounded-md border border-warning bg-warning-soft p-4 text-warning-soft-foreground">
+      <EyeOff className="mt-0.5 size-6 shrink-0" aria-hidden="true" />
+      <p className="font-semibold">
+        Bu soru gizlendi{q.hiddenAt ? ` (${formatDateTimeShort(q.hiddenAt)})` : ""}.
+        <span className="block text-sm font-normal">Başkaları göremez, cevaplayamaz ve tartışamaz. Yalnızca sen görüntüleyebilirsin.</span>
+      </p>
+    </div>
+  ) : null;
+
+  if (q.isHidden && !q.permissions.canModerate) {
+    return (
+      <div className="flex flex-col gap-5" data-testid="hidden-question">
+        <Link href="/sorularim" className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4">
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Sorularım
+        </Link>
+        {hiddenBand}
+        <Card>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="sr-only">{q.lesson.name} sorusu</h1>
+              <Badge tone="primary">{q.lesson.name}</Badge>
+              {q.topic ? <Badge tone="neutral">{q.topic.name}</Badge> : null}
+              <span className="text-xs text-muted-foreground">{formatDateTimeShort(q.createdAt)}</span>
+            </div>
+            {q.image ? <QuestionImage image={q.image} alt={`${q.lesson.name} sorusu`} variant="full" zoomable onExpired={refresh} /> : null}
+            {q.text ? <MathText text={q.text} className="max-w-prose text-lg" /> : null}
+            {q.description ? <p className="max-w-prose whitespace-pre-wrap break-words text-sm text-muted-foreground">{q.description}</p> : null}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <Link href="/sorular" className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Sorular
       </Link>
+
+      {hiddenBand}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-4">
@@ -243,6 +280,7 @@ export function QuestionDetail({ id }: { id: number }) {
         open={reporting}
         onOpenChange={setReporting}
         target="question"
+        answered={q.myAnswer !== null}
         minLength={settings.data?.sikayetMinKarakter ?? 10}
         submit={(reason, description) => questionMutations.report(api(), q.id, reason, description)}
       />

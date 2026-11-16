@@ -4755,6 +4755,40 @@
         "tags": [
           "Files"
         ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file",
+                  "purpose",
+                  "clientUploadId"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "purpose": {
+                    "enum": [
+                      "QuestionImage",
+                      "SolutionImage",
+                      "AssignmentImage",
+                      "Avatar"
+                    ],
+                    "type": "string"
+                  },
+                  "clientUploadId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "201": {
             "description": "Created",
@@ -4784,8 +4818,18 @@
               }
             }
           },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
           "413": {
-            "description": "Payload Too Large",
+            "description": "Dosya veya istek gövdesi izin verilen boyutu aşıyor (ProblemDetails).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5700,6 +5744,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/QuestionDetailView"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionDetailView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -9834,6 +9898,13 @@
               "string"
             ],
             "format": "date"
+          },
+          "clientRequestId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -11149,7 +11220,9 @@
           "aiSolutionState",
           "answerKeyReviewedAt",
           "answerKeyReviewedBy",
-          "answerKeyReviewNote"
+          "answerKeyReviewNote",
+          "isHidden",
+          "hiddenAt"
         ],
         "type": "object",
         "properties": {
@@ -11311,6 +11384,16 @@
               "null",
               "string"
             ]
+          },
+          "isHidden": {
+            "type": "boolean"
+          },
+          "hiddenAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -12915,7 +12998,8 @@
           "lessons",
           "assignments",
           "points",
-          "contributions"
+          "contributions",
+          "uploadToday"
         ],
         "type": "object",
         "properties": {
@@ -12936,6 +13020,9 @@
           },
           "contributions": {
             "$ref": "#/components/schemas/ContributionStatsView"
+          },
+          "uploadToday": {
+            "$ref": "#/components/schemas/UploadTodayView"
           }
         }
       },
@@ -13327,6 +13414,53 @@
           "rowVersion": {
             "type": "string",
             "format": "byte"
+          }
+        }
+      },
+      "UploadTodayView": {
+        "required": [
+          "date",
+          "uploaded",
+          "dailyLimit",
+          "remaining",
+          "pointsPerQuestion",
+          "scoredLimit",
+          "scoredToday",
+          "scoredRemaining"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "uploaded": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dailyLimit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "remaining": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pointsPerQuestion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scoredLimit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scoredToday": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scoredRemaining": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

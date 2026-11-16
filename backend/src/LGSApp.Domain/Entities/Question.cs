@@ -31,6 +31,7 @@ public class Question
     public bool SolutionNotNeeded { get; set; }
     public DateTime? CorrectOptionChangedAt { get; set; }
     public int? CorrectOptionChangedByUserId { get; set; }
+    public Guid? ClientRequestId { get; set; }
     public DateOnly? GenerationDate { get; set; }
     public byte? GenerationSlot { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

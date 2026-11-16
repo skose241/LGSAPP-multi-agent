@@ -17,7 +17,10 @@ import { CommentSection } from "@/features/student/comment-section";
 import { toProblemState } from "@/features/student/comment-node";
 import { ReportDialog } from "@/features/student/report-dialog";
 import { usePublicSettings } from "@/features/student/use-settings";
+import { PhotoAttachment } from "@/features/upload/photo-attachment";
+import { usePhotoAttachment } from "@/features/upload/use-photo-attachment";
 import { api } from "@/lib/api/client";
+import { solutionTextState } from "@/lib/student/upload-rules";
 
 function TypeBadge({ type }: { type: string }) {
   const Icon = type === "teacher" ? GraduationCap : type === "ai" ? Bot : UserRound;
@@ -37,9 +40,11 @@ function EditSolution({ solution, questionId, onDone }: { solution: Solution; qu
   const min = settings.data?.aciklamaMinKarakter ?? 20;
   const max = settings.data?.cozumMaxKarakter ?? 2000;
   const length = text.trim().length;
+  const photo = usePhotoAttachment(solution.image);
+  const { valid, tooShort, tooLong } = solutionTextState({ length, min, max, hasPhoto: photo.fileId !== null });
 
   const mutation = useMutation({
-    mutationFn: () => solutionMutations.update(api(), solution.id, text.trim(), solution.imageFileId ?? null, solution.rowVersion ?? ""),
+    mutationFn: () => solutionMutations.update(api(), solution.id, text.trim() === "" ? null : text.trim(), photo.fileId, solution.rowVersion ?? ""),
     onSuccess: async () => {
       toast.success("Çözümün güncellendi.");
       await queryClient.invalidateQueries({ queryKey: solutionKeys.list(questionId) });
@@ -63,14 +68,22 @@ function EditSolution({ solution, questionId, onDone }: { solution: Solution; qu
         onChange={(event) => setText(event.target.value)}
         className="min-h-32 w-full resize-y rounded-md border border-border-strong bg-surface px-4 py-3 text-base focus-visible:border-primary"
       />
-      <p className={length < min || length > max ? "text-xs font-semibold text-warning-soft-foreground" : "text-xs text-muted-foreground"} data-testid="edit-counter">
-        {length} / en az {min}, en fazla {max} karakter
+      <p className={tooShort || tooLong ? "text-xs font-semibold text-warning-soft-foreground" : "text-xs text-muted-foreground"} data-testid="edit-counter">
+        {photo.fileId !== null ? `${length} / en fazla ${max} karakter (fotoğraf olduğu için yazı isteğe bağlı)` : `${length} / en az ${min}, en fazla ${max} karakter`}
       </p>
+      <PhotoAttachment controller={photo} label="Çözüm fotoğrafı" disabled={mutation.isPending} />
       <div className="flex gap-2">
-        <Button type="button" variant="ghost" onClick={onDone}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            photo.discardUnsaved();
+            onDone();
+          }}
+        >
           Vazgeç
         </Button>
-        <Button type="button" disabled={length < min || length > max} loading={mutation.isPending} onClick={() => mutation.mutate()}>
+        <Button type="button" disabled={!valid || photo.busy} loading={mutation.isPending} onClick={() => mutation.mutate()}>
           Kaydet
         </Button>
       </div>

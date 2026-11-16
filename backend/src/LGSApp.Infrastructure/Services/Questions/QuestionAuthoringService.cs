@@ -21,7 +21,10 @@ public sealed record CreateQuestionCommand(
     string? OptionD,
     byte CorrectOption,
     string? Description,
-    DateOnly? ScheduledPublishDate);
+    DateOnly? ScheduledPublishDate,
+    Guid? ClientRequestId = null);
+
+public sealed record CreatedQuestionView(QuestionDetailView Question, bool Created);
 
 public sealed record MyQuestionView(
     int Id,
@@ -39,7 +42,7 @@ public sealed record MyQuestionListView(int Page, int PageSize, int TotalCount, 
 
 public interface IQuestionAuthoringService
 {
-    Task<ServiceResult<QuestionDetailView>> CreateAsync(Actor actor, CreateQuestionCommand command, CancellationToken cancellationToken = default);
+    Task<ServiceResult<CreatedQuestionView>> CreateAsync(Actor actor, CreateQuestionCommand command, CancellationToken cancellationToken = default);
     Task<ServiceResult<MyQuestionListView>> ListMineAsync(Actor actor, int page, int pageSize, CancellationToken cancellationToken = default);
 }
 
@@ -56,10 +59,12 @@ public sealed class QuestionAuthoringService(
     public const int MaxPageSize = 50;
     public const string DailyLimitMessage = "Günlük soru yükleme sınırına ulaştınız.";
     public const string ImageUsedMessage = "Seçilen fotoğraf daha önce kullanılmış.";
+    public const string RequestIdReusedMessage = "Bu istek kimliği farklı bir soru içeriğiyle daha önce kullanılmış.";
+    public const string RequestIdEmptyMessage = "İstek kimliği boş olamaz.";
 
     private static readonly FilePurpose[] QuestionPurposes = [FilePurpose.QuestionImage];
 
-    public async Task<ServiceResult<QuestionDetailView>> CreateAsync(Actor actor, CreateQuestionCommand command, CancellationToken cancellationToken = default)
+    public async Task<ServiceResult<CreatedQuestionView>> CreateAsync(Actor actor, CreateQuestionCommand command, CancellationToken cancellationToken = default)
     {
         if (!actor.IsStudent && !actor.IsModerator)
         {
@@ -76,6 +81,20 @@ public sealed class QuestionAuthoringService(
             AssignmentText.CleanSingleLine(command.OptionD)
         ];
         var description = AssignmentText.Clean(command.Description);
+
+        if (command.ClientRequestId == Guid.Empty)
+        {
+            return Fail.Validation(RequestIdEmptyMessage, new Dictionary<string, string[]> { ["clientRequestId"] = [RequestIdEmptyMessage] });
+        }
+
+        if (command.ClientRequestId is not null)
+        {
+            var replay = await ReplayAsync(actor, command, text, options, description, cancellationToken);
+            if (replay is not null)
+            {
+                return replay;
+            }
+        }
 
         if (command.CorrectOption is < 1 or > 4)
         {
@@ -181,23 +200,79 @@ public sealed class QuestionAuthoringService(
 
         try
         {
-            var created = await db.ExecuteInTransactionAsync<ServiceResult<int>>(
+            var created = await db.ExecuteInTransactionAsync<ServiceResult<CreatedId>>(
                 token => CreateCoreAsync(actor, command, text, options, description, today, dailyLimit, uploadPoints, scoredPerDay, token),
                 cancellationToken);
             if (!created.Succeeded)
             {
-                return ServiceResult<QuestionDetailView>.From(created);
+                return ServiceResult<CreatedQuestionView>.From(created);
             }
 
-            return await questions.GetDetailAsync(actor, created.Value, cancellationToken);
+            return await LoadAsync(actor, created.Value!.Id, created.Value.Created, cancellationToken);
         }
         catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
+            if (command.ClientRequestId is not null)
+            {
+                var replay = await ReplayAsync(actor, command, text, options, description, cancellationToken);
+                if (replay is not null)
+                {
+                    return replay;
+                }
+            }
+
             return Fail.Conflict(ImageUsedMessage);
         }
     }
 
-    private async Task<ServiceResult<int>> CreateCoreAsync(
+    private sealed record CreatedId(int Id, bool Created);
+
+    private async Task<ServiceResult<CreatedQuestionView>> LoadAsync(Actor actor, int id, bool created, CancellationToken cancellationToken)
+    {
+        var detail = await questions.GetDetailAsync(actor, id, cancellationToken);
+        return detail.Succeeded
+            ? ServiceResult<CreatedQuestionView>.Ok(new CreatedQuestionView(detail.Value!, created))
+            : ServiceResult<CreatedQuestionView>.From(detail);
+    }
+
+    private async Task<ServiceResult<CreatedQuestionView>?> ReplayAsync(
+        Actor actor,
+        CreateQuestionCommand command,
+        string? text,
+        string?[] options,
+        string? description,
+        CancellationToken cancellationToken)
+    {
+        var requestId = command.ClientRequestId;
+        var userId = actor.UserId;
+        var existing = await db.Questions.AsNoTracking()
+            .Where(q => q.AuthorUserId == userId && q.ClientRequestId == requestId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (existing is null)
+        {
+            return null;
+        }
+
+        var same = existing.LessonId == command.LessonId
+            && existing.TopicId == command.TopicId
+            && existing.ImageFileId == command.ImageFileId
+            && existing.CorrectOption == command.CorrectOption
+            && existing.Text == text
+            && existing.OptionA == options[0]
+            && existing.OptionB == options[1]
+            && existing.OptionC == options[2]
+            && existing.OptionD == options[3]
+            && existing.Description == description
+            && existing.ScheduledPublishDate == command.ScheduledPublishDate;
+        if (!same)
+        {
+            return Fail.Unprocessable(RequestIdReusedMessage);
+        }
+
+        return await LoadAsync(actor, existing.Id, false, cancellationToken);
+    }
+
+    private async Task<ServiceResult<CreatedId>> CreateCoreAsync(
         Actor actor,
         CreateQuestionCommand command,
         string? text,
@@ -210,7 +285,6 @@ public sealed class QuestionAuthoringService(
         CancellationToken token)
     {
         var userId = actor.UserId;
-        var dayStart = TurkeyTime.ToUtc(today, TimeOnly.MinValue);
 
         if (actor.IsStudent)
         {
@@ -220,8 +294,19 @@ public sealed class QuestionAuthoringService(
                 .Select(u => u.Id)
                 .FirstOrDefaultAsync(token);
 
-            var usedToday = await db.Questions.AsNoTracking()
-                .CountAsync(q => q.AuthorUserId == userId && q.Source == QuestionSource.Student && q.CreatedAt >= dayStart, token);
+            if (command.ClientRequestId is Guid requestId)
+            {
+                var existingId = await db.Questions.AsNoTracking()
+                    .Where(q => q.AuthorUserId == userId && q.ClientRequestId == requestId)
+                    .Select(q => (int?)q.Id)
+                    .FirstOrDefaultAsync(token);
+                if (existingId is int found)
+                {
+                    return ServiceResult<CreatedId>.Ok(new CreatedId(found, false));
+                }
+            }
+
+            var usedToday = await db.CountUploadedAsync(userId, today, token);
             if (usedToday >= dailyLimit)
             {
                 return Fail.TooManyRequests(DailyLimitMessage);
@@ -258,6 +343,7 @@ public sealed class QuestionAuthoringService(
             CorrectOption = command.CorrectOption,
             Description = description,
             ScheduledPublishDate = command.ScheduledPublishDate,
+            ClientRequestId = command.ClientRequestId,
             PublishedAt = publishNow ? now : null,
             CreatedAt = now
         };
@@ -266,8 +352,7 @@ public sealed class QuestionAuthoringService(
 
         if (actor.IsStudent && uploadPoints > 0)
         {
-            var scoredToday = await db.PointTransactions.AsNoTracking()
-                .CountAsync(p => p.UserId == userId && p.Reason == PointReason.QuestionUploaded && p.LocalDate == today, token);
+            var scoredToday = await db.CountScoredAsync(userId, today, token);
             if (scoredToday < scoredPerDay)
             {
                 await points.AwardAsync(userId, uploadPoints, PointReason.QuestionUploaded, question.Id, null, null, null, token);
@@ -275,7 +360,7 @@ public sealed class QuestionAuthoringService(
             }
         }
 
-        return ServiceResult<int>.Ok(question.Id);
+        return ServiceResult<CreatedId>.Ok(new CreatedId(question.Id, true));
     }
 
     public async Task<ServiceResult<MyQuestionListView>> ListMineAsync(Actor actor, int page, int pageSize, CancellationToken cancellationToken = default)

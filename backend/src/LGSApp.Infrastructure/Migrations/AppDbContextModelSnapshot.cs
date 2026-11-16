@@ -992,6 +992,9 @@ namespace LGSApp.Infrastructure.Migrations
                     b.Property<int>("AuthorUserId")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("ClientRequestId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<byte>("CorrectOption")
                         .HasColumnType("tinyint");
 
@@ -1098,6 +1101,11 @@ namespace LGSApp.Infrastructure.Migrations
                     b.HasIndex("ScheduledPublishDate")
                         .HasDatabaseName("IX_Questions_ScheduledPublishDate_Unpublished")
                         .HasFilter("[PublishedAt] IS NULL");
+
+                    b.HasIndex("AuthorUserId", "ClientRequestId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Questions_Author_ClientRequestId")
+                        .HasFilter("[ClientRequestId] IS NOT NULL");
 
                     b.HasIndex("AuthorUserId", "CreatedAt")
                         .HasDatabaseName("IX_Questions_Author_CreatedAt");

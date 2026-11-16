@@ -355,10 +355,38 @@ public class OpenApiContractTests
         var upload = Paths["/api/files"]!["post"]!["responses"]!.AsObject();
 
         Assert.True(create.ContainsKey("201"));
-        Assert.False(create.ContainsKey("200"));
+        Assert.True(create.ContainsKey("200") && create.ContainsKey("422"));
         Assert.True(logout.ContainsKey("204"));
         Assert.True(ban.ContainsKey("204"));
         Assert.True(upload.ContainsKey("201") && upload.ContainsKey("200") && upload.ContainsKey("413"));
+    }
+
+    [Fact]
+    public void File_upload_declares_multipart_body_and_413_problem_details()
+    {
+        var post = Paths["/api/files"]!["post"]!.AsObject();
+        var schema = post["requestBody"]!["content"]!["multipart/form-data"]!["schema"]!.AsObject();
+        var properties = schema["properties"]!.AsObject();
+
+        Assert.Equal("binary", properties["file"]!["format"]!.GetValue<string>());
+        Assert.NotNull(properties["purpose"]);
+        Assert.Equal("uuid", properties["clientUploadId"]!["format"]!.GetValue<string>());
+        Assert.NotNull(post["responses"]!["413"]!["content"]!["application/problem+json"]);
+    }
+
+    [Fact]
+    public void Upload_today_and_client_request_id_are_in_the_contract()
+    {
+        var uploadToday = Schema("UploadTodayView")["properties"]!.AsObject();
+        foreach (var name in new[] { "date", "uploaded", "dailyLimit", "remaining", "pointsPerQuestion", "scoredLimit", "scoredToday", "scoredRemaining" })
+        {
+            Assert.True(uploadToday.ContainsKey(name), name);
+        }
+
+        Assert.True(Schema("StudentStatsView")["properties"]!.AsObject().ContainsKey("uploadToday"));
+        Assert.True(Schema("CreateQuestionRequest")["properties"]!.AsObject().ContainsKey("clientRequestId"));
+        var detail = Schema("QuestionDetailView")["properties"]!.AsObject();
+        Assert.True(detail.ContainsKey("isHidden") && detail.ContainsKey("hiddenAt"));
     }
 
     [Fact]

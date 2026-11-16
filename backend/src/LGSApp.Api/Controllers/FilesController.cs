@@ -23,6 +23,7 @@ public class FilesController(IFileUploadService files, IOptions<UploadOptions> u
     [TypeFilter(typeof(UploadRequestSizeFilter))]
     [ProducesResponseType<FileView>(StatusCodes.Status201Created)]
     [ProducesResponseType<FileView>(StatusCodes.Status200OK)]
+    [ProducesResponseType<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status413PayloadTooLarge, "application/problem+json")]
     public async Task<IActionResult> Upload(CancellationToken cancellationToken)
     {

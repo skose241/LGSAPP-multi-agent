@@ -3,13 +3,14 @@
 import { formatDateOnly } from "@lgs/api";
 import { meStatsQuery, openAssignmentsQuery, questionKeys, questionsQuery, unreadCountQuery } from "@lgs/api/queries";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ClipboardList, Trophy } from "lucide-react";
+import { Bell, ClipboardList, ImagePlus, Trophy } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PoolQuestionCard } from "@/features/student/pool-question-card";
 import { api } from "@/lib/api/client";
+import { scoredSentence } from "@/lib/student/upload-rules";
 
 export function StudentDashboard() {
   const queryClient = useQueryClient();
@@ -94,6 +95,29 @@ export function StudentDashboard() {
       </div>
 
       <div className="flex flex-col gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle as="h2" className="flex items-center gap-2">
+              <ImagePlus className="size-5 text-primary" aria-hidden="true" />
+              Soru yükle
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {stats.data ? (
+              <p className="w-full text-sm" data-testid="dashboard-upload-quota">
+                Bugün {stats.data.uploadToday.uploaded} / {stats.data.uploadToday.dailyLimit} soru yükledin, {stats.data.uploadToday.remaining} hakkın kaldı.
+                {scoredSentence(stats.data.uploadToday) ? ` ${scoredSentence(stats.data.uploadToday)}` : ""}
+              </p>
+            ) : null}
+            <Button asChild>
+              <Link href="/soru-yukle">Soru yükle</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/sorularim">Sorularım</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle as="h2" className="flex items-center gap-2">

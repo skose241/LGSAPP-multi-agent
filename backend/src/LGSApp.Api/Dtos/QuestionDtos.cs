@@ -36,4 +36,5 @@ public record CreateQuestionRequest(
     [NoControlChars, StringLength(2000, ErrorMessage = "Şık çok uzun.")] string? OptionD,
     [Range(1, 4, ErrorMessage = "Doğru şık 1 ile 4 arasında olmalıdır.")] byte CorrectOption,
     [NoControlChars, StringLength(20000, ErrorMessage = "Açıklama çok uzun.")] string? Description,
-    DateOnly? ScheduledPublishDate);
+    DateOnly? ScheduledPublishDate,
+    Guid? ClientRequestId = null);

@@ -46,6 +46,11 @@ public static class OpenApiExtensions
                     }
                 }
 
+                if (context.Description.HttpMethod == "POST" && context.Description.RelativePath == "api/files")
+                {
+                    DescribeFileUpload(operation);
+                }
+
                 if (operation.RequestBody?.Content is { } requestContent)
                 {
                     RemoveAlternateContentTypes(requestContent);
@@ -94,6 +99,46 @@ public static class OpenApiExtensions
         });
 
         return services;
+    }
+
+    private static void DescribeFileUpload(OpenApiOperation operation)
+    {
+        operation.RequestBody = new OpenApiRequestBody
+        {
+            Required = true,
+            Content = new Dictionary<string, OpenApiMediaType>
+            {
+                ["multipart/form-data"] = new OpenApiMediaType
+                {
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.Object,
+                        Required = new HashSet<string> { "file", "purpose", "clientUploadId" },
+                        Properties = new Dictionary<string, IOpenApiSchema>
+                        {
+                            ["file"] = new OpenApiSchema { Type = JsonSchemaType.String, Format = "binary" },
+                            ["purpose"] = new OpenApiSchema
+                            {
+                                Type = JsonSchemaType.String,
+                                Enum = new List<JsonNode>
+                                {
+                                    JsonValue.Create("QuestionImage"),
+                                    JsonValue.Create("SolutionImage"),
+                                    JsonValue.Create("AssignmentImage"),
+                                    JsonValue.Create("Avatar")
+                                }
+                            },
+                            ["clientUploadId"] = new OpenApiSchema { Type = JsonSchemaType.String, Format = "uuid" }
+                        }
+                    }
+                }
+            }
+        };
+
+        if (operation.Responses is not null && operation.Responses.TryGetValue("413", out var tooLarge) && tooLarge is OpenApiResponse response)
+        {
+            response.Description = "Dosya veya istek gövdesi izin verilen boyutu aşıyor (ProblemDetails).";
+        }
     }
 
     private static void RemoveAlternateContentTypes(IDictionary<string, OpenApiMediaType> content)

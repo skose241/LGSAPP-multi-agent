@@ -5,3 +5,4 @@ export * from "./options";
 export type { paths, components } from "./generated/schema";
 export * from "./errors";
 export * from "./enums";
+export * from "./upload";

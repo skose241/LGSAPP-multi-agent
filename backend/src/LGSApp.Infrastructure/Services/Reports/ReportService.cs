@@ -26,6 +26,8 @@ public sealed class ReportService(
     IQuestionAccessService access,
     TurkeyTime clock) : IReportService
 {
+    public const string WrongAnswerKeyNeedsAnswerMessage = "Yanlış cevap anahtarı şikayeti için önce soruyu cevaplamalısınız.";
+
     private const int DescriptionColumnMaxLength = 500;
 
     private const int SnapshotMaxLength = 1000;
@@ -111,14 +113,14 @@ public sealed class ReportService(
         var description = prepared.Value!;
 
         var decision = await access.GetAsync(questionId, actor, cancellationToken);
-        if (decision is null || !decision.CanSeeOwnResult)
+        if (decision is null || !decision.IsVisible)
         {
             return Fail.NotFound("Soru bulunamadı.");
         }
 
-        if (!decision.CanSeeDiscussion && command.Reason != ReportReason.WrongAnswerKey)
+        if (command.Reason == ReportReason.WrongAnswerKey && !decision.CanSeeOwnResult)
         {
-            return Fail.Validation("Ödev açıkken soru için yalnızca yanlış cevap anahtarı şikayeti yapılabilir.");
+            return Fail.Validation(WrongAnswerKeyNeedsAnswerMessage);
         }
 
         var question = await db.Questions.AsNoTracking()

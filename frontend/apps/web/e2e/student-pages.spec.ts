@@ -12,7 +12,10 @@ test.describe("liderlik ve profil", () => {
     await page.goto("/liderlik");
     await expect(page.getByRole("heading", { name: "Liderlik" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Haftalık" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByTestId("my-rank")).toContainText("puan");
+    await expect(async () => {
+      await page.reload();
+      await expect(page.getByTestId("my-rank")).toContainText("puan", { timeout: 4000 });
+    }).toPass({ timeout: 90_000, intervals: [3000] });
     const mine = page.getByRole("list", { name: "Sıralama" }).locator("[aria-current='true']");
     const outside = page.getByText(/içinde değilsin, sıran/);
     await expect(mine.or(outside).first()).toBeVisible();

@@ -39,6 +39,8 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
     [HttpPost]
     [EnableRateLimiting(RateLimitingExtensions.QuestionCreatePolicy)]
     [ProducesResponseType<QuestionDetailView>(StatusCodes.Status201Created)]
+    [ProducesResponseType<QuestionDetailView>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, "application/problem+json")]
     public async Task<IActionResult> Create(CreateQuestionRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateQuestionCommand(
@@ -52,9 +54,12 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
             request.OptionD,
             request.CorrectOption,
             request.Description,
-            request.ScheduledPublishDate);
+            request.ScheduledPublishDate,
+            request.ClientRequestId);
         var result = await authoring.CreateAsync(User.ToActor(), command, cancellationToken);
-        return result.ToActionResult(this, view => Created($"/api/questions/{view.Id}", view));
+        return result.ToActionResult(this, outcome => outcome.Created
+            ? Created($"/api/questions/{outcome.Question.Id}", outcome.Question)
+            : Ok(outcome.Question));
     }
 
     [HttpGet("mine")]

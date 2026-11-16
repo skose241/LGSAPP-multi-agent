@@ -4542,7 +4542,18 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** Format: binary */
+                        file: string;
+                        /** @enum {string} */
+                        purpose: "QuestionImage" | "SolutionImage" | "AssignmentImage" | "Avatar";
+                        /** Format: uuid */
+                        clientUploadId: string;
+                    };
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -4562,6 +4573,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["FileView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                     };
                 };
                 /** @description Unauthorized */
@@ -4591,7 +4611,7 @@ export interface paths {
                         "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Payload Too Large */
+                /** @description Dosya veya istek gövdesi izin verilen boyutu aşıyor (ProblemDetails). */
                 413: {
                     headers: {
                         [name: string]: unknown;
@@ -5435,6 +5455,15 @@ export interface paths {
                 };
             };
             responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["QuestionDetailView"];
+                    };
+                };
                 /** @description Created */
                 201: {
                     headers: {
@@ -5484,6 +5513,15 @@ export interface paths {
                 };
                 /** @description Conflict */
                 409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -7891,6 +7929,8 @@ export interface components {
             description: null | string;
             /** Format: date */
             scheduledPublishDate: null | string;
+            /** Format: uuid */
+            clientRequestId?: null | string;
         };
         CreateReportRequest: {
             reason: components["schemas"]["ReportReason"];
@@ -8286,6 +8326,9 @@ export interface components {
             answerKeyReviewedAt: null | string;
             answerKeyReviewedBy: null | components["schemas"]["UserRefView"];
             answerKeyReviewNote: null | string;
+            isHidden: boolean;
+            /** Format: date-time */
+            hiddenAt: null | string;
         };
         QuestionOptionsView: {
             a: null | string;
@@ -8685,6 +8728,7 @@ export interface components {
             assignments: components["schemas"]["AssignmentParticipationView"];
             points: components["schemas"]["PointsStatsView"];
             contributions: components["schemas"]["ContributionStatsView"];
+            uploadToday: components["schemas"]["UploadTodayView"];
         };
         SubmitAnswerRequest: {
             /** Format: uint8 */
@@ -8785,6 +8829,24 @@ export interface components {
             imageFileId: null | number;
             /** Format: byte */
             rowVersion: string;
+        };
+        UploadTodayView: {
+            /** Format: date */
+            date: string;
+            /** Format: int32 */
+            uploaded: number;
+            /** Format: int32 */
+            dailyLimit: number;
+            /** Format: int32 */
+            remaining: number;
+            /** Format: int32 */
+            pointsPerQuestion: number;
+            /** Format: int32 */
+            scoredLimit: number;
+            /** Format: int32 */
+            scoredToday: number;
+            /** Format: int32 */
+            scoredRemaining: number;
         };
         UserInfoDto: {
             /** Format: int32 */

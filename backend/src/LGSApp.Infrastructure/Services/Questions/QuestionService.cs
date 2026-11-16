@@ -46,7 +46,9 @@ public sealed record QuestionDetailView(
     string AiSolutionState,
     DateTime? AnswerKeyReviewedAt,
     UserRefView? AnswerKeyReviewedBy,
-    string? AnswerKeyReviewNote);
+    string? AnswerKeyReviewNote,
+    bool IsHidden,
+    DateTime? HiddenAt);
 
 public interface IQuestionService
 {
@@ -58,7 +60,7 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
     public async Task<ServiceResult<QuestionDetailView>> GetDetailAsync(Actor actor, int questionId, CancellationToken cancellationToken = default)
     {
         var decision = await access.GetAsync(questionId, actor, cancellationToken);
-        if (decision is null || !decision.IsVisible)
+        if (decision is null || (!decision.IsVisible && !decision.IsHiddenOwnerView))
         {
             return Fail.NotFound("Soru bulunamadı.");
         }
@@ -83,6 +85,8 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
                 x.Description,
                 x.PublishedAt,
                 x.CreatedAt,
+                x.IsHidden,
+                x.HiddenAt,
                 x.IsAnswerDisputed,
                 x.AiSuggestedOption,
                 x.AnswerKeyReviewedAt,
@@ -169,7 +173,7 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             q.PublishedAt,
             q.CreatedAt,
             decision.CanSeeOwnResult ? q.CorrectOption : null,
-            decision.CanSeeDiscussion ? q.Description : null,
+            decision.CanSeeDiscussion || decision.IsHiddenOwnerView ? q.Description : null,
             stats,
             myAnswer,
             actor.IsModerator ? q.IsAnswerDisputed : null,
@@ -181,7 +185,9 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             aiState.State,
             actor.IsModerator ? q.AnswerKeyReviewedAt : null,
             actor.IsModerator && q.AnswerKeyReviewedByUserId is int reviewedBy ? people.GetValueOrDefault(reviewedBy) : null,
-            actor.IsModerator ? q.AnswerKeyReviewNote : null);
+            actor.IsModerator ? q.AnswerKeyReviewNote : null,
+            q.IsHidden,
+            actor.IsModerator || decision.IsHiddenOwnerView ? q.HiddenAt : null);
 
         return ServiceResult<QuestionDetailView>.Ok(view);
     }

@@ -8,6 +8,9 @@ export type QuestionPoolList = components["schemas"]["QuestionPoolListView"];
 export type QuestionDetail = components["schemas"]["QuestionDetailView"];
 export type AnswerResult = components["schemas"]["AnswerResultView"];
 export type ImageInfo = components["schemas"]["ImageView"];
+export type MyQuestion = components["schemas"]["MyQuestionView"];
+export type MyQuestionList = components["schemas"]["MyQuestionListView"];
+export type CreateQuestionBody = components["schemas"]["CreateQuestionRequest"];
 
 export type AnsweredFilter = "all" | "unanswered" | "answered";
 
@@ -25,6 +28,7 @@ export const questionKeys = {
   all: ["questions"] as const,
   list: (params: QuestionListParams) => [...questionKeys.all, "list", params] as const,
   detail: (id: number) => [...questionKeys.all, "detail", id] as const,
+  mine: (page: number, pageSize: number) => [...questionKeys.all, "mine", page, pageSize] as const,
 };
 
 export function imageSource(image: ImageInfo | null | undefined, variant: "thumb" | "full") {
@@ -71,12 +75,46 @@ export function questionQuery(client: ApiClient, id: number) {
   });
 }
 
+export function myQuestionsQuery(client: ApiClient, page: number, pageSize: number) {
+  return queryOptions({
+    queryKey: questionKeys.mine(page, pageSize),
+    queryFn: () => unwrap(client.GET("/api/questions/mine", { params: { query: { page, pageSize } } })),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function studentQuestionBody(input: {
+  lessonId: number;
+  topicId: number | null;
+  imageFileId: number;
+  correctOption: number;
+  description: string;
+  clientRequestId: string;
+}): CreateQuestionBody {
+  return {
+    lessonId: input.lessonId,
+    topicId: input.topicId,
+    text: null,
+    imageFileId: input.imageFileId,
+    optionA: null,
+    optionB: null,
+    optionC: null,
+    optionD: null,
+    correctOption: input.correctOption,
+    description: input.description,
+    scheduledPublishDate: null,
+    clientRequestId: input.clientRequestId,
+  };
+}
+
 export const questionMutations = {
-  submitAnswer: (client: ApiClient, id: number, selectedOption: number, solutionText: string) =>
+  create: (client: ApiClient, body: CreateQuestionBody) => unwrap(client.POST("/api/questions", { body })),
+  submitAnswer: (client: ApiClient, id: number, selectedOption: number, solutionText: string | null, solutionImageFileId: number | null = null) =>
     unwrap(
       client.POST("/api/questions/{id}/answers", {
         params: { path: { id } },
-        body: { selectedOption, solutionText, solutionImageFileId: null },
+        body: { selectedOption, solutionText, solutionImageFileId },
       }),
     ),
   like: (client: ApiClient, id: number) =>

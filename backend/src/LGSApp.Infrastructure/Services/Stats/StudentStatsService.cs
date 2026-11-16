@@ -5,6 +5,7 @@ using LGSApp.Infrastructure.Services.Assignments;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Leaderboard;
 using LGSApp.Infrastructure.Services.Questions;
+using LGSApp.Infrastructure.Services.Settings;
 using Microsoft.EntityFrameworkCore;
 
 namespace LGSApp.Infrastructure.Services.Stats;
@@ -21,19 +22,30 @@ public sealed record PointsStatsView(int Total, PeriodStandingView Weekly, Perio
 
 public sealed record ContributionStatsView(int QuestionsUploaded, int SolutionsWritten);
 
+public sealed record UploadTodayView(
+    DateOnly Date,
+    int Uploaded,
+    int DailyLimit,
+    int Remaining,
+    int PointsPerQuestion,
+    int ScoredLimit,
+    int ScoredToday,
+    int ScoredRemaining);
+
 public sealed record StudentStatsView(
     AnswerTotalsView Totals,
     IReadOnlyList<LessonStatsView> Lessons,
     AssignmentParticipationView Assignments,
     PointsStatsView Points,
-    ContributionStatsView Contributions);
+    ContributionStatsView Contributions,
+    UploadTodayView UploadToday);
 
 public interface IStudentStatsService
 {
     Task<ServiceResult<StudentStatsView>> GetAsync(int studentUserId, CancellationToken cancellationToken = default);
 }
 
-public sealed class StudentStatsService(AppDbContext db, ILeaderboardService leaderboard, TurkeyTime clock) : IStudentStatsService
+public sealed class StudentStatsService(AppDbContext db, ILeaderboardService leaderboard, ISettingsService settings, TurkeyTime clock) : IStudentStatsService
 {
     public async Task<ServiceResult<StudentStatsView>> GetAsync(int studentUserId, CancellationToken cancellationToken = default)
     {
@@ -91,7 +103,28 @@ public sealed class StudentStatsService(AppDbContext db, ILeaderboardService lea
             lessonViews,
             participation,
             new PointsStatsView(student.Points, weekly, monthly),
-            new ContributionStatsView(uploaded, written)));
+            new ContributionStatsView(uploaded, written),
+            await UploadTodayAsync(studentUserId, cancellationToken)));
+    }
+
+    private async Task<UploadTodayView> UploadTodayAsync(int userId, CancellationToken cancellationToken)
+    {
+        var today = clock.Today;
+        var dailyLimit = Math.Max(0, await settings.GetIntAsync(SettingKeys.GunlukSoruYuklemeLimiti, cancellationToken));
+        var points = Math.Max(0, await settings.GetIntAsync(SettingKeys.PuanSoruYukleme, cancellationToken));
+        var perDay = Math.Max(0, await settings.GetIntAsync(SettingKeys.PuanliSoruYuklemeGunluk, cancellationToken));
+        var uploaded = await db.CountUploadedAsync(userId, today, cancellationToken);
+        var scoredToday = await db.CountScoredAsync(userId, today, cancellationToken);
+        var scoredLimit = points > 0 ? perDay : 0;
+        return new UploadTodayView(
+            today,
+            uploaded,
+            dailyLimit,
+            Math.Max(0, dailyLimit - uploaded),
+            points,
+            scoredLimit,
+            scoredToday,
+            Math.Max(0, scoredLimit - scoredToday));
     }
 
     private async Task<AssignmentParticipationView> ParticipationAsync(int userId, DateOnly joinedOn, CancellationToken cancellationToken)

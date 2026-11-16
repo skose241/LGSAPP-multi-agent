@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/button";
 import { OptionPicker } from "@/components/ui/option-picker";
 import { toProblemState } from "@/features/student/comment-node";
 import { usePublicSettings } from "@/features/student/use-settings";
+import { PhotoAttachment } from "@/features/upload/photo-attachment";
+import { usePhotoAttachment } from "@/features/upload/use-photo-attachment";
 import { api } from "@/lib/api/client";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/session/draft";
+import { solutionTextState } from "@/lib/student/upload-rules";
 
 interface AnswerFormProps {
   question: QuestionDetail;
@@ -26,6 +29,7 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
   const [error, setError] = useState<ProblemState | null>(null);
   const [textError, setTextError] = useState<string | undefined>(undefined);
   const counterId = useId();
+  const photo = usePhotoAttachment(null);
 
   useEffect(() => {
     setText(loadDraft(draftKey));
@@ -34,13 +38,13 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
   const min = settings.data?.aciklamaMinKarakter ?? 20;
   const max = settings.data?.cozumMaxKarakter ?? 2000;
   const length = text.trim().length;
-  const tooShort = length < min;
-  const tooLong = length > max;
+  const hasPhoto = photo.fileId !== null;
+  const { valid, tooShort, tooLong } = solutionTextState({ length, min, max, hasPhoto });
 
   const mutation = useMutation({
     mutationFn: () => {
       const selected = option ? (letterToOption(option) ?? 0) : 0;
-      return questionMutations.submitAnswer(api(), question.id, selected, text.trim());
+      return questionMutations.submitAnswer(api(), question.id, selected, text.trim() === "" ? null : text.trim(), photo.fileId);
     },
     onSuccess: async (result) => {
       clearDraft(draftKey);
@@ -74,7 +78,7 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
         event.preventDefault();
         setError(null);
         setTextError(undefined);
-        if (option && !tooShort && !tooLong) mutation.mutate();
+        if (option && valid && !photo.busy) mutation.mutate();
       }}
     >
       <ProblemBanner state={error} conflictAsMessage />
@@ -108,7 +112,7 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
           data-testid="answer-counter"
           className={tooShort || tooLong ? "text-xs font-semibold text-warning-soft-foreground" : "text-xs text-muted-foreground"}
         >
-          {length} / en az {min}, en fazla {max} karakter
+          {hasPhoto ? `${length} / en fazla ${max} karakter (fotoğraf eklediğin için yazı isteğe bağlı)` : `${length} / en az ${min}, en fazla ${max} karakter`}
         </p>
         {textError ? (
           <p role="alert" className="text-sm font-medium text-danger">
@@ -117,7 +121,14 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
         ) : null}
       </div>
 
-      <Button type="submit" size="lg" disabled={!option || tooShort || tooLong} loading={mutation.isPending}>
+      <PhotoAttachment
+        controller={photo}
+        label="Çözüm fotoğrafı (isteğe bağlı)"
+        hint="Çözümünü kâğıda yazdıysan fotoğrafını ekleyebilirsin. Fotoğraf ekleyince yazı zorunlu olmaz."
+        disabled={mutation.isPending}
+      />
+
+      <Button type="submit" size="lg" disabled={!option || !valid || photo.busy} loading={mutation.isPending}>
         Cevabı Gönder
       </Button>
     </form>

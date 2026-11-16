@@ -50,6 +50,9 @@ importers:
       clsx:
         specifier: 2.1.1
         version: 2.1.1
+      heic-to:
+        specifier: 1.6.7
+        version: 1.6.7
       katex:
         specifier: 0.19.1
         version: 0.19.1
@@ -1305,6 +1308,9 @@ packages:
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
+
+  heic-to@1.6.7:
+    resolution: {integrity: sha512-GCPYNl86u6eZ7mr2aa+uQB+PrQOVKSBYfH8esovr8kh2c6EYQSDYIJ6uhXSmM2hPC8PdBVJ/Trn0jnfM9H9gvg==}
 
   https-proxy-agent@7.0.6:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
@@ -2863,6 +2869,8 @@ snapshots:
   graceful-fs@4.2.12: {}
 
   has-flag@4.0.0: {}
+
+  heic-to@1.6.7: {}
 
   https-proxy-agent@7.0.6(supports-color@10.2.2):
     dependencies:

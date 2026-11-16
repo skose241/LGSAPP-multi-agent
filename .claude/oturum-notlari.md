@@ -444,3 +444,30 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 ### Sıradaki adımlar
 1. F4 yükleme hattı (HEIC, küçültme, yeniden deneme, çözüm görseli, sorularım).
 2. İsteğe bağlı: yayında geliştirme pepper'ının reddedilmesi için başlangıç kontrolü.
+
+### F4 yükleme hattı — 2026-11-16, commit edildi
+- Frontend:
+  - Kuyruk (`packages/api/src/upload`): ≤3 eşzamanlı; sabit `clientUploadId`; 1/3/9 sn yeniden deneme, Retry-After (en az 1 sn, en fazla 120 sn), toplam 4 deneme; Retry-After'sız 429 = kota.
+  - Görsel hazırlama (`lib/image`): createImageBitmap, tembel `heic-to/csp` 1.6.7, ≤2000 px JPEG 0.85, 10 MB merdiveni.
+  - Ekranlar: `/soru-yukle` (çoklu, kart başına `clientRequestId`, `uploadToday` ile kalan hak ve puanlı hak), `/sorularim` (gizli soru salt okunur detaya gider).
+  - Çözüm görseli: metin veya fotoğraf; değiştir/kaldır; Vazgeç'te bağlanmamış dosya silinir.
+  - Sayfadan ayrılma koruması: beforeunload + bağlantı tıklaması (geri tuşu yakalanmıyor).
+- Backend:
+  - `me/stats.uploadToday`.
+  - `POST /api/questions` `clientRequestId` idempotency (201/200/422, migration `20261116110041_QuestionClientRequestId`).
+  - `POST /api/files` multipart sözleşmesi + 413.
+  - Yazar kendi gizli sorusunu salt okunur görür (`isHidden`, `hiddenAt`; alt uçlar 404).
+  - Cevaplamadan şikâyet (kullanıcı kararı); `WrongAnswerKey` yalnız cevaplamış öğrenciye açık (onay bekliyor).
+- Reviewer turu yapıldı. Orta bulgu (Retry-After ile sonsuz yeniden deneme) ve düşük bulgular kapatıldı.
+- Son tam koşu: backend 701/701, vitest 209, E2E 263 geçti / 0 hata / 3 skip (temiz DB, tek seferde).
+- Açık kalanlar:
+  - `heic-to` LGPL-3.0: lisans bildirimi mi, alternatif mi (kullanıcı kararı bekleniyor).
+  - Gerçek iPhone'da HEIC çevrimi ve çok fotoğrafta bellek denenmedi.
+  - CSP eklenirken heic-to denenmeli.
+  - LocalDB'siz ortamda servis testleri sessizce geçiyor (CI için düzeltilmeli).
+  - Liderlik önbelleği 60 sn ortak anahtar: yeni cevap veren öğrencinin sıra kartı 1 dk gecikebilir.
+  - Belirsiz hata sonrası 409 mesajı E2E ile tetiklenmedi.
+
+### Sıradaki adımlar
+1. heic-to lisans kararı; WrongAnswerKey kuralı onayı.
+2. F5 AI ekranları, F6 öğretmen, F7 müdür operasyon, F8 sertleştirme + yayın.

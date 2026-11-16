@@ -24,7 +24,8 @@ public sealed record QuestionAccess(
     bool CanSeeOwnResult,
     bool CanAnswer,
     bool CanReport,
-    bool CanModerate);
+    bool CanModerate,
+    bool IsHiddenOwnerView = false);
 
 public interface IQuestionAccessService
 {
@@ -56,9 +57,11 @@ public sealed class QuestionAccessService(AppDbContext db, TurkeyTime clock) : I
             && !isOwner
             && !facts.HasAnswered
             && (facts.AssignmentState is null ? facts.PublishedAt is not null : facts.AssignmentState == AssignmentEffectiveState.Open);
-        var canReport = canSeeOwnResult && !isOwner && !actor.IsModerator;
+        var canReport = isVisible && !isOwner && !actor.IsModerator;
 
-        return new QuestionAccess(facts, isVisible, isOwner, canSeeDiscussion, canSeeOwnResult, canAnswer, canReport, actor.IsModerator);
+        var hiddenOwnerView = actor.IsStudent && isOwner && facts.IsHidden;
+
+        return new QuestionAccess(facts, isVisible, isOwner, canSeeDiscussion, canSeeOwnResult, canAnswer, canReport, actor.IsModerator, hiddenOwnerView);
     }
 
     public async Task<QuestionAccess?> GetAsync(int questionId, Actor actor, CancellationToken cancellationToken = default)

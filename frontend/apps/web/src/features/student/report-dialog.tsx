@@ -15,14 +15,17 @@ interface ReportDialogProps {
   onCloseAutoFocus?: (event: Event) => void;
   target: "question" | "solution" | "comment";
   minLength: number;
+  answered?: boolean;
   submit: (reason: ReportReasonValue, description: string) => Promise<unknown>;
 }
 
 const titles = { question: "Soruyu şikâyet et", solution: "Çözümü şikâyet et", comment: "Yorumu şikâyet et" } as const;
 
-export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, minLength, submit }: ReportDialogProps) {
+export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, minLength, answered = true, submit }: ReportDialogProps) {
   const reasons = reportReasonsFor(target);
-  const [reason, setReason] = useState<ReportReasonValue>(reasons[0] ?? "other");
+  const blocked = (value: ReportReasonValue) => value === "wrongAnswerKey" && !answered;
+  const firstAllowed = reasons.find((value) => !blocked(value)) ?? "other";
+  const [reason, setReason] = useState<ReportReasonValue>(firstAllowed);
   const [description, setDescription] = useState("");
   const [error, setError] = useState<ProblemState | null>(null);
   const counterId = useId();
@@ -50,9 +53,12 @@ export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, min
     <Dialog open={open} onOpenChange={(next) => (mutation.isPending ? undefined : onOpenChange(next))}>
       <DialogContent title={titles[target]} description="Şikâyetin inceleme için öğretmenlere gider. Nedenini kısaca açıkla." onCloseAutoFocus={onCloseAutoFocus}>
         <ProblemBanner state={error} conflictAsMessage />
-        <SelectField label="Neden" value={reason} onChange={(event) => setReason(event.target.value as ReportReasonValue)}>
+        <SelectField
+          label="Neden"
+          hint={answered ? undefined : "Yanlış cevap anahtarı şikâyeti için önce soruyu cevaplamalısın."}
+          value={reason} onChange={(event) => setReason(event.target.value as ReportReasonValue)}>
           {reasons.map((value) => (
-            <option key={value} value={value}>
+            <option key={value} value={value} disabled={blocked(value)}>
               {reportReasonLabel(value)}
             </option>
           ))}
