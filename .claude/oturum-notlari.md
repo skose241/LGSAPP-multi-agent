@@ -498,3 +498,19 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 ### Sıradaki adımlar
 1. F6 öğretmen (önce B4-öğretmen `GET /api/students`, `/students/{id}/stats`, B5 `needs-solution`).
 2. F7 müdür operasyon, F8 sertleştirme + yayın.
+
+### Oturum 7 kapanış — 2026-11-16
+- Commit'ler: `47767b2` (F3 düzeltmeleri), `6a81cc2` (F4), `4097462` (F5 + lisans + E2E betiği). Hepsi origin/main'e push edildi.
+- Kalıcı kararlar:
+  - Yazar kendi gizli sorusunu salt okunur görür.
+  - Öğrenci cevaplamadan şikâyet edebilir; `WrongAnswerKey` için cevap şart.
+  - heic-to tutuldu, lisans sayfası eklendi.
+  - AI öneri/gizli AI çözümü yalnız karar yetkilisine.
+- F5'in son düzeltme turu (canResolveDispute, route-guard, E2E betiği) ayrıca reviewer'dan geçmedi; tam E2E + birim testlerle doğrulandı. F6 öncesi istenirse kısa reviewer turu.
+- Açık sorular:
+  - 12 eski `LGSApp_Test_*` LocalDB veritabanı silinsin mi?
+  - Liderlik önbelleği 60 sn gecikmesi kabul mü?
+  - Gerçek Gemini duman testi (ayrı v2 anahtarı) ne zaman?
+  - Yayında geliştirme pepper'ını reddeden başlangıç kontrolü eklensin mi?
+- Gerçek cihazda denenecekler: iPhone'da HEIC çevrimi ve 10+ fotoğraf toplu yükleme (`npx pnpm@10 dev:lan`, http://192.168.1.117:3000).
+- Sıradaki: F6 öğretmen ekranları (önce backend: `GET /api/students`, `/students/{id}/stats`, `GET /api/questions/needs-solution`), sonra F7, F8.
