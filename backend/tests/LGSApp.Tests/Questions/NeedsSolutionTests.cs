@@ -4,6 +4,9 @@ using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Infrastructure.Services.Questions;
+using LGSApp.Infrastructure.Services.Solutions;
+using LGSApp.Infrastructure.Services.Notifications;
+using LGSApp.Infrastructure.Services.Access;
 using LGSApp.Infrastructure.Services.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -332,6 +335,38 @@ public sealed class NeedsSolutionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Dismissed_view_lists_marked_questions_regardless_of_thresholds()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        await using var db = NewDb();
+        var marked = await AddQuestionAsync(db, _lessonA, 5, 5);
+        var markedNoAnswers = await AddQuestionAsync(db, _lessonA, 0, 0);
+        var open = await AddQuestionAsync(db, _lessonA, 5, 5);
+        var otherBranch = await AddQuestionAsync(db, _lessonB, 5, 5);
+        var service = NewService(db);
+
+        Assert.True((await service.SetNotNeededAsync(TeacherA, marked, true)).Succeeded);
+        Assert.True((await service.SetNotNeededAsync(TeacherA, markedNoAnswers, true)).Succeeded);
+        Assert.True((await service.SetNotNeededAsync(TeacherB, otherBranch, true)).Succeeded);
+
+        var dismissed = (await service.ListAsync(TeacherA, new NeedsSolutionQuery(null, 1, 20, true))).Value!;
+        Assert.True(dismissed.Dismissed);
+        Assert.Equal(2, dismissed.TotalCount);
+        Assert.Equal([marked, markedNoAnswers], dismissed.Items.Select(i => i.Id).ToList());
+        Assert.Equal(0, dismissed.Items[1].WrongRate);
+
+        var active = (await service.ListAsync(TeacherA, Query())).Value!;
+        Assert.False(active.Dismissed);
+        Assert.Equal([open], active.Items.Select(i => i.Id).ToList());
+
+        Assert.Equal(ServiceErrorKind.Forbidden, (await service.ListAsync(TeacherNone, new NeedsSolutionQuery(null, 1, 20, true))).Error);
+    }
+
+    [Fact]
     public async Task Marking_follows_the_branch_rule_and_reports_missing_questions()
     {
         if (!_available)
@@ -376,6 +411,42 @@ public sealed class NeedsSolutionTests : IAsyncLifetime
         var result = await service.SetNotNeededAsync(Mudur, id, true);
 
         Assert.Equal(ServiceErrorKind.Conflict, result.Error);
+    }
+
+    [Fact]
+    public async Task Teacher_solution_is_limited_to_the_teachers_branch()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        await using var db = NewDb();
+        var inA = await AddQuestionAsync(db, _lessonA, 0, 0);
+        var inB = await AddQuestionAsync(db, _lessonB, 0, 0);
+        var service = new SolutionService(
+            db,
+            new SettingsService(db, new MemoryCache(new MemoryCacheOptions())),
+            new QuestionAccessService(db, new TurkeyTime(TimeProvider.System)),
+            new NotificationService(db, new TurkeyTime(TimeProvider.System)),
+            new UserLookupService(db),
+            new StoredFileValidator(db),
+            new StubFileUrls(),
+            new TurkeyTime(TimeProvider.System));
+        var command = new CreateTeacherSolutionCommand("Öğretmen çözümü", null);
+
+        var wrongBranch = await service.CreateTeacherAsync(TeacherB, inA, command);
+        Assert.Equal(ServiceErrorKind.Forbidden, wrongBranch.Error);
+        Assert.Equal(AnswerKeyScope.WrongBranchMessage, wrongBranch.Message);
+
+        var branchless = await service.CreateTeacherAsync(TeacherNone, inA, command);
+        Assert.Equal(ServiceErrorKind.Forbidden, branchless.Error);
+        Assert.Equal(AnswerKeyScope.NoBranchMessage, branchless.Message);
+
+        Assert.False(await db.Solutions.AnyAsync(x => x.QuestionId == inA));
+        Assert.True((await service.CreateTeacherAsync(TeacherA, inA, command)).Succeeded);
+        Assert.True((await service.CreateTeacherAsync(Mudur, inB, command)).Succeeded);
+        Assert.Equal(ServiceErrorKind.NotFound, (await service.CreateTeacherAsync(TeacherA, 999999, command)).Error);
     }
 
     [Fact]

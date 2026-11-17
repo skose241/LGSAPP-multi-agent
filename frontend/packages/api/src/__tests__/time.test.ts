@@ -5,6 +5,7 @@ import {
   formatDateOnly,
   formatDateTime,
   formatDateTimeShort,
+  formatRelativeTime,
   formatTime,
   isDateOnly,
   isExpired,
@@ -68,5 +69,23 @@ describe("isExpired", () => {
     const now = new Date("2026-11-14T10:00:00Z");
     expect(isExpired("2026-11-14T09:59:59+00:00", now)).toBe(true);
     expect(isExpired("2026-11-14T10:30:00Z", now)).toBe(false);
+  });
+});
+
+describe('göreli zaman', () => {
+  const now = new Date('2026-11-17T12:00:00Z');
+
+  it('birimlere göre Türkçe metin üretir', () => {
+    expect(formatRelativeTime('2026-11-17T11:59:40Z', now)).toBe('az önce');
+    expect(formatRelativeTime('2026-11-17T11:55:00Z', now)).toBe('5 dakika önce');
+    expect(formatRelativeTime('2026-11-17T09:00:00Z', now)).toBe('3 saat önce');
+    expect(formatRelativeTime('2026-11-15T12:00:00Z', now)).toBe('2 gün önce');
+    expect(formatRelativeTime('2026-11-03T12:00:00Z', now)).toBe('2 hafta önce');
+  });
+
+  it('eski tarihte İstanbul saatiyle tam tarih verir, gelecek ve geçersiz değeri yönetir', () => {
+    expect(formatRelativeTime('2026-09-01T09:00:00Z', now)).toBe('01.09.2026 12:00');
+    expect(formatRelativeTime('2026-11-17T12:05:00Z', now)).toBe('az önce');
+    expect(formatRelativeTime('bozuk', now)).toBe('');
   });
 });

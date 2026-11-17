@@ -3,7 +3,9 @@ import type { Page } from "@playwright/test";
 import { expect } from "./fixtures";
 
 export async function expectNoAxeViolations(page: Page, label: string) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(400);
   const results = await new AxeBuilder({ page })
     .exclude("nextjs-portal")
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])

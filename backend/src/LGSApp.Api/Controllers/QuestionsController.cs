@@ -69,8 +69,9 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
         [FromQuery] int? lessonId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = NeedsSolutionRules.DefaultPageSize,
+        [FromQuery] bool dismissed = false,
         CancellationToken cancellationToken = default) =>
-        (await needsSolution.ListAsync(User.ToActor(), new NeedsSolutionQuery(lessonId, page, pageSize), cancellationToken)).ToActionResult(this);
+        (await needsSolution.ListAsync(User.ToActor(), new NeedsSolutionQuery(lessonId, page, pageSize, dismissed), cancellationToken)).ToActionResult(this);
 
     [HttpPut("{id:int}/solution-not-needed")]
     [Authorize(Policy = Policies.OgretmenOrMudur)]

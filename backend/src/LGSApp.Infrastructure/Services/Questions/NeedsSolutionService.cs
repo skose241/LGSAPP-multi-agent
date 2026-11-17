@@ -15,7 +15,7 @@ public static class NeedsSolutionRules
     public const int MaxPageSize = 50;
 }
 
-public sealed record NeedsSolutionQuery(int? LessonId, int Page, int PageSize);
+public sealed record NeedsSolutionQuery(int? LessonId, int Page, int PageSize, bool Dismissed = false);
 
 public sealed record NeedsSolutionItemView(
     int Id,
@@ -39,6 +39,7 @@ public sealed record NeedsSolutionListView(
     int ThresholdAnswers,
     int ThresholdWrongRate,
     int? LessonId,
+    bool Dismissed,
     IReadOnlyList<NeedsSolutionItemView> Items);
 
 public interface INeedsSolutionService
@@ -94,7 +95,7 @@ public sealed class NeedsSolutionService(AppDbContext db, ISettingsService setti
         var candidates = db.Questions.AsNoTracking()
             .Where(q => q.PublishedAt != null
                 && !q.IsHidden
-                && !q.SolutionNotNeeded
+                && q.SolutionNotNeeded == query.Dismissed
                 && !db.Solutions.Any(s => s.QuestionId == q.Id && s.Type == SolutionType.Teacher && !s.IsDeleted));
 
         if (lessonFilter is int lessonId)
@@ -109,17 +110,19 @@ public sealed class NeedsSolutionService(AppDbContext db, ISettingsService setti
             Wrong = db.Answers.Count(a => a.QuestionId == q.Id && !a.IsCorrect)
         });
 
-        var matching = counted.Where(x => x.Total >= thresholdAnswers && x.Wrong * 100 >= thresholdRate * x.Total);
+        var matching = query.Dismissed
+            ? counted
+            : counted.Where(x => x.Total >= thresholdAnswers && x.Wrong * 100 >= thresholdRate * x.Total);
 
         var total = await matching.CountAsync(cancellationToken);
         var offset = (long)(query.Page - 1) * query.PageSize;
         if (offset >= total)
         {
-            return ServiceResult<NeedsSolutionListView>.Ok(new NeedsSolutionListView(query.Page, query.PageSize, total, thresholdAnswers, thresholdRate, query.LessonId, []));
+            return ServiceResult<NeedsSolutionListView>.Ok(new NeedsSolutionListView(query.Page, query.PageSize, total, thresholdAnswers, thresholdRate, query.LessonId, query.Dismissed, []));
         }
 
         var rows = await matching
-            .OrderByDescending(x => (double)x.Wrong / x.Total)
+            .OrderByDescending(x => x.Total == 0 ? 0.0 : (double)x.Wrong / x.Total)
             .ThenByDescending(x => x.Total)
             .ThenBy(x => x.Question.Id)
             .Skip((int)offset)
@@ -160,7 +163,7 @@ public sealed class NeedsSolutionService(AppDbContext db, ISettingsService setti
             r.Wrong,
             StatsRules.WrongRate(r.Total, r.Wrong))).ToList();
 
-        return ServiceResult<NeedsSolutionListView>.Ok(new NeedsSolutionListView(query.Page, query.PageSize, total, thresholdAnswers, thresholdRate, query.LessonId, items));
+        return ServiceResult<NeedsSolutionListView>.Ok(new NeedsSolutionListView(query.Page, query.PageSize, total, thresholdAnswers, thresholdRate, query.LessonId, query.Dismissed, items));
     }
 
     public async Task<ServiceResult> SetNotNeededAsync(Actor actor, int questionId, bool notNeeded, CancellationToken cancellationToken = default)

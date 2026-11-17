@@ -343,7 +343,7 @@ public sealed class QuestionIdempotencyTests : IAsyncLifetime
             Task.FromResult(ServiceResult<QuestionDetailView>.Ok(new QuestionDetailView(
                 questionId, QuestionSource.Student, new LessonRefView(1, "x"), null, null, null, null, null,
                 new QuestionOptionsView(null, null, null, null), null, DateTime.UtcNow, null, null, null, null, null, null,
-                new QuestionPermissionsView(false, false, false, false, false, false, false), null, false, null, "none", null, null, null, false, null)));
+                new QuestionPermissionsView(false, false, false, false, false, false, false, false), null, false, null, "none", null, null, null, false, null)));
     }
 
     private sealed class StubFileUrls : IFileUrlService

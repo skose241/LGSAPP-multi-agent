@@ -5872,6 +5872,14 @@
               "format": "int32",
               "default": 20
             }
+          },
+          {
+            "name": "dismissed",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -11365,6 +11373,7 @@
           "thresholdAnswers",
           "thresholdWrongRate",
           "lessonId",
+          "dismissed",
           "items"
         ],
         "type": "object",
@@ -11395,6 +11404,9 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "dismissed": {
+            "type": "boolean"
           },
           "items": {
             "type": "array",
@@ -11997,7 +12009,8 @@
           "canReport",
           "canModerate",
           "canRequestAiSolution",
-          "canResolveDispute"
+          "canResolveDispute",
+          "canWriteTeacherSolution"
         ],
         "type": "object",
         "properties": {
@@ -12020,6 +12033,9 @@
             "type": "boolean"
           },
           "canResolveDispute": {
+            "type": "boolean"
+          },
+          "canWriteTeacherSolution": {
             "type": "boolean"
           }
         }

@@ -1,15 +1,35 @@
 "use client";
 
-import { meStatsQuery } from "@lgs/api/queries";
+import { meStatsQuery, type StudentStats } from "@lgs/api/queries";
 import { useQuery } from "@tanstack/react-query";
 import { CloudOff } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api/client";
+import { percentLabel as percent } from "@/lib/teacher/students";
 
-function percent(rate: number | null): string {
-  return rate === null ? "-" : `%${Math.round(rate)}`;
+export type StatsPerspective = "self" | "teacher";
+
+const COPY = {
+  self: {
+    totalDescription: "Çözdüğün tüm sorular",
+    pointsDescription: "Katkılarınla kazandığın puanlar",
+    lessonsEmpty: "Henüz soru çözmedin. İlk sorunu çözünce burada görünecek.",
+    contributions: "Katkılarım",
+    contributionsDescription: "Arkadaşlarına yaptığın katkılar",
+  },
+  teacher: {
+    totalDescription: "Çözdüğü tüm sorular",
+    pointsDescription: "Katkılarıyla kazandığı puanlar",
+    lessonsEmpty: "Bu öğrenci henüz soru çözmemiş.",
+    contributions: "Katkıları",
+    contributionsDescription: "Sisteme yaptığı katkılar",
+  },
+} as const;
+
+function rankLabel(rank: number | null): string {
+  return rank ? `${rank}.` : "Sırada değil";
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -44,26 +64,50 @@ function SuccessBar({ name, answered, correct, wrong, rate }: { name: string; an
   );
 }
 
-export function ProfileStats() {
-  const stats = useQuery(meStatsQuery(api()));
+function LessonTable({ lessons }: { lessons: StudentStats["lessons"] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm" data-testid="lesson-table">
+        <caption className="sr-only">Ders bazında çözülen sorular</caption>
+        <thead className="text-xs text-muted-foreground">
+          <tr>
+            <th scope="col" className="py-2 pr-3 font-semibold">
+              Ders
+            </th>
+            <th scope="col" className="px-2 py-2 text-right font-semibold">
+              Cevap
+            </th>
+            <th scope="col" className="px-2 py-2 text-right font-semibold">
+              Doğru
+            </th>
+            <th scope="col" className="px-2 py-2 text-right font-semibold">
+              Yanlış
+            </th>
+            <th scope="col" className="py-2 pl-2 text-right font-semibold">
+              Başarı
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {lessons.map((lesson) => (
+            <tr key={lesson.lesson.id} className="border-t border-border" data-testid="lesson-row">
+              <th scope="row" className="py-2 pr-3 font-semibold">
+                {lesson.lesson.name}
+              </th>
+              <td className="px-2 py-2 text-right">{lesson.answered}</td>
+              <td className="px-2 py-2 text-right">{lesson.correct}</td>
+              <td className="px-2 py-2 text-right">{lesson.wrong}</td>
+              <td className="py-2 pl-2 text-right">{percent(lesson.successRate)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-  if (stats.isPending) {
-    return <div role="status" aria-label="İstatistikler yükleniyor" className="h-48 animate-pulse rounded-lg bg-surface-muted" />;
-  }
-
-  if (stats.isError) {
-    return (
-      <EmptyState
-        icon={CloudOff}
-        as="h2"
-        title="İstatistikler yüklenemedi"
-        description={stats.error.message}
-        action={<Button onClick={() => stats.refetch()}>Tekrar Dene</Button>}
-      />
-    );
-  }
-
-  const data = stats.data;
+export function StatsPanels({ data, perspective }: { data: StudentStats; perspective: StatsPerspective }) {
+  const copy = COPY[perspective];
   const assignments = data.assignments;
   const participation = [
     { label: "Tamamlanan", value: assignments.completed },
@@ -77,7 +121,7 @@ export function ProfileStats() {
       <Card>
         <CardHeader>
           <CardTitle as="h2">Genel başarı</CardTitle>
-          <CardDescription>Çözdüğün tüm sorular</CardDescription>
+          <CardDescription>{copy.totalDescription}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -92,13 +136,13 @@ export function ProfileStats() {
       <Card>
         <CardHeader>
           <CardTitle as="h2">Puan ve sıra</CardTitle>
-          <CardDescription>Katkılarınla kazandığın puanlar</CardDescription>
+          <CardDescription>{copy.pointsDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-3 gap-4">
             <Stat label="Toplam puan" value={data.points.total} />
-            <Stat label="Haftalık sıra" value={data.points.weekly.rank ? `${data.points.weekly.rank}.` : "-"} />
-            <Stat label="Aylık sıra" value={data.points.monthly.rank ? `${data.points.monthly.rank}.` : "-"} />
+            <Stat label="Haftalık sıra" value={rankLabel(data.points.weekly.rank)} />
+            <Stat label="Aylık sıra" value={rankLabel(data.points.monthly.rank)} />
             <Stat label="Haftalık puan" value={data.points.weekly.points} />
             <Stat label="Aylık puan" value={data.points.monthly.points} />
           </dl>
@@ -108,18 +152,24 @@ export function ProfileStats() {
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle as="h2">Ders bazında başarı</CardTitle>
-          <CardDescription>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-3 rounded-sm bg-correct" aria-hidden="true" /> Doğru
-            </span>
-            <span className="ml-4 inline-flex items-center gap-1.5">
-              <span className="size-3 rounded-sm bg-wrong" aria-hidden="true" /> Yanlış
-            </span>
-          </CardDescription>
+          {perspective === "self" ? (
+            <CardDescription>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-3 rounded-sm bg-correct" aria-hidden="true" /> Doğru
+              </span>
+              <span className="ml-4 inline-flex items-center gap-1.5">
+                <span className="size-3 rounded-sm bg-wrong" aria-hidden="true" /> Yanlış
+              </span>
+            </CardDescription>
+          ) : (
+            <CardDescription>Hangi dersten kaç soru çözüldüğü</CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           {data.lessons.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Henüz soru çözmedin. İlk sorunu çözünce burada görünecek.</p>
+            <p className="text-sm text-muted-foreground">{copy.lessonsEmpty}</p>
+          ) : perspective === "teacher" ? (
+            <LessonTable lessons={data.lessons} />
           ) : (
             <ul className="flex flex-col gap-4" aria-label="Ders başarıları">
               {data.lessons.map((lesson) => (
@@ -146,8 +196,8 @@ export function ProfileStats() {
 
       <Card>
         <CardHeader>
-          <CardTitle as="h2">Katkılarım</CardTitle>
-          <CardDescription>Arkadaşlarına yaptığın katkılar</CardDescription>
+          <CardTitle as="h2">{copy.contributions}</CardTitle>
+          <CardDescription>{copy.contributionsDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-2 gap-4">
@@ -158,4 +208,26 @@ export function ProfileStats() {
       </Card>
     </div>
   );
+}
+
+export function ProfileStats() {
+  const stats = useQuery(meStatsQuery(api()));
+
+  if (stats.isPending) {
+    return <div role="status" aria-label="İstatistikler yükleniyor" className="h-48 animate-pulse rounded-lg bg-surface-muted" />;
+  }
+
+  if (stats.isError) {
+    return (
+      <EmptyState
+        icon={CloudOff}
+        as="h2"
+        title="İstatistikler yüklenemedi"
+        description={stats.error.message}
+        action={<Button onClick={() => stats.refetch()}>Tekrar Dene</Button>}
+      />
+    );
+  }
+
+  return <StatsPanels data={stats.data} perspective="self" />;
 }

@@ -143,11 +143,17 @@ public sealed class SolutionService(
 
         var question = await db.Questions.AsNoTracking()
             .Where(q => q.Id == questionId)
-            .Select(q => new { q.Id })
+            .Select(q => new { q.Id, q.LessonId })
             .FirstOrDefaultAsync(cancellationToken);
         if (question is null)
         {
             return Fail.NotFound("Soru bulunamadı.");
+        }
+
+        var denied = await AnswerKeyScope.AuthorizeAsync(db, actor, question.LessonId, cancellationToken);
+        if (denied is { } scopeFailure)
+        {
+            return scopeFailure;
         }
 
         var exists = await db.Solutions.AnyAsync(

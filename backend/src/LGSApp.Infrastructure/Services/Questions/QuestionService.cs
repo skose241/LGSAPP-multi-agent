@@ -19,7 +19,7 @@ public sealed record QuestionStatsView(int AnswerCount, int CorrectCount, int So
 
 public sealed record MyAnswerView(byte SelectedOption, bool IsCorrect, DateTime AnsweredAt, int? SolutionId);
 
-public sealed record QuestionPermissionsView(bool CanAnswer, bool CanSeeDiscussion, bool CanSeeOwnResult, bool CanReport, bool CanModerate, bool CanRequestAiSolution, bool CanResolveDispute);
+public sealed record QuestionPermissionsView(bool CanAnswer, bool CanSeeDiscussion, bool CanSeeOwnResult, bool CanReport, bool CanModerate, bool CanRequestAiSolution, bool CanResolveDispute, bool CanWriteTeacherSolution);
 
 public sealed record QuestionDetailView(
     int Id,
@@ -180,7 +180,7 @@ public sealed class QuestionService(AppDbContext db, IQuestionAccessService acce
             myAnswer,
             actor.IsModerator ? q.IsAnswerDisputed : null,
             canResolve ? q.AiSuggestedOption : null,
-            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanSeeOwnResult, decision.CanReport, decision.CanModerate, aiState.CanRequest, canResolve),
+            new QuestionPermissionsView(decision.CanAnswer, decision.CanSeeDiscussion, decision.CanSeeOwnResult, decision.CanReport, decision.CanModerate, aiState.CanRequest, canResolve, canResolve),
             likeCount,
             likedByMe,
             actor.IsModerator ? q.RowVersion : null,

@@ -24,6 +24,7 @@ import { AnswerForm } from "@/features/student/answer-form";
 import { CommentSection } from "@/features/student/comment-section";
 import { ReportDialog } from "@/features/student/report-dialog";
 import { SolutionsSection } from "@/features/student/solutions-section";
+import { TeacherSolutionSection } from "@/features/teacher/teacher-solution-section";
 import { usePublicSettings } from "@/features/student/use-settings";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -263,6 +264,7 @@ export function QuestionDetail({ id }: { id: number }) {
         <div className="flex flex-col gap-4">
           {q.permissions.canSeeDiscussion ? (
             <>
+              <TeacherSolutionSection question={q} />
               <SolutionsSection
                 questionId={q.id}
                 aiSlot={(aiSolution) => <AiSolutionSection question={q} aiSolution={aiSolution} />}

@@ -25,6 +25,7 @@ export function Providers({ children }: { children: ReactNode }) {
           classNames: {
             toast:
               "!rounded-lg !border !border-border !bg-surface-raised !text-foreground !shadow-lg !font-sans !text-sm",
+            actionButton: "!h-11 !min-h-touch !px-4 !text-sm !font-semibold",
           },
         }}
       />
