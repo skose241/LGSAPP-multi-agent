@@ -1,6 +1,7 @@
 using LGSApp.Infrastructure.Persistence;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace LGSApp.Tests;
 
@@ -10,8 +11,13 @@ public static class TestDatabase
 
     public static string NewName() => "LGSApp_Test_" + Guid.NewGuid().ToString("N");
 
+    public static string ConnectionString(string name) => $"{Server}Database={name};";
+
     public static AppDbContext Open(string name) =>
-        new(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer($"{Server}Database={name};").Options);
+        new(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(ConnectionString(name)).Options);
+
+    public static AppDbContext Open(string name, params IInterceptor[] interceptors) =>
+        new(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(ConnectionString(name)).AddInterceptors(interceptors).Options);
 
     public static async Task<bool> TryCreateAsync(string name, Func<AppDbContext, Task> seed)
     {

@@ -43,10 +43,12 @@ public static class DependencyInjection
         services.AddSchedulerOptions(configuration);
         services.AddAiOptions(configuration);
 
-        services.AddDbContext<AppDbContext>(options =>
+        services.AddSingleton<LeaderboardInvalidationInterceptor>();
+        services.AddDbContext<AppDbContext>((sp, options) =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
                 sql => sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null))
+                .AddInterceptors(sp.GetRequiredService<LeaderboardInvalidationInterceptor>())
                 .ConfigureWarnings(w => w.Ignore(CoreEventId.MappedPropertyIgnoredWarning)));
 
         services.AddIdentityCore<ApplicationUser>(options =>
