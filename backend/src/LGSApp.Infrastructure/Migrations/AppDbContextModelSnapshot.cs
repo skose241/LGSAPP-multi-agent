@@ -1416,13 +1416,13 @@ namespace LGSApp.Infrastructure.Migrations
                         new
                         {
                             Key = "cozumEsikCevapSayisi",
-                            Description = "Yapay zeka çözümü için asgari cevap sayısı eşiği.",
+                            Description = "Öğretmen çözümü bekleyen listesi için asgari cevap sayısı eşiği.",
                             Value = "5"
                         },
                         new
                         {
                             Key = "cozumEsikYanlisOrani",
-                            Description = "Yapay zeka çözümü için yanlış cevap oranı eşiği (yüzde).",
+                            Description = "Öğretmen çözümü bekleyen listesi için yanlış cevap oranı eşiği (yüzde).",
                             Value = "60"
                         },
                         new

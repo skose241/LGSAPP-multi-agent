@@ -22,6 +22,7 @@ using LGSApp.Infrastructure.Services.Scheduler;
 using LGSApp.Infrastructure.Services.Settings;
 using LGSApp.Infrastructure.Services.Solutions;
 using LGSApp.Infrastructure.Services.Stats;
+using LGSApp.Infrastructure.Services.Students;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -94,6 +95,8 @@ public static class DependencyInjection
         services.AddScoped<IQuestionAuthoringService, QuestionAuthoringService>();
         services.AddScoped<IQuestionPoolService, QuestionPoolService>();
         services.AddScoped<IStudentStatsService, StudentStatsService>();
+        services.AddScoped<IStudentDirectoryService, StudentDirectoryService>();
+        services.AddScoped<INeedsSolutionService, NeedsSolutionService>();
         services.AddScoped<IPublicSettingsService, PublicSettingsService>();
         services.AddScoped<IPointService, PointService>();
         services.AddScoped<INotificationService, NotificationService>();

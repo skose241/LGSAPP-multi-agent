@@ -14,6 +14,9 @@ public static class StatsRules
     public static double? SuccessRate(int answered, int correct) =>
         answered <= 0 ? null : Math.Round(correct * 100.0 / answered, 1, MidpointRounding.AwayFromZero);
 
+    public static double WrongRate(int answered, int wrong) =>
+        answered <= 0 ? 0 : Math.Round(wrong * 100.0 / answered, 1, MidpointRounding.AwayFromZero);
+
     public static ParticipationStatus Classify(int totalQuestions, int answered, bool isClosed)
     {
         if (totalQuestions <= 0)

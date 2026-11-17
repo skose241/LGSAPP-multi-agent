@@ -16,7 +16,7 @@ namespace LGSApp.Api.Controllers;
 [ApiController]
 [Route("api/questions")]
 [Authorize(Policy = Policies.Kullanici)]
-public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes, IAiSolutionService aiSolutions, IAnswerDisputeService disputes, IQuestionPoolService pool) : ControllerBase
+public class QuestionsController(IQuestionService questions, IQuestionAuthoringService authoring, IAnswerService answers, ISolutionService solutions, IAnswerKeyService answerKeys, ILikeService likes, IAiSolutionService aiSolutions, IAnswerDisputeService disputes, IQuestionPoolService pool, INeedsSolutionService needsSolution) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<QuestionPoolListView>(StatusCodes.Status200OK)]
@@ -61,6 +61,28 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
             ? Created($"/api/questions/{outcome.Question.Id}", outcome.Question)
             : Ok(outcome.Question));
     }
+
+    [HttpGet("needs-solution")]
+    [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType<NeedsSolutionListView>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> NeedsSolution(
+        [FromQuery] int? lessonId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = NeedsSolutionRules.DefaultPageSize,
+        CancellationToken cancellationToken = default) =>
+        (await needsSolution.ListAsync(User.ToActor(), new NeedsSolutionQuery(lessonId, page, pageSize), cancellationToken)).ToActionResult(this);
+
+    [HttpPut("{id:int}/solution-not-needed")]
+    [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> MarkSolutionNotNeeded(int id, CancellationToken cancellationToken) =>
+        (await needsSolution.SetNotNeededAsync(User.ToActor(), id, true, cancellationToken)).ToActionResult(this);
+
+    [HttpDelete("{id:int}/solution-not-needed")]
+    [Authorize(Policy = Policies.OgretmenOrMudur)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UnmarkSolutionNotNeeded(int id, CancellationToken cancellationToken) =>
+        (await needsSolution.SetNotNeededAsync(User.ToActor(), id, false, cancellationToken)).ToActionResult(this);
 
     [HttpGet("mine")]
     [ProducesResponseType<MyQuestionListView>(StatusCodes.Status200OK)]
