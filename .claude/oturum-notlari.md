@@ -536,3 +536,34 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
   - Gerçek cihazda iPhone toplu yükleme gözlemi.
   - E2E çalıştırırken tüm node/dotnet süreçlerini toptan sonlandırma denenmemeli; yalnız `e2e:run` süreç ağacı sonlandırılır (dotnet.exe VS Code'a ait olabilir).
 - Sıradaki: değişiklikleri reviewer'a ver, onaylanırsa commit + push (origin/main); sonra F7 müdür operasyon, F8 sertleştirme + yayın.
+
+## Oturum 9 — 2026-11-19
+
+### Bu oturumda yapılanlar (hepsi commit + push edildi)
+- `3a97e7f` F6b öğretmen ödevleri (reviewer turu sonrası): havuz sorusunun şıkkını ödevden değiştirmek onay penceresi ister ("tüm cevapların puanı yeniden hesaplanır") + kalıcı not; boş dosya 400'ü artık `code: "file_empty"` ile tanınıyor (Türkçe mesaj regex'i kalktı); `prepare.ts` render hatalarını `console.warn` ile logluyor.
+- `3ade9a4` B7a–e: zamanlayıcı durumuna `timerEnabled` + `jobs[].scheduledAt` (TR saati); AI dışı 17 genel ayar (grup `ai|genel`, `critical`, çapraz kurallar: görünür derinlik ≤ max derinlik, açıklama min ≤ çözüm max); `PUT /api/admin/users/{id}` (ad/soyad/sınıf, rol değişmez); `POST /api/admin/users/bulk` (1..100, hepsi-ya-hiç, `items[i].alan` hataları, 3/dk); `UserBanRecord` migration (`BannedAt`, `BannedByUserId`), `pendingReportCount`, `reported=true`.
+- `4429df9` F7a zamanlayıcı ekranı (`/yonetim/zamanlayici` + `[id]`, onaylı elle tetik, 409 runId bağlantısı, geçmiş, pano özeti) ve F7b ders programı (`/yonetim/ders-programi`, hücre başı en fazla 20).
+- `d6eb788` + `ee20a41` F7c `/yonetim/ayarlar` (ortak `settings-editor`, kritik "Dikkat" notları, sahipsiz dosya temizliği) ve F7d kullanıcı işlemleri (bilgi düzenleme, `/yonetim/kullanicilar/toplu` CSV/TSV yapıştırma + şifre tablosu yazdır/kopyala, şikâyet rozeti/filtresi `?sikayetli=1`, ban bilgisi). Reviewer düzeltmeleri: tek seferlik şifre harf/rakamla başlar; Excel formül öneki (`'`) ad/kullanıcı adı/sınıf hücrelerinde; şifreler mutation cache'ten temizlenir; `gunlukSoruYuklemeLimiti` kritik (0 = yükleme kapalı, migration `SettingUploadLimitDescription`); yeniden ban ilk kaydı korur; yalnız tekil ad ihlali 409; sınıf yalnız öğrencide; E2E'de AdminSettings/BulkUserCreate/SchedulerTrigger hız sınırları 10000.
+- `454d128` F8a/F8d sertleştirme: `ProductionGuards` (Development dışında dev pepper parmak izi, UseDevelopmentStorage, localdb, PermitLimit>1000, bekleyen migration reddi), HSTS/nosniff/JSON no-store, `/health/live`, `/health/ready`, `HttpsRedirection:Enabled`; nonce'lu CSP (varsayılan report-only, `CSP_REPORT_ONLY=false` zorlayıcı, `CSP_IMG_HOSTS`), `/csp-report`, `/healthz`, zod `jitless`, E2E'de CSP ihlali testi kaldırır; `LGSAPP_TEST_SQL`/`LGSAPP_TEST_REQUIRE_DB`; `seed-reference-data [--dry-run]` komutu; `backend/README.md` ilk kurulum sırası.
+- `ca6f323` F8b/F8c: `.github/workflows/ci.yml` (backend+mssql konteyneri, frontend, openapi/schema diff, açık paket, Linux Production smoke) ve `deploy.yml` (workflow_dispatch, OIDC, `environment: production`); `infra/` Bicep (B1, SQL Basic, Storage, Key Vault referansları, purge protection açık, basic auth kapalı, bütçe 50$/80$; `az bicep build/lint` temiz, v0.49.2); `scripts/deploy/*.ps1` (+ smoke/ci bash); `AppDbContextFactory` (migration bundle host kurmadan, `ConnectionStrings__DefaultConnection` ile); Api csproj dev appsettings'i publish'e almaz. Reviewer düzeltmeleri: çözülmemiş `@Microsoft.KeyVault(` metni açılışta reddedilir (7 sır), readiness 20 sn önbellek, `/csp-report` güvenilir IP + toplam 300/dk + istek başına 3 log, referans veri tek transaction + tr-TR eşleme.
+- Son tam koşular: backend 852/852, vitest api 108 + web 252, E2E 463 geçti / 3 skip / 0 hata.
+
+### Kalıcı kararlar
+- F7: toplu kullanıcı oluşturma var; ad/soyad/sınıf düzenlenir, rol değişmez; tüm AI dışı ayarlar açık (kritikler notlu); şikâyetliler için rozet+filtre, ayrı ekran yok; zamanlayıcının çalışmadığı geçmiş gün için üretim yok.
+- F8: eski sistemden HİÇBİR veri taşınmayacak (açık ödevler elle yeniden kurulacak; taşıma aracı ve eski şifre doğrulayıcısı yazılmayacak). Azure SQL Basic 5 DTU. İlk yayın yerel az CLI betikleri + Key Vault, sonra GitHub Actions.
+- Gemini anahtarları: geliştirmede user-secrets (`Ai:Gemini:QuestionApiKey`, `Ai:Gemini:SolutionApiKey`), yayında Key Vault referansı (`Ai__Gemini__*`). v2 için canlıdan ayrı iki anahtar açılması önerildi.
+- "Tetikleme ucunda IP kısıtı" notu GEÇERSİZ: v2'de zamanlayıcı API içinde, dış HTTP tetiği yok.
+- Kod: E2E'de Windows'ta `-g` ile Türkçe karakter kullanılmaz; paralel ajanlar `git stash` kullanmaz.
+
+### Durum / açık sorular
+- Azure aboneliği yok: Azure for Students portalında okul adı alanı siliniyor. GitHub Student Developer Pack doğrulandı, ~72 saatte aktifleşecek; sonra Azure for Students GitHub üzerinden açılacak.
+- İlk gerçek GitHub Actions CI koşusu `ca6f323` push'uyla tetiklenmiş olmalı; sonucu görülmedi (makinede `gh` yok). Actions sekmesinden kontrol edilecek; Linux Production smoke ilk kez orada koştu.
+- Kullanıcı eski Postgres `ConnectionStrings__DefaultConnection` kullanıcı ortam değişkenini sildi (2026-11-19).
+- Bilinen riskler `infra/README.md` "Bilinen riskler ve yayın sonrası adımlar": SQL "Azure hizmetlerine izin ver" + sunucu yöneticisiyle bağlantı (sonra MI + contained user), web'in kasa kapsamında Secrets User olması, CSP report-only → zorlayıcı geçiş, GitHub `production` environment onaylayıcı + yalnız main kuralı elle kurulmalı.
+- Doğrulanmayanlar: `DOTNETCORE|10.0` App Service desteği, bölge kısıtı, `deploy.yml`/pwsh 7, eski iOS'ta `'wasm-unsafe-eval'` (HEIC), gerçek iPhone toplu yükleme ("Dosya zorunludur" kök nedeni hâlâ bilinmiyor), toplu ekleme taşma testinin kök nedeni (zamanlama çıkarımı).
+- Küçük açıklar: profil düzenlemede istemci sürümü yok (bayat form tespiti yok); `seed-reference-data` ada göre eşler (ad değişirse orijinali yeniden ekler); `reported` sorgu parametresi UI'da kullanılmıyor; şikâyet bağlantısı kullanıcıya göre filtrelemiyor.
+
+### Sıradaki adımlar
+1. GitHub Actions ilk CI sonucunu kontrol et; kırmızıysa düzelt.
+2. Abonelik açılınca F8e (`scripts/deploy/first-install.ps1`, `infra/README.md`): bütçe → bicep what-if → deploy → set-secrets → migrate + seed-reference-data → API (Seed__) → web → ilk müdür girişi → Seed değişkenlerini sil → Gemini duman testi (ayrı v2 anahtarı, onaylı) → gerçek iPhone HEIC/toplu yükleme → birkaç gün sonra CSP zorlayıcı.
+3. Yayın sonrası: SQL managed identity geçişi, web Key Vault rol kapsamı, alan adı (önce azurewebsites.net pilot, sonra netpesinde.com).
