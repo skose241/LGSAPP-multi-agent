@@ -557,13 +557,13 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 
 ### Durum / açık sorular
 - Azure aboneliği yok: Azure for Students portalında okul adı alanı siliniyor. GitHub Student Developer Pack doğrulandı, ~72 saatte aktifleşecek; sonra Azure for Students GitHub üzerinden açılacak.
-- İlk gerçek GitHub Actions CI koşusu `ca6f323` push'uyla tetiklenmiş olmalı; sonucu görülmedi (makinede `gh` yok). Actions sekmesinden kontrol edilecek; Linux Production smoke ilk kez orada koştu.
+- İlk GitHub Actions CI koşusu (`ca6f323`): Production duman testi dahil yeşil (kullanıcı Actions sekmesinden doğruladı). E2E işi yalnız workflow_dispatch ile çalışır, "taslak" görünmesi beklenen. `gh` kuruldu (`C:Program FilesGitHub CLIgh.exe`), henüz `gh auth login` yapılmadı.
 - Kullanıcı eski Postgres `ConnectionStrings__DefaultConnection` kullanıcı ortam değişkenini sildi (2026-11-19).
 - Bilinen riskler `infra/README.md` "Bilinen riskler ve yayın sonrası adımlar": SQL "Azure hizmetlerine izin ver" + sunucu yöneticisiyle bağlantı (sonra MI + contained user), web'in kasa kapsamında Secrets User olması, CSP report-only → zorlayıcı geçiş, GitHub `production` environment onaylayıcı + yalnız main kuralı elle kurulmalı.
 - Doğrulanmayanlar: `DOTNETCORE|10.0` App Service desteği, bölge kısıtı, `deploy.yml`/pwsh 7, eski iOS'ta `'wasm-unsafe-eval'` (HEIC), gerçek iPhone toplu yükleme ("Dosya zorunludur" kök nedeni hâlâ bilinmiyor), toplu ekleme taşma testinin kök nedeni (zamanlama çıkarımı).
 - Küçük açıklar: profil düzenlemede istemci sürümü yok (bayat form tespiti yok); `seed-reference-data` ada göre eşler (ad değişirse orijinali yeniden ekler); `reported` sorgu parametresi UI'da kullanılmıyor; şikâyet bağlantısı kullanıcıya göre filtrelemiyor.
 
 ### Sıradaki adımlar
-1. GitHub Actions ilk CI sonucunu kontrol et; kırmızıysa düzelt.
+1. `gh auth login` sonrası CI koşularını `gh run list` ile izle; E2E taslağını bir kez elle çalıştırıp doğrula.
 2. Abonelik açılınca F8e (`scripts/deploy/first-install.ps1`, `infra/README.md`): bütçe → bicep what-if → deploy → set-secrets → migrate + seed-reference-data → API (Seed__) → web → ilk müdür girişi → Seed değişkenlerini sil → Gemini duman testi (ayrı v2 anahtarı, onaylı) → gerçek iPhone HEIC/toplu yükleme → birkaç gün sonra CSP zorlayıcı.
 3. Yayın sonrası: SQL managed identity geçişi, web Key Vault rol kapsamı, alan adı (önce azurewebsites.net pilot, sonra netpesinde.com).
