@@ -1,10 +1,11 @@
 "use client";
 
 import { formatDateTime, formatDateTimeShort } from "@lgs/api";
-import { adminUsersQuery } from "@lgs/api/queries";
+import { adminUsersQuery, type AdminUser } from "@lgs/api/queries";
 import { useQuery } from "@tanstack/react-query";
-import { CloudOff, Plus, Search, ShieldPlus, UserX } from "lucide-react";
+import { CloudOff, Flag, ListPlus, Plus, Search, ShieldPlus, UserX } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
@@ -13,19 +14,42 @@ import { Card } from "@/components/ui/card";
 import { UserStatusBadges, RoleBadge } from "@/features/admin/user-badges";
 import { api } from "@/lib/api/client";
 import { paginate } from "@/lib/admin/pagination";
-import { countByRole, filterUsers, fullName, ROLE_TABS, type RoleFilter } from "@/lib/admin/users";
+import { countByRole, countReported, filterUsers, fullName, ROLE_TABS, type RoleFilter } from "@/lib/admin/users";
 import { cn } from "@/lib/utils";
 
 const headerClasses = "px-3 py-3 font-semibold";
+
+function BanInfo({ user }: { user: AdminUser }) {
+  if (!user.isBanned || !user.bannedAt) return null;
+  return (
+    <span className="text-xs text-muted-foreground" data-testid="ban-date">
+      Engellendi: {formatDateTimeShort(user.bannedAt)}
+    </span>
+  );
+}
 
 export function UsersList() {
   const users = useQuery(adminUsersQuery(api()));
   const [role, setRole] = useState<RoleFilter>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const reportedOnly = searchParams.get("sikayetli") === "1";
+
+  function toggleReported() {
+    const next = new URLSearchParams(searchParams.toString());
+    if (reportedOnly) next.delete("sikayetli");
+    else next.set("sikayetli", "1");
+    const text = next.toString();
+    router.replace(text ? `${pathname}?${text}` : pathname);
+    setPage(1);
+  }
 
   const counts = useMemo(() => countByRole(users.data ?? []), [users.data]);
-  const filtered = useMemo(() => filterUsers(users.data ?? [], role, query), [users.data, role, query]);
+  const reportedCount = useMemo(() => countReported(users.data ?? []), [users.data]);
+  const filtered = useMemo(() => filterUsers(users.data ?? [], role, query, reportedOnly), [users.data, role, query, reportedOnly]);
   const slice = useMemo(() => paginate(filtered, page), [filtered, page]);
   const visible = slice.items;
 
@@ -41,6 +65,12 @@ export function UsersList() {
             <Link href="/yonetim/kullanicilar/yeni">
               <Plus aria-hidden="true" />
               Yeni kullanıcı
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link href="/yonetim/kullanicilar/toplu">
+              <ListPlus aria-hidden="true" />
+              Toplu ekle
             </Link>
           </Button>
           <Button asChild variant="secondary">
@@ -76,6 +106,22 @@ export function UsersList() {
               </span>
             </button>
           ))}
+          <button
+            type="button"
+            aria-pressed={reportedOnly}
+            onClick={toggleReported}
+            data-testid="reported-filter"
+            className={cn(
+              "inline-flex min-h-touch items-center gap-2 rounded-pill border px-4 text-sm font-semibold transition-colors",
+              reportedOnly
+                ? "border-warning bg-warning-soft text-warning-soft-foreground"
+                : "border-border-strong bg-surface text-foreground hover:bg-surface-muted",
+            )}
+          >
+            <Flag className="size-4" aria-hidden="true" />
+            Yalnız şikâyetliler
+            <span className="text-xs">{reportedCount}</span>
+          </button>
         </div>
         <div className="relative w-full xl:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
@@ -115,7 +161,7 @@ export function UsersList() {
           description={
             users.data.length === 0
               ? "İlk öğretmen ya da öğrenci hesabını oluştur."
-              : "Arama ya da rol filtresini değiştirmeyi dene."
+              : "Arama, rol ya da şikâyet filtresini değiştirmeyi dene."
           }
         />
       ) : (
@@ -168,6 +214,7 @@ export function UsersList() {
                         <div className="flex flex-wrap gap-1">
                           <UserStatusBadges user={user} />
                         </div>
+                        <BanInfo user={user} />
                       </td>
                       <td className="whitespace-nowrap px-3 py-1 text-muted-foreground">
                         {user.lastLoginAt ? formatDateTimeShort(user.lastLoginAt) : "Hiç girmedi"}
@@ -199,6 +246,7 @@ export function UsersList() {
                   <span className="flex flex-wrap gap-1.5">
                     <UserStatusBadges user={user} />
                   </span>
+                  <BanInfo user={user} />
                   <span className="text-xs text-muted-foreground">
                     Son giriş: {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "Hiç girmedi"}
                   </span>

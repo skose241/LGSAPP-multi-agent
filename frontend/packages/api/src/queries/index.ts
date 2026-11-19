@@ -10,3 +10,4 @@ export * from "./ai";
 export * from "./teacher";
 export * from "./assignments";
 export * from "./scheduler";
+export * from "./maintenance";

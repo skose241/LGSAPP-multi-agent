@@ -192,7 +192,9 @@ test.describe("oturum", () => {
     await login(page, account.userName, account.password);
     await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible();
     await banAccount(account.id);
-    await page.goto("/profil");
+    await page.goto("/profil").catch((error: Error) => {
+      if (!/ERR_ABORTED|interrupted/.test(error.message)) throw error;
+    });
     await page.waitForURL(/\/giris\?neden=oturum/);
     await expect(page.getByText("Oturumunuzun süresi doldu.")).toBeVisible();
     await page.goto("/");

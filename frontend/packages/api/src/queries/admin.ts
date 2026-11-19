@@ -7,6 +7,9 @@ export type AdminUser = components["schemas"]["AdminUserDto"];
 export type PasswordResetRequest = components["schemas"]["PasswordResetRequestDto"];
 export type CreateUserBody = components["schemas"]["CreateUserRequest"];
 export type CreatedUser = components["schemas"]["CreatedUserResponse"];
+export type UpdateUserBody = components["schemas"]["UpdateUserProfileRequest"];
+export type BulkUserItem = components["schemas"]["BulkUserItemRequest"];
+export type BulkCreatedUsers = components["schemas"]["BulkCreatedUsersResponse"];
 export type OneTimePassword = components["schemas"]["OneTimePasswordResponse"];
 export type GenerationSchedule = components["schemas"]["GenerationScheduleView"];
 export type ScheduleItem = components["schemas"]["ScheduleItemRequest"];
@@ -14,17 +17,22 @@ export type ScheduleItem = components["schemas"]["ScheduleItemRequest"];
 export const adminKeys = {
   all: ["admin"] as const,
   users: () => [...adminKeys.all, "users"] as const,
-  usersByRole: (role: string | undefined) => [...adminKeys.users(), "list", role ?? "all"] as const,
+  usersByRole: (role: string | undefined, reported?: boolean) =>
+    [...adminKeys.users(), "list", role ?? "all", reported ? "reported" : "any"] as const,
   user: (id: number) => [...adminKeys.users(), "detail", id] as const,
   resetRequests: () => [...adminKeys.all, "password-reset-requests"] as const,
   generationSchedule: () => [...adminKeys.all, "generation-schedule"] as const,
 };
 
-export function adminUsersQuery(client: ApiClient, role?: string) {
+export function adminUsersQuery(client: ApiClient, role?: string, reported?: boolean) {
   return queryOptions({
-    queryKey: adminKeys.usersByRole(role),
+    queryKey: adminKeys.usersByRole(role, reported),
     queryFn: () =>
-      unwrap(client.GET("/api/admin/users", { params: { query: role ? { role } : {} } })),
+      unwrap(
+        client.GET("/api/admin/users", {
+          params: { query: { ...(role ? { role } : {}), ...(reported ? { reported: true } : {}) } },
+        }),
+      ),
     staleTime: 15_000,
   });
 }
@@ -59,6 +67,10 @@ export const adminMutations = {
   replaceGenerationSchedule: (client: ApiClient, items: ScheduleItem[]) =>
     unwrap(client.PUT("/api/admin/generation-schedule", { body: { items } })),
   createUser: (client: ApiClient, body: CreateUserBody) => unwrap(client.POST("/api/admin/users", { body })),
+  updateUser: (client: ApiClient, id: number, body: UpdateUserBody) =>
+    unwrap(client.PUT("/api/admin/users/{id}", { params: { path: { id } }, body })),
+  bulkCreateUsers: (client: ApiClient, items: BulkUserItem[]) =>
+    unwrap(client.POST("/api/admin/users/bulk", { body: { items } })),
   ban: (client: ApiClient, id: number) =>
     unwrap(client.POST("/api/admin/users/{id}/ban", { params: { path: { id } } })),
   unban: (client: ApiClient, id: number) =>

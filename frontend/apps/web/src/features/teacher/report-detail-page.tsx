@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDateTimeShort, isApiError, letterToOption, optionToLetter, reportReasonLabel } from "@lgs/api";
-import { aiKeys, questionKeys, reportDetailQuery, solutionKeys, teacherKeys, teacherMutations, type ReportDetail, type ReportItem, type ReportResolveActionValue, type ReportResolveResult } from "@lgs/api/queries";
+import { adminKeys, aiKeys, questionKeys, reportDetailQuery, solutionKeys, teacherKeys, teacherMutations, type ReportDetail, type ReportItem, type ReportResolveActionValue, type ReportResolveResult } from "@lgs/api/queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, CloudOff, Flag, ShieldQuestion } from "lucide-react";
 import Link from "next/link";
@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
 
-function ReportSummary({ report }: { report: ReportItem }) {
+function ReportSummary({ report, isMudur }: { report: ReportItem; isMudur: boolean }) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-3">
@@ -40,6 +40,13 @@ function ReportSummary({ report }: { report: ReportItem }) {
           {userLabel(report.reporter)} · {formatDateTimeShort(report.createdAt)}
           {report.reported ? ` · Şikâyet edilen: ${userLabel(report.reported)}` : ""}
         </p>
+        {isMudur && report.reported && report.reported.role !== "ai" ? (
+          <Button asChild variant="secondary" className="self-start">
+            <Link href={`/yonetim/kullanicilar/${report.reported.id}`} data-testid="reported-user-link">
+              İçerik sahibinin kullanıcı sayfası
+            </Link>
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -156,6 +163,7 @@ function ResolveForm({ detail, onResolved, onFailure }: { detail: ReportDetail; 
       queryClient.invalidateQueries({ queryKey: aiKeys.disputedAll }),
       queryClient.invalidateQueries({ queryKey: questionKeys.all }),
       queryClient.invalidateQueries({ queryKey: solutionKeys.list(report.questionId) }),
+      queryClient.invalidateQueries({ queryKey: adminKeys.users() }),
       queryClient.invalidateQueries({ queryKey: ["notifications"] }),
     ]);
   };
@@ -289,6 +297,7 @@ function ResolvedPanel({ report, outcome }: { report: ReportItem; outcome: Repor
 
 export function ReportDetailPage({ id }: { id: number }) {
   const queryClient = useQueryClient();
+  const me = useMe();
   const detail = useQuery(reportDetailQuery(api(), id));
   const [outcome, setOutcome] = useState<ReportResolveResult | null>(null);
   const [resolveError, setResolveError] = useState<ProblemState | null>(null);
@@ -353,7 +362,7 @@ export function ReportDetailPage({ id }: { id: number }) {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-4">
-          <ReportSummary report={report} />
+          <ReportSummary report={report} isMudur={me.data?.role === "mudur"} />
           <QuestionTarget detail={data} onImageExpired={() => void refreshDetail()} />
           <OtherTargets detail={data} onImageExpired={() => void refreshDetail()} />
         </div>

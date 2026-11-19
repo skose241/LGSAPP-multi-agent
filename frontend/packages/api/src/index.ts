@@ -7,3 +7,4 @@ export * from "./errors";
 export * from "./enums";
 export * from "./upload";
 export * from "./ai";
+export * from "./settings";

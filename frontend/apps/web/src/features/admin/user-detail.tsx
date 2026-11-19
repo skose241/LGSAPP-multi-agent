@@ -3,7 +3,7 @@
 import { formatDateTime, isApiError } from "@lgs/api";
 import { adminKeys, adminMutations, adminUserQuery, lessonsQuery, type AdminUser } from "@lgs/api/queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Ban, BookOpen, CloudOff, KeyRound, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Ban, BookOpen, CloudOff, Flag, KeyRound, ShieldCheck, UserPen } from "lucide-react";
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -13,13 +13,14 @@ import { type ProblemState } from "@/components/problem-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SelectField } from "@/components/ui/select-field";
+import { EditUserDialog } from "@/features/admin/edit-user-dialog";
 import { OneTimePasswordDialog } from "@/features/admin/one-time-password-dialog";
 import { RoleBadge, UserStatusBadges } from "@/features/admin/user-badges";
 import { useMe } from "@/features/auth/use-me";
 import { api } from "@/lib/api/client";
-import { fullName, userActions, type ActionState } from "@/lib/admin/users";
+import { fullName, userActions, userLabelOf, type ActionState } from "@/lib/admin/users";
 
-type DialogKind = "ban" | "unban" | "regenerate" | "branch" | null;
+type DialogKind = "ban" | "unban" | "regenerate" | "branch" | "edit" | null;
 
 function toProblem(error: unknown): ProblemState {
   if (isApiError(error)) return { status: error.status, problem: error.problem, at: Date.now() };
@@ -217,6 +218,25 @@ export function UserDetail({ id }: { id: number }) {
               <Field label="Oluşturulma">{formatDateTime(data.createdAt)}</Field>
               <Field label="Son giriş">{data.lastLoginAt ? formatDateTime(data.lastLoginAt) : "Hiç girmedi"}</Field>
             </dl>
+            {data.isBanned ? (
+              <p className="text-sm" data-testid="ban-info">
+                <span className="font-semibold">Engellenme: </span>
+                {data.bannedAt ? formatDateTime(data.bannedAt) : "Tarih kayıtlı değil"}
+                {data.bannedBy ? `, engelleyen: ${userLabelOf(data.bannedBy)} (${data.bannedBy.userName})` : ""}
+              </p>
+            ) : null}
+            {data.pendingReportCount > 0 ? (
+              <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm" data-testid="report-info">
+                <span>
+                  <span className="font-semibold">Bekleyen şikâyet: </span>
+                  {data.pendingReportCount}
+                </span>
+                <Link href="/ogretmen/sikayetler" className="inline-flex min-h-touch items-center gap-1.5 font-semibold text-primary underline underline-offset-4">
+                  <Flag className="size-4" aria-hidden="true" />
+                  Şikâyetlere git
+                </Link>
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-1.5">
               <UserStatusBadges user={data} />
               {!data.isBanned && !data.mustChangePassword && !data.isSystemAccount ? (
@@ -233,6 +253,17 @@ export function UserDetail({ id }: { id: number }) {
           </CardHeader>
           <CardContent>
             <ul>
+              {actions.edit.allowed ? (
+                <ActionRow
+                  icon={<UserPen className="size-5" aria-hidden="true" />}
+                  title="Bilgileri düzenle"
+                  description={data.role === "ogrenci" ? "Ad, soyad ve sınıfı güncelle." : "Ad ve soyadı güncelle."}
+                  label="Bilgileri düzenle"
+                  state={actions.edit}
+                  testId="action-edit"
+                  onClick={() => setDialog("edit")}
+                />
+              ) : null}
               {data.isBanned ? (
                 <ActionRow
                   icon={<ShieldCheck className="size-5" aria-hidden="true" />}
@@ -351,6 +382,8 @@ export function UserDetail({ id }: { id: number }) {
           ))}
         </SelectField>
       </ConfirmDialog>
+
+      <EditUserDialog user={data} open={dialog === "edit"} onOpenChange={(open) => (open ? setDialog("edit") : close())} />
 
       <OneTimePasswordDialog result={revealed} onClose={() => setRevealed(null)} />
     </div>

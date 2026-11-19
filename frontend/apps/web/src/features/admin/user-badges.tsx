@@ -1,5 +1,5 @@
 import type { AdminUser } from "@lgs/api/queries";
-import { Ban, Bot, KeyRound } from "lucide-react";
+import { Ban, Bot, Flag, KeyRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { roleLabel } from "@/lib/nav";
 
@@ -15,6 +15,12 @@ export function UserStatusBadges({ user }: { user: AdminUser }) {
         <Badge tone="danger">
           <Ban aria-hidden="true" />
           Banlı
+        </Badge>
+      ) : null}
+      {user.pendingReportCount > 0 ? (
+        <Badge tone="warning">
+          <Flag aria-hidden="true" />
+          Şikâyet var ({user.pendingReportCount})
         </Badge>
       ) : null}
       {user.mustChangePassword ? (

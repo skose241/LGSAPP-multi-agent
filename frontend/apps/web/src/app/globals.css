@@ -330,8 +330,25 @@
   }
 
   #giris-karti,
-  #giris-karti * {
+  #giris-karti *,
+  #toplu-sifreler,
+  #toplu-sifreler * {
     visibility: visible;
+  }
+
+  #toplu-sifreler {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  #toplu-sifreler th,
+  #toplu-sifreler td {
+    border: 1px solid #000;
+    padding: 6px;
   }
 
   #giris-karti {

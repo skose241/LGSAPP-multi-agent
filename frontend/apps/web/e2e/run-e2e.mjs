@@ -95,6 +95,9 @@ async function main() {
     Scheduler__Enabled: "false",
     Ai__Provider: "Fake",
     Ai__Fake__MismatchEveryNth: "4",
+    RateLimiting__AdminSettings__PermitLimit: "10000",
+    RateLimiting__BulkUserCreate__PermitLimit: "10000",
+    RateLimiting__SchedulerTrigger__PermitLimit: "10000",
   };
 
   log("LGSApp_E2E siliniyor ve migration'lar uygulanıyor");

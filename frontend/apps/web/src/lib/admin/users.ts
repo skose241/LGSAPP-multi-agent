@@ -30,9 +30,14 @@ export function matchesQuery(user: AdminUser, query: string): boolean {
   return lower(haystack).includes(lower(trimmed)) || fold(haystack).includes(fold(trimmed));
 }
 
-export function filterUsers(users: AdminUser[], role: RoleFilter, query: string): AdminUser[] {
+export function filterUsers(users: AdminUser[], role: RoleFilter, query: string, reportedOnly = false): AdminUser[] {
   return users
-    .filter((user) => (role === "all" ? true : user.role === role) && matchesQuery(user, query))
+    .filter(
+      (user) =>
+        (role === "all" ? true : user.role === role) &&
+        (!reportedOnly || user.pendingReportCount > 0) &&
+        matchesQuery(user, query),
+    )
     .sort((a, b) => fullName(a).localeCompare(fullName(b), "tr") || a.userName.localeCompare(b.userName, "tr"));
 }
 
@@ -45,6 +50,14 @@ export function countByRole(users: AdminUser[]): Record<RoleFilter, number> {
   };
 }
 
+export function countReported(users: AdminUser[]): number {
+  return users.filter((user) => user.pendingReportCount > 0).length;
+}
+
+export function userLabelOf(user: { fullName: string | null; userName: string } | null): string {
+  return user ? user.fullName || user.userName : "Bilinmiyor";
+}
+
 export interface ActionState {
   allowed: boolean;
   reason?: string;
@@ -55,6 +68,7 @@ export interface UserActions {
   unban: ActionState;
   regeneratePassword: ActionState;
   branch: ActionState;
+  edit: ActionState;
 }
 
 const ok: ActionState = { allowed: true };
@@ -63,7 +77,7 @@ const no = (reason: string): ActionState => ({ allowed: false, reason });
 export function userActions(user: AdminUser, currentUserId: number | undefined): UserActions {
   if (user.isSystemAccount || user.role === "ai") {
     const reason = "Yapay zekâ hesabı sistem tarafından yönetilir.";
-    return { ban: no(reason), unban: no(reason), regeneratePassword: no(reason), branch: no(reason) };
+    return { ban: no(reason), unban: no(reason), regeneratePassword: no(reason), branch: no(reason), edit: no(reason) };
   }
 
   const isSelf = currentUserId !== undefined && user.id === currentUserId;
@@ -87,5 +101,5 @@ export function userActions(user: AdminUser, currentUserId: number | undefined):
 
   const branch = user.role === "ogretmen" ? ok : no("Branş dersi yalnızca öğretmen hesaplarına atanabilir.");
 
-  return { ban, unban, regeneratePassword, branch };
+  return { ban, unban, regeneratePassword, branch, edit: ok };
 }

@@ -18,4 +18,6 @@ export function shouldGuardNavigation(
   return url.pathname !== current.pathname || url.search !== current.search;
 }
 
+export const PASSWORDS_LEAVE_MESSAGE = "Tek seferlik şifreler bir daha gösterilmeyecek. Not almadan ayrılırsan bu şifrelere ulaşamazsın. Ayrılmak istiyor musun?";
+
 export const DIRTY_LEAVE_MESSAGE = "Kaydedilmemiş değişiklikler var. Sayfadan ayrılırsan kaybolur. Ayrılmak istiyor musun?";

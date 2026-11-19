@@ -24,8 +24,11 @@ export async function requestAi(user: ActiveUser, questionId: number): Promise<A
 }
 
 export async function setSettings(changes: Record<string, number>) {
+  const current = await readSettings();
+  const differing = Object.fromEntries(Object.entries(changes).filter(([key, value]) => current[key] !== value));
+  if (Object.keys(differing).length === 0) return;
   const token = await adminToken();
-  const result = await backend("PUT", "/api/admin/settings", { token, body: changes });
+  const result = await backend("PUT", "/api/admin/settings", { token, body: differing });
   if (result.status !== 200) throw new Error(`Ayar yazılamadı: ${result.status} ${JSON.stringify(result.body)}`);
 }
 

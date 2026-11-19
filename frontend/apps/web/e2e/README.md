@@ -19,6 +19,7 @@ Playwright argümanları aynen iletilir, örneğin `npx pnpm@10 e2e:run e2e/lice
    - `ASPNETCORE_ENVIRONMENT=Development`, `ASPNETCORE_URLS=http://localhost:5390`
    - `Ai__Provider=Fake`, `Ai__Fake__MismatchEveryNth=4` (uyuşmazlık testleri buna dayanır)
    - `Scheduler__Enabled=false`
+   - `RateLimiting__AdminSettings__PermitLimit`, `RateLimiting__BulkUserCreate__PermitLimit`, `RateLimiting__SchedulerTrigger__PermitLimit` = `10000` (yönetim testleri aynı IP'den çok istek attığı için; gerçek 429 davranışı testlerde `page.route` ile taklit edilir)
    - `Seed__AdminUserName`, `Seed__AdminPassword`, `Bff__ProxyKey` (yalnız E2E'ye özel sabit test değerleri)
    - `ConnectionStrings__DefaultConnection` (LocalDB `LGSApp_E2E`)
 6. Playwright'ı `E2E_CHROMIUM_CHANNEL=chrome` (sistem Chrome) ile Chromium ve WebKit iPhone projelerinde çalıştırır.
