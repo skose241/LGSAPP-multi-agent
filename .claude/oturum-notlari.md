@@ -557,7 +557,7 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 
 ### Durum / açık sorular
 - Azure aboneliği yok: Azure for Students portalında okul adı alanı siliniyor. GitHub Student Developer Pack doğrulandı, ~72 saatte aktifleşecek; sonra Azure for Students GitHub üzerinden açılacak.
-- İlk GitHub Actions CI koşusu (`ca6f323`): Production duman testi dahil yeşil (kullanıcı Actions sekmesinden doğruladı). E2E işi yalnız workflow_dispatch ile çalışır, "taslak" görünmesi beklenen. `gh` kuruldu (`C:Program FilesGitHub CLIgh.exe`), henüz `gh auth login` yapılmadı.
+- İlk GitHub Actions CI koşusu (`ca6f323`): Production duman testi dahil yeşil (kullanıcı Actions sekmesinden doğruladı). E2E işi yalnız workflow_dispatch ile çalışır, "taslak" görünmesi beklenen. `gh` kuruldu (`C:\Program Files\GitHub CLI\gh.exe`), henüz `gh auth login` yapılmadı.
 - Kullanıcı eski Postgres `ConnectionStrings__DefaultConnection` kullanıcı ortam değişkenini sildi (2026-11-19).
 - Bilinen riskler `infra/README.md` "Bilinen riskler ve yayın sonrası adımlar": SQL "Azure hizmetlerine izin ver" + sunucu yöneticisiyle bağlantı (sonra MI + contained user), web'in kasa kapsamında Secrets User olması, CSP report-only → zorlayıcı geçiş, GitHub `production` environment onaylayıcı + yalnız main kuralı elle kurulmalı.
 - Doğrulanmayanlar: `DOTNETCORE|10.0` App Service desteği, bölge kısıtı, `deploy.yml`/pwsh 7, eski iOS'ta `'wasm-unsafe-eval'` (HEIC), gerçek iPhone toplu yükleme ("Dosya zorunludur" kök nedeni hâlâ bilinmiyor), toplu ekleme taşma testinin kök nedeni (zamanlama çıkarımı).
