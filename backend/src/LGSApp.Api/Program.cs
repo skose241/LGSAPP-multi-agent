@@ -20,6 +20,20 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     EnvironmentName = documentGeneration ? Environments.Development : null
 });
 
+var guards = ProductionGuards.Evaluate(builder.Configuration, builder.Environment);
+if (guards.Errors.Count > 0)
+{
+    Console.OutputEncoding = System.Text.Encoding.UTF8;
+    Console.Error.WriteLine($"Başlangıç durduruldu: {builder.Environment.EnvironmentName} ortamında güvenli olmayan yapılandırma tespit edildi.");
+    foreach (var error in guards.Errors)
+    {
+        Console.Error.WriteLine($" - {error}");
+    }
+
+    Environment.ExitCode = 1;
+    return;
+}
+
 builder.Services.AddAppForwardedHeaders(builder.Configuration, builder.Environment);
 builder.Services.AddBffClientIp(builder.Configuration);
 
@@ -56,7 +70,7 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod());
 });
 
-builder.Services.AddHealthChecks();
+builder.Services.AddAppHealthChecks();
 
 if (documentGeneration)
 {
@@ -65,7 +79,18 @@ if (documentGeneration)
 
 var app = builder.Build();
 
+foreach (var warning in guards.Warnings)
+{
+    app.Logger.LogWarning("{Message}", warning);
+}
+
 app.UseAppForwardedHeaders(builder.Configuration, app.Environment);
+app.UseSecurityHeaders();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
 app.UseBffClientIp();
 app.UseProblemJsonCharset();
 app.UseExceptionHandler();
@@ -77,14 +102,18 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+if (builder.Configuration.GetValue("HttpsRedirection:Enabled", true))
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapControllers();
-app.MapHealthChecks("/health").AllowAnonymous();
+app.MapAppHealth();
 
 try
 {
@@ -95,6 +124,24 @@ catch (InvalidOperationException ex)
     app.Logger.LogCritical("{Message}", ex.Message);
     Environment.ExitCode = 1;
     return;
+}
+
+if (!documentGeneration && !app.Environment.IsDevelopment())
+{
+    try
+    {
+        var pendingMessage = await ProductionGuards.FindPendingMigrationsAsync(app.Services);
+        if (pendingMessage is not null)
+        {
+            app.Logger.LogCritical("{Message}", pendingMessage);
+            Environment.ExitCode = 1;
+            return;
+        }
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Bekleyen migration denetimi yapılamadı.");
+    }
 }
 
 if (!documentGeneration)
@@ -148,3 +195,5 @@ async Task RunSeedStepAsync(string name, LogLevel failureLevel, Func<Task> step)
         app.Logger.Log(failureLevel, ex, "Başlangıç adımı tamamlanamadı: {Step}", name);
     }
 }
+
+public partial class Program;

@@ -1,5 +1,6 @@
 "use client";
 
+import "@/lib/zod-config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";

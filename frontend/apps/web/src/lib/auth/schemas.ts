@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import { z } from "zod";
 
 export const MIN_PASSWORD_LENGTH = { mudur: 12, default: 8 } as const;

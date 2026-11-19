@@ -1,5 +1,6 @@
 "use client";
 
+import "@/lib/zod-config";
 import { fieldError } from "@lgs/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

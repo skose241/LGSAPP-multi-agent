@@ -38,6 +38,8 @@ export default defineConfig({
       NEXT_DIST_DIR: ".next-e2e",
       DEV_ALLOWED_ORIGINS: "",
       TRUST_PROXY: "true",
+      CSP_REPORT_ONLY: "false",
+      CSP_IMG_HOSTS: "http://127.0.0.1:10000 http://localhost:10000",
     },
   },
 });

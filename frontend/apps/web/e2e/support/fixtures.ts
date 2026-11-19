@@ -12,7 +12,23 @@ export const test = base.extend<Fixtures>({
   },
   page: async ({ page, context, clientIp }, use) => {
     await context.setExtraHTTPHeaders({ "x-forwarded-for": clientIp });
+    const violations: string[] = [];
+    await context.exposeBinding("__reportCspViolation", (_source, detail: string) => {
+      violations.push(detail);
+    });
+    await context.addInitScript(() => {
+      document.addEventListener("securitypolicyviolation", (event) => {
+        const report = (window as unknown as { __reportCspViolation?: (detail: string) => void }).__reportCspViolation;
+        report?.(`${event.violatedDirective} ${event.blockedURI} ${event.sourceFile}:${event.lineNumber}`);
+      });
+    });
+    page.on("console", (message) => {
+      if (message.type() === "error" && /content security policy|content-security-policy/i.test(message.text())) {
+        violations.push(`console: ${message.text()}`);
+      }
+    });
     await use(page);
+    expect(violations, "CSP ihlali").toEqual([]);
   },
 });
 

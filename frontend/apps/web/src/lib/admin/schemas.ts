@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import { z } from "zod";
 
 export const USER_NAME_PATTERN = /^[A-Za-z0-9._\-çğıöşüÇĞİÖŞÜ]+$/u;

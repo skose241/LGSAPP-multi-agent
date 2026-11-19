@@ -7,7 +7,31 @@ namespace LGSApp.Tests;
 
 public static class TestDatabase
 {
-    private const string Server = "Server=(localdb)\\MSSQLLocalDB;Trusted_Connection=True;TrustServerCertificate=True;";
+    public const string ServerVariable = "LGSAPP_TEST_SQL";
+    public const string RequireVariable = "LGSAPP_TEST_REQUIRE_DB";
+
+    private const string DefaultServer = "(localdb)\\MSSQLLocalDB";
+
+    private static readonly string Server = BuildServer(Environment.GetEnvironmentVariable(ServerVariable));
+
+    public static bool RequireDatabase =>
+        string.Equals(Environment.GetEnvironmentVariable(RequireVariable)?.Trim(), "true", StringComparison.OrdinalIgnoreCase);
+
+    public static string BuildServer(string? value)
+    {
+        var trimmed = value?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return $"Server={DefaultServer};Trusted_Connection=True;TrustServerCertificate=True;";
+        }
+
+        if (!trimmed.Contains('='))
+        {
+            return $"Server={trimmed};Trusted_Connection=True;TrustServerCertificate=True;";
+        }
+
+        return trimmed.EndsWith(';') ? trimmed : trimmed + ";";
+    }
 
     public static string NewName() => "LGSApp_Test_" + Guid.NewGuid().ToString("N");
 
@@ -33,6 +57,11 @@ public static class TestDatabase
             await DropAsync(name);
             if (ex is SqlException && !await ServerReachableAsync())
             {
+                if (RequireDatabase)
+                {
+                    throw new InvalidOperationException($"{RequireVariable}=true olduğu için test veritabanı sunucusuna erişilmesi zorunlu, ancak erişilemedi. Sunucu {ServerVariable} ortam değişkeniyle verilir (varsayılan {DefaultServer}).", ex);
+                }
+
                 return false;
             }
 
