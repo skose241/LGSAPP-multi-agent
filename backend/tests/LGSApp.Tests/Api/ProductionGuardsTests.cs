@@ -123,6 +123,63 @@ public class ProductionGuardsTests
         Assert.Contains(result.Errors, e => e.Contains("DevTime"));
     }
 
+    [Theory]
+    [InlineData("Jwt:Key")]
+    [InlineData("Bff:ProxyKey")]
+    [InlineData("RecoveryCodes:Pepper")]
+    [InlineData("Ai:Gemini:QuestionApiKey")]
+    [InlineData("Ai:Gemini:SolutionApiKey")]
+    [InlineData("Storage:ConnectionString")]
+    [InlineData("ConnectionStrings:DefaultConnection")]
+    public void Unresolved_key_vault_reference_is_rejected(string key)
+    {
+        var values = ValidProduction();
+        values[key] = "  @microsoft.keyvault(SecretUri=https://kv.vault.azure.net/secrets/x/)";
+
+        var result = Run(values);
+
+        Assert.Contains(result.Errors, e => e.Contains(key) && e.Contains("Key Vault referansı çözülemedi"));
+        Assert.Empty(Run(values, "Development").Errors);
+    }
+
+    [Fact]
+    public void Jwt_key_that_is_a_key_vault_reference_fails_authentication_setup_in_any_environment()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Jwt:Key"] = "@Microsoft.KeyVault(VaultName=kv;SecretName=jwt-key-0123456789)"
+        }).Build();
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new ServiceCollection().AddJwtAuthentication(configuration, new FakeEnvironment("Development")));
+
+        Assert.Contains("Key Vault referansı çözülemedi", ex.Message);
+    }
+
+    [Fact]
+    public void Bff_proxy_key_that_is_a_key_vault_reference_fails_validation()
+    {
+        var message = LGSApp.Api.Options.BffOptions.Validate(new LGSApp.Api.Options.BffOptions
+        {
+            ProxyKey = "@Microsoft.KeyVault(VaultName=kv;SecretName=bff-proxy-key-0123)"
+        });
+
+        Assert.NotNull(message);
+        Assert.Contains("Key Vault referansı çözülemedi", message);
+    }
+
+    [Theory]
+    [InlineData("UseDevelopmentStorage = true")]
+    [InlineData("usedevelopmentstorage=TRUE;DevelopmentStorageProxyUri=http://x")]
+    [InlineData("UseDevelopmentStorage  =true")]
+    public void Development_storage_regex_tolerates_spacing_and_case(string storage)
+    {
+        var values = ValidProduction();
+        values["Storage:ConnectionString"] = storage;
+
+        Assert.Contains(Run(values).Errors, e => e.Contains("UseDevelopmentStorage"));
+    }
+
     [Fact]
     public void Localhost_cors_origin_only_warns()
     {

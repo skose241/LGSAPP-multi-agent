@@ -2,7 +2,11 @@ export function bffStartupWarnings(env: Record<string, string | undefined>): str
   if (env.NODE_ENV !== "production") return [];
   const warnings: string[] = [];
 
-  if (!env.BFF_PROXY_KEY) {
+  if (env.BFF_PROXY_KEY?.trim().startsWith("@Microsoft.KeyVault(")) {
+    warnings.push(
+      "BFF_PROXY_KEY çözülmemiş bir Key Vault referansı olarak görünüyor. Uygulamanın yönetilen kimliğine Key Vault erişimi verin ve referans sözdizimini kontrol edin; aksi halde backend proxy anahtarını doğrulayamaz.",
+    );
+  } else if (!env.BFF_PROXY_KEY) {
     warnings.push(
       "BFF_PROXY_KEY tanımlı değil. Backend istemci IP'sini BFF üzerinden alamaz, IP bazlı hız sınırları tüm kullanıcılar için tek adres üzerinden çalışır.",
     );

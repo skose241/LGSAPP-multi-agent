@@ -22,6 +22,11 @@ public static class AuthExtensions
     {
         var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
+        if (ProductionGuards.IsUnresolvedKeyVaultReference(jwt.Key))
+        {
+            throw new InvalidOperationException("Jwt:Key Key Vault referansı çözülemedi; managed identity rolü ve sır adını kontrol edin.");
+        }
+
         if (string.IsNullOrWhiteSpace(jwt.Key) || Encoding.UTF8.GetByteCount(jwt.Key) < 32)
         {
             throw new InvalidOperationException("Jwt:Key en az 32 byte olmalıdır.");

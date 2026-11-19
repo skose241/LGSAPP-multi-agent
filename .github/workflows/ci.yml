@@ -1,0 +1,220 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: Playwright E2E işi de çalışsın (taslak, doğrulanmadı)
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: SQL Server başlat (rastgele SA şifresi)
+        run: bash scripts/deploy/ci-start-sql.sh lgs-mssql 1433
+
+      - name: Build (uyarılar hata)
+        run: dotnet build backend/LGSApp.slnx -c Release -warnaserror
+
+      - name: Test
+        env:
+          LGSAPP_TEST_REQUIRE_DB: "true"
+        run: |
+          export LGSAPP_TEST_SQL="Server=127.0.0.1,${SQL_HOST_PORT};User ID=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;"
+          dotnet test backend/LGSApp.slnx -c Release --no-build
+
+      - name: OpenAPI sözleşmesi güncel mi
+        run: git diff --exit-code -- contracts/openapi.json
+
+      - name: Güvenlik açığı olan paketler (High/Critical ise başarısız)
+        run: |
+          dotnet list backend/LGSApp.slnx package --vulnerable --include-transitive 2>&1 | tee vulnerable.txt
+          if grep -E '^\s*>.*\s(High|Critical)\s' vulnerable.txt; then
+            echo "::error::High veya Critical güvenlik açığı olan NuGet paketi bulundu."
+            exit 1
+          fi
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      - run: pnpm build
+
+      - name: API şeması güncel mi
+        run: |
+          pnpm gen:api
+          git diff --exit-code -- packages/api/src/generated/schema.d.ts
+
+      - name: Bağımlılık denetimi (yalnız uyarı)
+        continue-on-error: true
+        run: pnpm audit --prod
+
+  smoke:
+    name: Production duman testi (Linux)
+    needs: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: dotnet-ef kur
+        run: dotnet tool install --global dotnet-ef --version "10.0.14"
+
+      - name: SQL Server ve Azurite başlat
+        run: |
+          bash scripts/deploy/ci-start-sql.sh lgs-mssql 1433
+          bash scripts/deploy/ci-start-azurite.sh lgs-azurite 10000
+
+      - name: Saat dilimi ve ICU ön denetimi
+        run: |
+          test -f /usr/share/zoneinfo/Europe/Istanbul
+          ldconfig -p | grep -i libicu | head -n 3
+
+      - name: API linux-x64 Release publish
+        run: |
+          dotnet publish backend/src/LGSApp.Api/LGSApp.Api.csproj \
+            -c Release -r linux-x64 --self-contained false \
+            -p:OpenApiGenerateDocumentsOnBuild=false \
+            -o "${RUNNER_TEMP}/api"
+          test -f "${RUNNER_TEMP}/api/appsettings.json"
+          test ! -f "${RUNNER_TEMP}/api/appsettings.Development.json"
+          test -f "${RUNNER_TEMP}/api/libSkiaSharp.so"
+
+      - name: Migration paketi oluştur ve uygula
+        run: |
+          dotnet ef migrations bundle \
+            --project backend/src/LGSApp.Infrastructure \
+            --startup-project backend/src/LGSApp.Api \
+            --configuration Release -r linux-x64 --self-contained --force \
+            -o "${RUNNER_TEMP}/efbundle"
+          cd "${RUNNER_TEMP}"
+          ./efbundle --connection "Server=127.0.0.1,${SQL_HOST_PORT};Database=LGSApp_Smoke;User ID=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True"
+
+      - name: ImageMagick denetimi
+        run: command -v convert || sudo apt-get install -y imagemagick
+
+      - name: Duman testi (seed-reference-data, health/ready, login, JPEG yükleme)
+        env:
+          SMOKE_LOG: ${{ runner.temp }}/api-smoke.log
+        run: |
+          export API_DIR="${RUNNER_TEMP}/api"
+          export SMOKE_DB_CONNECTION="Server=127.0.0.1,${SQL_HOST_PORT};Database=LGSApp_Smoke;User ID=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True"
+          export SMOKE_STORAGE_CONNECTION="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+          bash scripts/deploy/smoke.sh
+
+      - name: API günlüğü (hata durumunda)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-smoke-log
+          path: ${{ runner.temp }}/api-smoke.log
+          if-no-files-found: ignore
+
+  e2e:
+    name: E2E (taslak, doğrulanmadı)
+    if: github.event_name == 'workflow_dispatch' && inputs.run_e2e
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: dotnet-ef kur
+        run: dotnet tool install --global dotnet-ef --version "10.0.14"
+
+      - name: SQL Server başlat
+        run: bash scripts/deploy/ci-start-sql.sh lgs-mssql 1433
+
+      - name: Bağımlılıklar
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Playwright tarayıcıları
+        working-directory: frontend/apps/web
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E çalıştır
+        working-directory: frontend/apps/web
+        env:
+          E2E_CHROMIUM_CHANNEL: ""
+        run: |
+          export E2E_CONNECTION_STRING="Server=127.0.0.1,${SQL_HOST_PORT};Database=LGSApp_E2E;User ID=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True"
+          pnpm e2e:run
+
+      - name: Playwright raporu
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/apps/web/playwright-report
+            frontend/apps/web/test-results
+          if-no-files-found: ignore

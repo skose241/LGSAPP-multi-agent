@@ -1,7 +1,11 @@
+import { resolveClientIp } from "@/lib/bff/client-ip";
+import { trustProxy, trustedProxyHops } from "@/lib/bff/config";
+
 export const MAX_REPORT_BYTES = 16 * 1024;
 export const RATE_LIMIT_PER_MINUTE = 30;
+export const GLOBAL_RATE_LIMIT_PER_MINUTE = 300;
 const MAX_FIELD = 200;
-const MAX_REPORTS = 10;
+const MAX_LOGGED_PER_REQUEST = 3;
 const MAX_TRACKED_IPS = 5000;
 
 export interface CspReportLine {
@@ -69,7 +73,7 @@ export function parseCspReports(raw: string): CspReportLine[] {
   }
   const lines: CspReportLine[] = [];
   if (Array.isArray(data)) {
-    for (const entry of data.slice(0, MAX_REPORTS)) {
+    for (const entry of data.slice(0, MAX_LOGGED_PER_REQUEST)) {
       if (typeof entry !== "object" || entry === null) continue;
       const item = entry as Record<string, unknown>;
       if (item.type !== undefined && item.type !== "csp-violation") continue;
@@ -105,29 +109,56 @@ export async function readLimited(request: Request, limit: number): Promise<stri
 }
 
 const hits = new Map<string, { windowStart: number; count: number }>();
+const globalWindow = { windowStart: 0, count: 0 };
 
-export function allowReport(ip: string, now: number = Date.now(), limit: number = RATE_LIMIT_PER_MINUTE): boolean {
+export function allowReport(
+  ip: string,
+  now: number = Date.now(),
+  limit: number = RATE_LIMIT_PER_MINUTE,
+  globalLimit: number = GLOBAL_RATE_LIMIT_PER_MINUTE,
+): boolean {
+  if (now - globalWindow.windowStart >= 60_000) {
+    globalWindow.windowStart = now;
+    globalWindow.count = 0;
+  }
+  if (globalWindow.count >= globalLimit) return false;
+
   const entry = hits.get(ip);
   if (!entry || now - entry.windowStart >= 60_000) {
-    if (hits.size >= MAX_TRACKED_IPS) {
+    if (!entry && hits.size >= MAX_TRACKED_IPS) {
       for (const [key, value] of hits) {
         if (now - value.windowStart >= 60_000) hits.delete(key);
       }
-      if (hits.size >= MAX_TRACKED_IPS) return false;
+      while (hits.size >= MAX_TRACKED_IPS) {
+        const oldest = hits.keys().next().value;
+        if (oldest === undefined) break;
+        hits.delete(oldest);
+      }
     }
+    hits.delete(ip);
     hits.set(ip, { windowStart: now, count: 1 });
+    globalWindow.count += 1;
     return true;
   }
+  if (entry.count >= limit) return false;
   entry.count += 1;
-  return entry.count <= limit;
+  globalWindow.count += 1;
+  return true;
 }
 
 export function resetReportLimiter(): void {
   hits.clear();
+  globalWindow.windowStart = 0;
+  globalWindow.count = 0;
+}
+
+export function trackedIpCount(): number {
+  return hits.size;
 }
 
 export function clientIp(headers: Headers): string {
-  const forwarded = headers.get("x-forwarded-for");
-  const first = forwarded?.split(",")[0]?.trim();
-  return first && first !== "" ? first : "unknown";
+  return (
+    resolveClientIp(headers.get("x-forwarded-for"), { trustProxy: trustProxy(), hops: trustedProxyHops() }) ??
+    "unknown"
+  );
 }

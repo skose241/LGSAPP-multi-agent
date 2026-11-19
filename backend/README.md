@@ -32,7 +32,7 @@ Sunucu komutları `ProductionGuards` değerlendirmesinden geçmez (Pepper, local
 
 ## Azure yayını
 
-Altyapı (Bicep), yayın betikleri ve CI/CD için `infra/README.md` dosyasına bakın. Migration paketi (`dotnet ef migrations bundle`) hem üretilirken hem çalıştırılırken `ASPNETCORE_ENVIRONMENT=Development` ile çalıştırılmalıdır; Production ortamında `ProductionGuards` ana bilgisayarın kurulmasını engeller. Yayın paketinden `appsettings.Development.json` çıkarılır (`scripts/deploy/publish-api.ps1`).
+Altyapı (Bicep), yayın betikleri ve CI/CD için `infra/README.md` dosyasına bakın. Migration paketi (`dotnet ef migrations bundle`) uygulamanın ana bilgisayarını kurmaz; `AppDbContextFactory` (tasarım zamanı fabrikası) kullanılır, bu yüzden Production'da `ProductionGuards` engel olmaz. Paket `--connection "<bağlantı>"` ile ya da `ConnectionStrings__DefaultConnection` ortam değişkeniyle çalışır (ortam değişkeni her zaman önceliklidir). Fabrika ortamı `ASPNETCORE_ENVIRONMENT`/`DOTNET_ENVIRONMENT` değişkeninden alır; ikisi de yoksa `Development` varsayılır. Development'ta bağlantı sırası: ortam değişkeni, user-secrets (`lgsapp-api-dev`, Api csproj `UserSecretsId` ile aynı), `appsettings.Development.json`, `appsettings.json` (LocalDB). Diğer ortamlarda yalnızca ortam değişkeni okunur; yoksa LocalDB'ye düşülmez, açık hata yazılır ve `--connection` verilmediyse bağlantı kurulamaz. Yayın paketinden `appsettings.Development.json` çıkarılır (`scripts/deploy/publish-api.ps1`).
 
 ## Ayarlar
 
@@ -41,7 +41,12 @@ Altyapı (Bicep), yayın betikleri ve CI/CD için `infra/README.md` dosyasına b
 ## Sağlık uçları
 
 - `/health` ve `/health/live`: bağımlılıksız canlılık.
-- `/health/ready`: veritabanı ve blob depolama denetimi (503 dönebilir).
+- `/health/ready`: veritabanı ve blob depolama denetimi (503 dönebilir). Sonuç 20 sn önbelleğe alınır; eşzamanlı çağrılar tek denetim yapar. Yanıt yalnız `Healthy`/`Unhealthy` metnidir.
+
+## Başlangıç korumaları
+
+- Development dışında sırlardan biri (`Jwt:Key`, `Bff:ProxyKey`, `RecoveryCodes:Pepper`, Gemini anahtarları, `Storage:ConnectionString`, `ConnectionStrings:DefaultConnection`) `@Microsoft.KeyVault(` ile başlıyorsa App Service Key Vault referansını çözememiştir; uygulama başlamaz. `Jwt:Key` ve `Bff:ProxyKey` ayrıca ortamdan bağımsız doğrulanır.
+- Başlangıçta bekleyen migration denetimi (`FindPendingMigrationsAsync`) bekleyen migration bulursa uygulamayı durdurur. Denetimin kendisi istisna fırlatırsa (ör. veritabanına geçici erişilemezse) hata günlüğe yazılır ve uygulama açılmaya devam eder; bu durumda şemanın güncel olduğu doğrulanmış olmaz.
 
 ## Testler
 

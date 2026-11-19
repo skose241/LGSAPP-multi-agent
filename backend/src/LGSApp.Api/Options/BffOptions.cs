@@ -1,3 +1,4 @@
+using LGSApp.Api.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace LGSApp.Api.Options;
@@ -18,6 +19,11 @@ public sealed class BffOptions
         if (string.IsNullOrEmpty(options.ProxyKey))
         {
             return null;
+        }
+
+        if (ProductionGuards.IsUnresolvedKeyVaultReference(options.ProxyKey))
+        {
+            return "Bff:ProxyKey Key Vault referansı çözülemedi; managed identity rolü ve sır adını kontrol edin.";
         }
 
         if (options.ProxyKey.Length < MinProxyKeyLength)

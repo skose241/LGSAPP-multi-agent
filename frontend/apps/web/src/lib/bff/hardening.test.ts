@@ -102,6 +102,17 @@ describe("açılış uyarıları", () => {
     expect(bffStartupWarnings({ NODE_ENV: "production" })).toHaveLength(2);
     expect(bffStartupWarnings({ NODE_ENV: "production", BFF_PROXY_KEY: "x", TRUST_PROXY: "true" })).toEqual([]);
   });
+
+  it("production'da çözülmemiş Key Vault referansını uyarır", () => {
+    const warnings = bffStartupWarnings({
+      NODE_ENV: "production",
+      BFF_PROXY_KEY: "@Microsoft.KeyVault(SecretUri=https://kv.vault.azure.net/secrets/x/)",
+      TRUST_PROXY: "true",
+    });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("Key Vault");
+    expect(bffStartupWarnings({ NODE_ENV: "development", BFF_PROXY_KEY: "@Microsoft.KeyVault(x)" })).toEqual([]);
+  });
 });
 
 describe("Location", () => {

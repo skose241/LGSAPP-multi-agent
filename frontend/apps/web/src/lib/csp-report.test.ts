@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/csp-report/route";
-import { allowReport, parseCspReports, resetReportLimiter, stripUrl } from "./csp-report";
+import { allowReport, parseCspReports, resetReportLimiter, stripUrl, trackedIpCount } from "./csp-report";
 
 function post(body: string, type = "application/csp-report", ip = "1.1.1.1") {
   return new Request("http://localhost/csp-report", {
@@ -63,9 +63,14 @@ describe("POST /csp-report", () => {
   let warn: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {
     resetReportLimiter();
+    vi.stubEnv("TRUST_PROXY", "true");
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "1");
     warn = vi.spyOn(console, "warn").mockImplementation(() => {});
   });
-  afterEach(() => warn.mockRestore());
+  afterEach(() => {
+    warn.mockRestore();
+    vi.unstubAllEnvs();
+  });
 
   it("geçerli raporu loglar ve 204 döner", async () => {
     const res = await POST(post(JSON.stringify({ "csp-report": { "violated-directive": "img-src", "blocked-uri": "https://c.test/a?z=1" } })));
@@ -101,6 +106,40 @@ describe("POST /csp-report", () => {
     }
     expect(warn).toHaveBeenCalledTimes(30);
   });
+
+  const reportBody = JSON.stringify({ "csp-report": { "violated-directive": "img-src" } });
+
+  it("sahte XFF başı sınırı atlatamaz (TRUST_PROXY açık)", async () => {
+    for (let i = 0; i < 40; i++) {
+      const res = await POST(post(reportBody, "application/csp-report", `10.0.0.${i}, 5.5.5.5`));
+      expect(res.status).toBe(204);
+    }
+    expect(warn).toHaveBeenCalledTimes(30);
+  });
+
+  it("TRUST_PROXY kapalıysa XFF yok sayılır, tek ortak kova", async () => {
+    vi.stubEnv("TRUST_PROXY", "false");
+    for (let i = 0; i < 40; i++) {
+      await POST(post(reportBody, "application/csp-report", `10.0.0.${i}`));
+    }
+    expect(warn).toHaveBeenCalledTimes(30);
+    expect(trackedIpCount()).toBe(1);
+  });
+
+  it("ip:port biçimi aynı kovaya düşer", async () => {
+    for (let i = 0; i < 40; i++) {
+      await POST(post(reportBody, "application/csp-report", `7.7.7.7:${1000 + i}`));
+    }
+    expect(warn).toHaveBeenCalledTimes(30);
+    expect(trackedIpCount()).toBe(1);
+  });
+
+  it("istek başına en fazla 3 rapor loglanır", async () => {
+    const many = JSON.stringify(Array.from({ length: 8 }, () => ({ type: "csp-violation", body: { effectiveDirective: "img-src" } })));
+    const res = await POST(post(many, "application/reports+json"));
+    expect(res.status).toBe(204);
+    expect(warn).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe("allowReport", () => {
@@ -109,5 +148,24 @@ describe("allowReport", () => {
     expect(allowReport("a", 0, 1)).toBe(true);
     expect(allowReport("a", 1000, 1)).toBe(false);
     expect(allowReport("a", 61_000, 1)).toBe(true);
+  });
+
+  it("tüm IP'ler için toplam sınır uygulanır", () => {
+    resetReportLimiter();
+    let allowed = 0;
+    for (let i = 0; i < 400; i++) {
+      if (allowReport(`ip-${i}`, 1000)) allowed++;
+    }
+    expect(allowed).toBe(300);
+    expect(allowReport("yeni", 62_000)).toBe(true);
+  });
+
+  it("tablo dolunca en eski girdiler atılır, yeni IP reddedilmez", () => {
+    resetReportLimiter();
+    for (let i = 0; i < 5000; i++) allowReport(`ip-${i}`, 1000, 30, Number.MAX_SAFE_INTEGER);
+    expect(trackedIpCount()).toBe(5000);
+    expect(allowReport("taze", 1500, 30, Number.MAX_SAFE_INTEGER)).toBe(true);
+    expect(trackedIpCount()).toBe(5000);
+    expect(allowReport("taze", 1600, 1, Number.MAX_SAFE_INTEGER)).toBe(false);
   });
 });

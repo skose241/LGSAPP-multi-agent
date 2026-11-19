@@ -1,6 +1,7 @@
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Files;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace LGSApp.Api.Extensions;
@@ -31,6 +32,7 @@ public static class HttpSecurityExtensions
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("database", tags: [ReadyTag])
             .AddCheck<BlobHealthCheck>("blob", tags: [ReadyTag]);
+        services.AddSingleton<ReadinessCache>();
         return services;
     }
 
@@ -38,11 +40,60 @@ public static class HttpSecurityExtensions
     {
         endpoints.MapHealthChecks("/health", new() { Predicate = _ => false }).AllowAnonymous();
         endpoints.MapHealthChecks("/health/live", new() { Predicate = _ => false }).AllowAnonymous();
-        endpoints.MapHealthChecks("/health/ready", new() { Predicate = r => r.Tags.Contains(ReadyTag) }).AllowAnonymous();
+        endpoints.MapGet("/health/ready", async (HttpContext context, ReadinessCache cache) =>
+        {
+            var healthy = await cache.IsHealthyAsync();
+            context.Response.Headers.CacheControl = "no-store, no-cache";
+            context.Response.StatusCode = healthy ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable;
+            context.Response.ContentType = "text/plain";
+            await context.Response.WriteAsync(healthy ? "Healthy" : "Unhealthy");
+        }).AllowAnonymous().ExcludeFromDescription();
     }
 
     private static bool IsJson(string? contentType) =>
         contentType is not null && contentType.Contains("json", StringComparison.OrdinalIgnoreCase);
+}
+
+public sealed class ReadinessCache(HealthCheckService healthChecks, TimeProvider timeProvider)
+{
+    public static readonly TimeSpan Lifetime = TimeSpan.FromSeconds(20);
+
+    private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(15);
+
+    private readonly SemaphoreSlim gate = new(1, 1);
+    private bool healthy;
+    private DateTimeOffset expiresAt = DateTimeOffset.MinValue;
+
+    public async Task<bool> IsHealthyAsync()
+    {
+        await gate.WaitAsync();
+        try
+        {
+            var now = timeProvider.GetUtcNow();
+            if (now < expiresAt)
+            {
+                return healthy;
+            }
+
+            using var timeout = new CancellationTokenSource(CheckTimeout);
+            try
+            {
+                var report = await healthChecks.CheckHealthAsync(r => r.Tags.Contains(HttpSecurityExtensions.ReadyTag), timeout.Token);
+                healthy = report.Status == HealthStatus.Healthy;
+            }
+            catch (OperationCanceledException)
+            {
+                healthy = false;
+            }
+
+            expiresAt = timeProvider.GetUtcNow() + Lifetime;
+            return healthy;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
 }
 
 public sealed class DatabaseHealthCheck(AppDbContext db) : IHealthCheck

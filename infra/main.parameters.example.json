@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "westeurope" },
+    "namePrefix": { "value": "lgsapp" },
+    "appServiceSku": { "value": "B1" },
+    "sqlSku": { "value": "Basic" },
+    "sqlAdminLogin": { "value": "lgsadmin" },
+    "apiRuntime": { "value": "DOTNETCORE|10.0" },
+    "webRuntime": { "value": "NODE|22-lts" },
+    "deployMonitoring": { "value": false },
+    "logDailyCapGb": { "value": "0.5" },
+    "aiEnabled": { "value": true },
+    "cspReportOnly": { "value": true },
+    "entraAdminLogin": { "value": "" },
+    "entraAdminObjectId": { "value": "" }
+  }
+}

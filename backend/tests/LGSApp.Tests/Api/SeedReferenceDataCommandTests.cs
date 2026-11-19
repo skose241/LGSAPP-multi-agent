@@ -138,6 +138,42 @@ public class SeedReferenceDataCommandTests
     }
 
     [Fact]
+    public async Task Existing_names_match_with_turkish_casing_for_lessons_and_topics()
+    {
+        var name = TestDatabase.NewName();
+        if (!await TestDatabase.TryCreateAsync(name, _ => Task.CompletedTask))
+        {
+            return;
+        }
+
+        try
+        {
+            await using (var db = TestDatabase.Open(name))
+            {
+                var lesson = new Lesson { Name = "din kültürü ve ahlak bilgisi", Session = LessonSession.Sozel, OrderNo = 3, IsActive = true };
+                var english = new Lesson { Name = "ingilizce", Session = LessonSession.Sozel, OrderNo = 4, IsActive = true };
+                db.Lessons.AddRange(lesson, english);
+                await db.SaveChangesAsync();
+                db.Topics.Add(new Topic { LessonId = lesson.Id, Name = "kader inancı", OrderNo = 1, IsActive = true });
+                await db.SaveChangesAsync();
+            }
+
+            var (code, output, _) = await RunAsync(name, "seed-reference-data");
+
+            Assert.Equal(0, code);
+            Assert.Contains($"Dersler: {ReferenceData.Lessons.Count - 2} eklendi, 2 zaten vardı.", output);
+            await using var verify = TestDatabase.Open(name);
+            Assert.Equal(ReferenceData.Lessons.Count, await verify.Lessons.CountAsync());
+            Assert.Equal(1, await verify.Topics.CountAsync(t => t.Name.ToLower() == "kader inancı"));
+            Assert.Equal(ReferenceData.Topics.Count, await verify.Topics.CountAsync());
+        }
+        finally
+        {
+            await TestDatabase.DropAsync(name);
+        }
+    }
+
+    [Fact]
     public async Task Dry_run_lists_changes_without_writing()
     {
         var name = TestDatabase.NewName();

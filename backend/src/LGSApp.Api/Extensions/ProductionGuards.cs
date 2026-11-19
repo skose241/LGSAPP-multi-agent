@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using LGSApp.Infrastructure.Options;
 using LGSApp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -8,8 +9,25 @@ namespace LGSApp.Api.Extensions;
 
 public sealed record ProductionGuardResult(IReadOnlyList<string> Errors, IReadOnlyList<string> Warnings);
 
-public static class ProductionGuards
+public static partial class ProductionGuards
 {
+    private static readonly string[] SecretKeys =
+    [
+        "Jwt:Key",
+        "Bff:ProxyKey",
+        "RecoveryCodes:Pepper",
+        "Ai:Gemini:QuestionApiKey",
+        "Ai:Gemini:SolutionApiKey",
+        "Storage:ConnectionString",
+        "ConnectionStrings:DefaultConnection"
+    ];
+
+    [GeneratedRegex(@"UseDevelopmentStorage\s*=\s*true", RegexOptions.IgnoreCase)]
+    private static partial Regex DevelopmentStorageRegex();
+
+    public static bool IsUnresolvedKeyVaultReference(string? value) =>
+        value is not null && value.TrimStart().StartsWith("@Microsoft.KeyVault(", StringComparison.OrdinalIgnoreCase);
+
     public const int RateLimitCeiling = 1000;
 
     private const string DevelopmentPepperFingerprint = "7fad99ba3fb6ae5a70a03f0bdc9a67bcf6f9efef43314ab9fe24f2679cb9d80b";
@@ -26,6 +44,14 @@ public static class ProductionGuards
         if (configuration.GetValue<int>("DevTime:OffsetMinutes") != 0)
         {
             errors.Add("DevTime:OffsetMinutes yalnızca Development ortamında kullanılabilir.");
+        }
+
+        foreach (var key in SecretKeys)
+        {
+            if (IsUnresolvedKeyVaultReference(configuration[key]))
+            {
+                errors.Add($"{key} Key Vault referansı çözülemedi; managed identity rolü ve sır adını kontrol edin.");
+            }
         }
 
         var jwtKey = configuration["Jwt:Key"];
@@ -52,7 +78,7 @@ public static class ProductionGuards
         {
             errors.Add("Storage:ConnectionString tanımlı değil. Üretimde Storage__ConnectionString ortam değişkeni verilmelidir.");
         }
-        else if (storage.Contains("UseDevelopmentStorage=true", StringComparison.OrdinalIgnoreCase))
+        else if (DevelopmentStorageRegex().IsMatch(storage))
         {
             errors.Add("Storage:ConnectionString geliştirme depolamasını (UseDevelopmentStorage=true) gösteriyor; üretimde kullanılamaz.");
         }

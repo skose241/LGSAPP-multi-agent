@@ -1,3 +1,4 @@
+using System.Globalization;
 using LGSApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,16 +41,30 @@ public static class ReferenceData
         ("Din Kültürü ve Ahlak Bilgisi", "Zekat ve Sadaka", 2)
     ];
 
-    public static async Task<ReferenceDataResult> ApplyAsync(AppDbContext db, bool dryRun, CancellationToken cancellationToken = default)
+    private static readonly CultureInfo Turkish = new("tr-TR");
+
+    private static string Normalize(string value) => value.Trim().ToUpper(Turkish);
+
+    public static Task<ReferenceDataResult> ApplyAsync(AppDbContext db, bool dryRun, CancellationToken cancellationToken = default) =>
+        db.Database.CreateExecutionStrategy().ExecuteAsync(ct => ApplyInTransactionAsync(db, dryRun, ct), cancellationToken);
+
+    private static async Task<ReferenceDataResult> ApplyInTransactionAsync(AppDbContext db, bool dryRun, CancellationToken cancellationToken)
     {
-        var lessons = (await db.Lessons.ToListAsync(cancellationToken))
-            .ToDictionary(l => l.Name, StringComparer.OrdinalIgnoreCase);
+        db.ChangeTracker.Clear();
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var lessons = new Dictionary<string, Lesson>();
+        foreach (var existing in await db.Lessons.ToListAsync(cancellationToken))
+        {
+            lessons.TryAdd(Normalize(existing.Name), existing);
+        }
 
         var lessonsAdded = new List<string>();
         var lessonsExisting = 0;
         foreach (var (name, session, orderNo) in Lessons)
         {
-            if (lessons.ContainsKey(name))
+            var key = Normalize(name);
+            if (lessons.ContainsKey(key))
             {
                 lessonsExisting++;
                 continue;
@@ -60,7 +75,7 @@ public static class ReferenceData
             {
                 var lesson = new Lesson { Name = name, Session = session, OrderNo = orderNo, IsActive = true };
                 db.Lessons.Add(lesson);
-                lessons[name] = lesson;
+                lessons[key] = lesson;
             }
         }
 
@@ -72,14 +87,15 @@ public static class ReferenceData
         var existingTopics = (await db.Topics
                 .Select(t => new { LessonName = t.Lesson.Name, t.Name })
                 .ToListAsync(cancellationToken))
-            .Select(t => (t.LessonName.ToUpperInvariant(), t.Name.ToUpperInvariant()))
+            .Select(t => (Normalize(t.LessonName), Normalize(t.Name)))
             .ToHashSet();
 
         var topicsAdded = new List<(string Lesson, string Topic)>();
         var topicsExisting = 0;
         foreach (var (lessonName, topicName, orderNo) in Topics)
         {
-            if (existingTopics.Contains((lessonName.ToUpperInvariant(), topicName.ToUpperInvariant())))
+            var lessonKey = Normalize(lessonName);
+            if (existingTopics.Contains((lessonKey, Normalize(topicName))))
             {
                 topicsExisting++;
                 continue;
@@ -88,7 +104,7 @@ public static class ReferenceData
             topicsAdded.Add((lessonName, topicName));
             if (!dryRun)
             {
-                db.Topics.Add(new Topic { LessonId = lessons[lessonName].Id, Name = topicName, OrderNo = orderNo, IsActive = true });
+                db.Topics.Add(new Topic { LessonId = lessons[lessonKey].Id, Name = topicName, OrderNo = orderNo, IsActive = true });
             }
         }
 
@@ -97,6 +113,7 @@ public static class ReferenceData
             await db.SaveChangesAsync(cancellationToken);
         }
 
+        await transaction.CommitAsync(cancellationToken);
         return new ReferenceDataResult(lessonsAdded, topicsAdded, lessonsExisting, topicsExisting);
     }
 }
