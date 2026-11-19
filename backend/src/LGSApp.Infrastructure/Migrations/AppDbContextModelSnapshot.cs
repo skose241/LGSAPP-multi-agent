@@ -261,6 +261,12 @@ namespace LGSApp.Infrastructure.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("BannedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("BannedByUserId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("BranchLessonId")
                         .HasColumnType("int");
 
@@ -328,6 +334,8 @@ namespace LGSApp.Infrastructure.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BannedByUserId");
 
                     b.HasIndex("BranchLessonId");
 
@@ -1915,6 +1923,11 @@ namespace LGSApp.Infrastructure.Migrations
 
             modelBuilder.Entity("LGSApp.Domain.Entities.ApplicationUser", b =>
                 {
+                    b.HasOne("LGSApp.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("BannedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LGSApp.Domain.Entities.Lesson", null)
                         .WithMany()
                         .HasForeignKey("BranchLessonId")

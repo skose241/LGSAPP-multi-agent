@@ -83,7 +83,7 @@ public sealed record RunPage(int Page, int PageSize, int TotalCount, IReadOnlyLi
 
 public sealed record RunFilter(GenerationKind? Kind, GenerationRunStatus? Status, DateOnly? From, DateOnly? To, int Page, int PageSize);
 
-public sealed record SchedulerJobStatus(string Kind, DateTime ScheduledAtUtc, bool Due, RunView? LastRun, int? RunningRunId);
+public sealed record SchedulerJobStatus(string Kind, DateTime ScheduledAtUtc, string ScheduledAt, bool Due, RunView? LastRun, int? RunningRunId);
 
 public sealed record TopicRefView(int Id, string Name);
 
@@ -97,6 +97,7 @@ public sealed record SchedulerStatusView(
     bool AiSolutionConfigured,
     bool GenerationEnabled,
     bool FakeGenerator,
+    bool TimerEnabled,
     IReadOnlyList<SchedulerJobStatus> Jobs,
     IReadOnlyList<TodayLessonStatus> TodayLessons);
 
@@ -123,6 +124,15 @@ public sealed class SchedulerQueryService(
     public static bool ComputeAiConfigured(bool generatorConfigured, bool verificationEnabled, bool solutionConfigured) =>
         generatorConfigured && (!verificationEnabled || solutionConfigured);
 
+    public static string ScheduledAtLocal(SchedulerOptions o, GenerationKind kind) =>
+        (kind switch
+        {
+            GenerationKind.Generate => o.GenerateTime,
+            GenerationKind.Complete => o.CompleteTime,
+            GenerationKind.Publish => o.PublishTime,
+            _ => o.AssignmentsTime
+        }).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
     public async Task<SchedulerStatusView> GetStatusAsync(CancellationToken cancellationToken)
     {
         var o = options.Value;
@@ -133,12 +143,15 @@ public sealed class SchedulerQueryService(
         var dailyPlan = await planner.BuildAsync(today, false, cancellationToken);
 
         var runIds = runInfos.GroupBy(r => r.Kind).Select(g => g.OrderByDescending(r => r.Id).First().Id).ToList();
-        var lastRuns = await RunViewsAsync(db.GenerationRuns.AsNoTracking().Where(r => runIds.Contains(r.Id)), cancellationToken);
+        var lastRuns = runIds.Count == 0
+            ? []
+            : await RunViewsAsync(db.GenerationRuns.AsNoTracking().Where(r => runIds.Contains(r.Id)), cancellationToken);
 
         var kinds = new[] { GenerationKind.CloseAssignments, GenerationKind.Generate, GenerationKind.Complete, GenerationKind.Publish };
         var jobs = kinds.Select(kind => new SchedulerJobStatus(
             RunKindNames.ToName(kind),
             SchedulerPlanner.ScheduledAtUtc(o, kind, today),
+            ScheduledAtLocal(o, kind),
             plan.Due.Contains(kind),
             lastRuns.FirstOrDefault(r => r.Kind == RunKindNames.ToName(kind)),
             runInfos.Where(r => r.Kind == kind && r.Status == GenerationRunStatus.Running).Select(r => (int?)r.Id).FirstOrDefault()))
@@ -160,7 +173,7 @@ public sealed class SchedulerQueryService(
         var solutionConfigured = aiOptions.Value.SolutionConfigured;
         var aiConfigured = ComputeAiConfigured(generator.IsConfigured, verificationEnabled, solutionConfigured);
 
-        return new SchedulerStatusView(now, today, aiConfigured, verificationEnabled, solutionConfigured, dailyPlan.Enabled, aiOptions.Value.Provider == AiProvider.Fake, jobs, lessons);
+        return new SchedulerStatusView(now, today, aiConfigured, verificationEnabled, solutionConfigured, dailyPlan.Enabled, aiOptions.Value.Provider == AiProvider.Fake, o.Enabled, jobs, lessons);
     }
 
     public async Task<RunPage> ListRunsAsync(RunFilter filter, CancellationToken cancellationToken)

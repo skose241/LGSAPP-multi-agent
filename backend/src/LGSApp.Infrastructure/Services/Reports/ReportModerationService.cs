@@ -509,7 +509,7 @@ public sealed class ReportModerationService(
             return ServiceResult.Ok();
         }
 
-        var result = await userManager.SetBannedAsync(user, true);
+        var result = await userManager.SetBannedAsync(user, true, actor.UserId);
         if (!result.Succeeded)
         {
             if (result.Errors.Any(e => e.Code == SystemAccounts.MudurBanErrorCode))

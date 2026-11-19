@@ -6,7 +6,7 @@ namespace LGSApp.Infrastructure.Services;
 
 public static class UserBanExtensions
 {
-    public static async Task<IdentityResult> SetBannedAsync(this UserManager<ApplicationUser> userManager, ApplicationUser user, bool banned)
+    public static async Task<IdentityResult> SetBannedAsync(this UserManager<ApplicationUser> userManager, ApplicationUser user, bool banned, int? bannedByUserId = null)
     {
         if (banned && await userManager.IsInRoleAsync(user, Roles.Mudur))
         {
@@ -14,6 +14,8 @@ public static class UserBanExtensions
         }
 
         user.IsBanned = banned;
+        user.BannedAt = banned ? DateTime.UtcNow : null;
+        user.BannedByUserId = banned ? bannedByUserId : null;
         var result = await userManager.UpdateAsync(user);
         if (!result.Succeeded)
         {

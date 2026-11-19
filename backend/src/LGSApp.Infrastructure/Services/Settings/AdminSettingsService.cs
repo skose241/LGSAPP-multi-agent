@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LGSApp.Infrastructure.Services.Settings;
 
-public sealed record AdminSettingView(string Key, int Value, string Description, int Min, int Max, DateTime? UpdatedAt, int DefaultValue);
+public sealed record AdminSettingView(string Key, int Value, string Description, int Min, int Max, DateTime? UpdatedAt, int DefaultValue, string Group, bool Critical);
 
 public sealed record AdminSettingsUpdateResult(IReadOnlyList<string> Changed, IReadOnlyList<AdminSettingView> Settings);
 
@@ -31,15 +31,17 @@ public sealed class AdminSettingsService(AppDbContext db, ISettingsService setti
 
     public async Task<ServiceResult<AdminSettingsUpdateResult>> UpdateAsync(int userId, IReadOnlyDictionary<string, long?>? changes, CancellationToken cancellationToken)
     {
-        var validation = AdminSettingRules.Validate(changes);
+        var allKeys = AdminSettingRules.Definitions.Select(d => d.Key).ToList();
+        var rows = await db.Settings.Where(s => allKeys.Contains(s.Key)).ToDictionaryAsync(s => s.Key, StringComparer.Ordinal, cancellationToken);
+        var current = rows.ToDictionary(r => r.Key, r => CurrentValue(r.Key, r.Value), StringComparer.Ordinal);
+
+        var validation = AdminSettingRules.Validate(changes, current);
         if (!validation.Succeeded)
         {
             return ServiceResult<AdminSettingsUpdateResult>.From(validation);
         }
 
         var accepted = validation.Value!;
-        var keys = accepted.Keys.ToList();
-        var rows = await db.Settings.Where(s => keys.Contains(s.Key)).ToDictionaryAsync(s => s.Key, StringComparer.Ordinal, cancellationToken);
         var now = clock.UtcNow;
         var changed = new List<string>();
 
@@ -96,7 +98,7 @@ public sealed class AdminSettingsService(AppDbContext db, ISettingsService setti
             Defaults.TryGetValue(definition.Key, out var def);
             byKey.TryGetValue(definition.Key, out var row);
             var value = row is null ? def.Value : CurrentValue(definition.Key, row);
-            result.Add(new AdminSettingView(definition.Key, value, def.Description ?? row?.Description ?? string.Empty, definition.Min, definition.Max, row?.UpdatedAt, def.Value));
+            result.Add(new AdminSettingView(definition.Key, value, def.Description ?? row?.Description ?? string.Empty, definition.Min, definition.Max, row?.UpdatedAt, def.Value, definition.Group, definition.Critical));
         }
 
         return result;

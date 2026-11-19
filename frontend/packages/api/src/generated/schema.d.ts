@@ -1344,6 +1344,7 @@ export interface paths {
             parameters: {
                 query?: {
                     role?: string;
+                    reported?: boolean;
                 };
                 header?: never;
                 path?: never;
@@ -1550,7 +1551,86 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateUserProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminUserDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -1647,6 +1727,101 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkCreateUsersRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        /** @description Oluşturulan kaynağın adresi. */
+                        Location?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BulkCreatedUsersResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -7728,6 +7903,8 @@ export interface components {
             updatedAt: null | string;
             /** Format: int32 */
             defaultValue: number;
+            group: string;
+            critical: boolean;
         };
         AdminUserDto: {
             /** Format: int32 */
@@ -7749,6 +7926,11 @@ export interface components {
             /** Format: int32 */
             branchLessonId: null | number;
             branchLessonName: null | string;
+            /** Format: date-time */
+            bannedAt: null | string;
+            bannedBy: null | components["schemas"]["UserRefView"];
+            /** Format: int32 */
+            pendingReportCount: number;
         };
         AiAdminStatusView: {
             provider: components["schemas"]["AiProvider"];
@@ -8205,6 +8387,21 @@ export interface components {
             id: number;
             userName: string;
             fullName: null | string;
+        };
+        BulkCreatedUsersResponse: {
+            users: components["schemas"]["CreatedUserResponse"][];
+        };
+        BulkCreateUsersRequest: {
+            items: null | components["schemas"]["BulkUserItemRequest"][];
+        };
+        BulkUserItemRequest: {
+            userName: null | string;
+            firstName: null | string;
+            lastName: null | string;
+            role: null | string;
+            className: null | string;
+            /** Format: int32 */
+            branchLessonId?: null | number;
         };
         ChangeCorrectOptionRequest: {
             /** Format: uint8 */
@@ -9116,6 +9313,7 @@ export interface components {
             kind: string;
             /** Format: date-time */
             scheduledAtUtc: string;
+            scheduledAt: string;
             due: boolean;
             lastRun: null | components["schemas"]["RunView"];
             /** Format: int32 */
@@ -9131,6 +9329,7 @@ export interface components {
             aiSolutionConfigured: boolean;
             generationEnabled: boolean;
             fakeGenerator: boolean;
+            timerEnabled: boolean;
             jobs: components["schemas"]["SchedulerJobStatus"][];
             todayLessons: components["schemas"]["TodayLessonStatus"][];
         };
@@ -9317,6 +9516,11 @@ export interface components {
             imageFileId: null | number;
             /** Format: byte */
             rowVersion: string;
+        };
+        UpdateUserProfileRequest: {
+            firstName: string;
+            lastName: string;
+            className: null | string;
         };
         UploadTodayView: {
             /** Format: date */

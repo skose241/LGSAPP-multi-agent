@@ -272,6 +272,8 @@ public static class DbSeeder
         {
             user.MustChangePassword = false;
             user.IsBanned = false;
+            user.BannedAt = null;
+            user.BannedByUserId = null;
             repaired = true;
         }
 

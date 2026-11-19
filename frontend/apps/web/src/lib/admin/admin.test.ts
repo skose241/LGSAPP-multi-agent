@@ -19,6 +19,9 @@ function user(overrides: Partial<AdminUser>): AdminUser {
     isSystemAccount: false,
     branchLessonId: null,
     branchLessonName: null,
+    bannedAt: null,
+    bannedBy: null,
+    pendingReportCount: 0,
     ...overrides,
   };
 }

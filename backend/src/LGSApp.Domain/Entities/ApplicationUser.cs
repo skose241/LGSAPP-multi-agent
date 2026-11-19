@@ -9,6 +9,8 @@ public class ApplicationUser : IdentityUser<int>
     public string? ClassName { get; set; }
     public bool MustChangePassword { get; set; }
     public bool IsBanned { get; set; }
+    public DateTime? BannedAt { get; set; }
+    public int? BannedByUserId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
     public int? CreatedByUserId { get; set; }

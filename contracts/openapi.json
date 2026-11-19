@@ -1378,6 +1378,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "reported",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -1600,6 +1607,104 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/admin/users/{id}/branch-lesson": {
@@ -1681,6 +1786,103 @@
           },
           "409": {
             "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/bulk": {
+      "post": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkCreateUsersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "headers": {
+              "Location": {
+                "description": "Oluşturulan kaynağın adresi.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkCreatedUsersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8170,7 +8372,9 @@
           "min",
           "max",
           "updatedAt",
-          "defaultValue"
+          "defaultValue",
+          "group",
+          "critical"
         ],
         "type": "object",
         "properties": {
@@ -8202,6 +8406,12 @@
           "defaultValue": {
             "type": "integer",
             "format": "int32"
+          },
+          "group": {
+            "type": "string"
+          },
+          "critical": {
+            "type": "boolean"
           }
         }
       },
@@ -8220,7 +8430,10 @@
           "createdByUserId",
           "isSystemAccount",
           "branchLessonId",
-          "branchLessonName"
+          "branchLessonName",
+          "bannedAt",
+          "bannedBy",
+          "pendingReportCount"
         ],
         "type": "object",
         "properties": {
@@ -8288,6 +8501,27 @@
               "null",
               "string"
             ]
+          },
+          "bannedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "bannedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserRefView"
+              }
+            ]
+          },
+          "pendingReportCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -9866,6 +10100,86 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "BulkCreatedUsersResponse": {
+        "required": [
+          "users"
+        ],
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatedUserResponse"
+            }
+          }
+        }
+      },
+      "BulkCreateUsersRequest": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/BulkUserItemRequest"
+            }
+          }
+        }
+      },
+      "BulkUserItemRequest": {
+        "required": [
+          "userName",
+          "firstName",
+          "lastName",
+          "role",
+          "className"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "firstName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "role": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "className": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "branchLessonId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -13364,6 +13678,7 @@
         "required": [
           "kind",
           "scheduledAtUtc",
+          "scheduledAt",
           "due",
           "lastRun",
           "runningRunId"
@@ -13376,6 +13691,9 @@
           "scheduledAtUtc": {
             "type": "string",
             "format": "date-time"
+          },
+          "scheduledAt": {
+            "type": "string"
           },
           "due": {
             "type": "boolean"
@@ -13408,6 +13726,7 @@
           "aiSolutionConfigured",
           "generationEnabled",
           "fakeGenerator",
+          "timerEnabled",
           "jobs",
           "todayLessons"
         ],
@@ -13434,6 +13753,9 @@
             "type": "boolean"
           },
           "fakeGenerator": {
+            "type": "boolean"
+          },
+          "timerEnabled": {
             "type": "boolean"
           },
           "jobs": {
@@ -14153,6 +14475,28 @@
           "rowVersion": {
             "type": "string",
             "format": "byte"
+          }
+        }
+      },
+      "UpdateUserProfileRequest": {
+        "required": [
+          "firstName",
+          "lastName",
+          "className"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "className": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

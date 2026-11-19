@@ -22,5 +22,6 @@ public class RateLimitingOptions
     public RateLimitRule QuestionCreate { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
     public RateLimitRule AiSolution { get; set; } = new() { PermitLimit = 3, WindowSeconds = 60 };
     public RateLimitRule SchedulerTrigger { get; set; } = new() { PermitLimit = 5, WindowSeconds = 60 };
+    public RateLimitRule BulkUserCreate { get; set; } = new() { PermitLimit = 3, WindowSeconds = 60 };
     public RateLimitRule AdminSettings { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
 }

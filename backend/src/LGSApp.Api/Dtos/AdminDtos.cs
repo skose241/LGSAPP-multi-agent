@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LGSApp.Infrastructure.Services.Common;
 
 namespace LGSApp.Api.Dtos;
 
@@ -26,7 +27,27 @@ public record AdminUserDto(
     int? CreatedByUserId,
     bool IsSystemAccount,
     int? BranchLessonId,
-    string? BranchLessonName);
+    string? BranchLessonName,
+    DateTime? BannedAt,
+    UserRefView? BannedBy,
+    int PendingReportCount);
+
+public record UpdateUserProfileRequest(
+    [Required(ErrorMessage = "Ad zorunludur."), StringLength(100, ErrorMessage = "Ad en fazla {1} karakter olabilir.")] string FirstName,
+    [Required(ErrorMessage = "Soyad zorunludur."), StringLength(100, ErrorMessage = "Soyad en fazla {1} karakter olabilir.")] string LastName,
+    [StringLength(50, ErrorMessage = "Sınıf en fazla {1} karakter olabilir.")] string? ClassName);
+
+public record BulkUserItemRequest(
+    string? UserName,
+    string? FirstName,
+    string? LastName,
+    string? Role,
+    string? ClassName,
+    int? BranchLessonId = null);
+
+public record BulkCreateUsersRequest(List<BulkUserItemRequest?>? Items);
+
+public record BulkCreatedUsersResponse(IReadOnlyList<CreatedUserResponse> Users);
 
 public record CreatedUserResponse(AdminUserDto User, string OneTimePassword);
 

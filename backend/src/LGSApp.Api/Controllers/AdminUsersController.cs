@@ -2,13 +2,16 @@ using System.Globalization;
 using System.Security.Claims;
 using LGSApp.Api.Authorization;
 using LGSApp.Api.Dtos;
+using LGSApp.Api.Extensions;
 using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
+using LGSApp.Infrastructure.Services.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace LGSApp.Api.Controllers;
@@ -21,16 +24,18 @@ public class AdminUsersController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly OneTimePasswordService _oneTimePasswords;
     private readonly AppDbContext _db;
+    private readonly IAdminUserService _adminUsers;
 
-    public AdminUsersController(UserManager<ApplicationUser> userManager, OneTimePasswordService oneTimePasswords, AppDbContext db)
+    public AdminUsersController(UserManager<ApplicationUser> userManager, OneTimePasswordService oneTimePasswords, AppDbContext db, IAdminUserService adminUsers)
     {
         _userManager = userManager;
         _oneTimePasswords = oneTimePasswords;
         _db = db;
+        _adminUsers = adminUsers;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AdminUserDto>>> List([FromQuery] string? role, CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<AdminUserDto>>> List([FromQuery] string? role, [FromQuery] bool? reported, CancellationToken cancellationToken)
     {
         var query = UserRows();
 
@@ -40,9 +45,15 @@ public class AdminUsersController : ControllerBase
             query = query.Where(x => x.RoleName == normalized);
         }
 
+        if (reported == true)
+        {
+            query = query.Where(x => _db.Reports.Any(r => r.ReportedUserId == x.User.Id && r.Status == ReportStatus.Pending));
+        }
+
         var rows = await query.OrderBy(x => x.User.Id).ToListAsync(cancellationToken);
         var names = await LessonNamesAsync(cancellationToken);
-        return Ok(rows.Select(x => ToDto(x.User, x.RoleName, names)));
+        var extras = await _adminUsers.LoadExtrasAsync(rows.Select(x => x.User), cancellationToken);
+        return Ok(rows.Select(x => ToDto(x.User, x.RoleName, names, extras)));
     }
 
     [HttpGet("{id:int}")]
@@ -55,7 +66,8 @@ public class AdminUsersController : ControllerBase
         }
 
         var names = await LessonNamesAsync(cancellationToken);
-        return Ok(ToDto(row.User, row.RoleName, names));
+        var extras = await _adminUsers.LoadExtrasAsync([row.User], cancellationToken);
+        return Ok(ToDto(row.User, row.RoleName, names, extras));
     }
 
     [HttpPut("{id:int}/branch-lesson")]
@@ -87,7 +99,47 @@ public class AdminUsersController : ControllerBase
         }
 
         var names = await LessonNamesAsync(cancellationToken);
-        return Ok(ToDto(user, Roles.Ogretmen, names));
+        var extras = await _adminUsers.LoadExtrasAsync([user], cancellationToken);
+        return Ok(ToDto(user, Roles.Ogretmen, names, extras));
+    }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType<AdminUserDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateProfile(int id, UpdateUserProfileRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _adminUsers.UpdateProfileAsync(id, new UserProfileInput(request.FirstName, request.LastName, request.ClassName), cancellationToken);
+        if (!result.Succeeded)
+        {
+            return result.ToActionResult(this);
+        }
+
+        var updated = result.Value!;
+        var names = await LessonNamesAsync(cancellationToken);
+        var extras = await _adminUsers.LoadExtrasAsync([updated.User], cancellationToken);
+        return Ok(ToDto(updated.User, updated.Role, names, extras));
+    }
+
+    [HttpPost("bulk")]
+    [EnableRateLimiting(RateLimitingExtensions.BulkUserCreatePolicy)]
+    [ProducesResponseType<BulkCreatedUsersResponse>(StatusCodes.Status201Created)]
+    public async Task<IActionResult> BulkCreate(BulkCreateUsersRequest request, CancellationToken cancellationToken)
+    {
+        var items = (request.Items ?? [])
+            .Select(i => i is null ? null : new BulkUserInput(i.UserName, i.FirstName, i.LastName, i.Role, i.ClassName, i.BranchLessonId))
+            .ToList();
+        var result = await _adminUsers.BulkCreateAsync(items, CurrentUserId(), cancellationToken);
+        if (!result.Succeeded)
+        {
+            return result.ToActionResult(this);
+        }
+
+        var created = result.Value!;
+        var names = await LessonNamesAsync(cancellationToken);
+        var extras = await _adminUsers.LoadExtrasAsync(created.Select(c => c.User), cancellationToken);
+        var users = created
+            .Select(c => new CreatedUserResponse(ToDto(c.User, c.Role, names, extras), c.Password))
+            .ToList();
+        return CreatedAtAction(nameof(List), new BulkCreatedUsersResponse(users));
     }
 
     [HttpPost]
@@ -194,7 +246,8 @@ public class AdminUsersController : ControllerBase
         }
 
         var lessonNames = await LessonNamesAsync(cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id = user.Id }, new CreatedUserResponse(ToDto(user, role, lessonNames), password));
+        var extras = await _adminUsers.LoadExtrasAsync([user], cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = user.Id }, new CreatedUserResponse(ToDto(user, role, lessonNames, extras), password));
     }
 
     [HttpPost("{id:int}/ban")]
@@ -248,7 +301,7 @@ public class AdminUsersController : ControllerBase
             return SystemAccountProblem();
         }
 
-        var result = await _userManager.SetBannedAsync(user, banned);
+        var result = await _userManager.SetBannedAsync(user, banned, CurrentUserId());
         if (!result.Succeeded)
         {
             return result.Errors.Any(e => e.Code == SystemAccounts.MudurBanErrorCode)
@@ -279,7 +332,7 @@ public class AdminUsersController : ControllerBase
     private Task<Dictionary<int, string>> LessonNamesAsync(CancellationToken cancellationToken) =>
         _db.Lessons.AsNoTracking().ToDictionaryAsync(l => l.Id, l => l.Name, cancellationToken);
 
-    private static AdminUserDto ToDto(ApplicationUser u, string? role, IReadOnlyDictionary<int, string> lessonNames) =>
+    private static AdminUserDto ToDto(ApplicationUser u, string? role, IReadOnlyDictionary<int, string> lessonNames, AdminUserExtras extras) =>
         new(
             u.Id,
             u.UserName ?? string.Empty,
@@ -294,7 +347,10 @@ public class AdminUsersController : ControllerBase
             u.CreatedByUserId,
             role == Roles.Ai,
             u.BranchLessonId,
-            u.BranchLessonId is { } lessonId ? lessonNames.GetValueOrDefault(lessonId) : null);
+            u.BranchLessonId is { } lessonId ? lessonNames.GetValueOrDefault(lessonId) : null,
+            u.BannedAt,
+            extras.BannedByFor(u),
+            extras.PendingFor(u.Id));
 
     private ObjectResult SystemAccountProblem() =>
         Problem(statusCode: StatusCodes.Status400BadRequest, title: SystemAccounts.ManagedMessage);

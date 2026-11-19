@@ -23,6 +23,7 @@ using LGSApp.Infrastructure.Services.Settings;
 using LGSApp.Infrastructure.Services.Solutions;
 using LGSApp.Infrastructure.Services.Stats;
 using LGSApp.Infrastructure.Services.Students;
+using LGSApp.Infrastructure.Services.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -86,6 +87,7 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<TurkeyTime>();
         services.AddScoped<UserLookupService>();
+        services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<ISettingsService, SettingsService>();
         services.AddScoped<IAdminSettingsService, AdminSettingsService>();
         services.AddScoped<IAiAdminService, AiAdminService>();

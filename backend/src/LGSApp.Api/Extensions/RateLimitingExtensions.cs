@@ -21,6 +21,7 @@ public static class RateLimitingExtensions
     public const string AiSolutionPolicy = "ai-solution";
     public const string SchedulerTriggerPolicy = "scheduler-trigger";
     public const string AdminSettingsPolicy = "admin-settings";
+    public const string BulkUserCreatePolicy = "bulk-user-create";
 
     public static IServiceCollection AddAppRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
@@ -42,6 +43,7 @@ public static class RateLimitingExtensions
             options.AddPolicy(AiSolutionPolicy, context => UserPartition(context, AiSolutionPolicy, settings.AiSolution));
             options.AddPolicy(SchedulerTriggerPolicy, context => UserPartition(context, SchedulerTriggerPolicy, settings.SchedulerTrigger));
             options.AddPolicy(AdminSettingsPolicy, context => UserPartition(context, AdminSettingsPolicy, settings.AdminSettings));
+            options.AddPolicy(BulkUserCreatePolicy, context => UserPartition(context, BulkUserCreatePolicy, settings.BulkUserCreate));
             options.OnRejected =async (context, cancellationToken) =>
             {
                 var response = context.HttpContext.Response;

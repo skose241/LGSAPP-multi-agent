@@ -55,6 +55,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             b.Property(u => u.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
             b.Property(u => u.Points).HasDefaultValue(0);
             b.HasOne<Lesson>().WithMany().HasForeignKey(u => u.BranchLessonId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<ApplicationUser>().WithMany().HasForeignKey(u => u.BannedByUserId).OnDelete(DeleteBehavior.Restrict);
             b.Property(u => u.UserName).HasMaxLength(UserNameRules.MaxLength);
             b.Property(u => u.NormalizedUserName).HasMaxLength(UserNameRules.MaxLength);
             b.Ignore(u => u.Email);
