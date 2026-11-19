@@ -30,7 +30,7 @@ public static class AdminSettingRules
         new(SettingKeys.PuanSoruYukleme, 0, 100, SettingGroups.General),
         new(SettingKeys.PuanCozumYazma, 0, 100, SettingGroups.General),
         new(SettingKeys.PuanliSoruYuklemeGunluk, 0, 100, SettingGroups.General),
-        new(SettingKeys.GunlukSoruYuklemeLimiti, 0, 500, SettingGroups.General),
+        new(SettingKeys.GunlukSoruYuklemeLimiti, 0, 500, SettingGroups.General, true),
         new(SettingKeys.GunlukDosyaLimitiOgrenci, 1, 1000, SettingGroups.General),
         new(SettingKeys.GunlukDosyaLimitiOgretmen, 1, 5000, SettingGroups.General),
         new(SettingKeys.AciklamaMinKarakter, 0, 500, SettingGroups.General),

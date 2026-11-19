@@ -291,7 +291,7 @@ public sealed class AdminUserService(
                         UserName = row.UserName,
                         FirstName = row.FirstName,
                         LastName = row.LastName,
-                        ClassName = row.ClassName,
+                        ClassName = row.Role == Roles.Ogrenci ? row.ClassName : null,
                         MustChangePassword = true,
                         CreatedAt = DateTime.UtcNow,
                         CreatedByUserId = createdByUserId,
@@ -318,7 +318,7 @@ public sealed class AdminUserService(
                 return ServiceResult<IReadOnlyList<BulkCreatedUser>>.Ok(created);
             }, cancellationToken);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             return Fail.Conflict(UserInputRules.UserNameTakenMessage);
         }

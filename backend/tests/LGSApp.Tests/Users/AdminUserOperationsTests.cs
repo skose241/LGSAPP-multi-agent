@@ -76,6 +76,7 @@ public sealed class AdminUserOperationsTests : IAsyncLifetime
             services.AddLogging();
             services.AddDataProtection();
             services.AddInfrastructure(configuration);
+            services.AddScoped<IUserValidator<ApplicationUser>, RejectingUserValidator>();
             _provider = services.BuildServiceProvider();
         }
     }
@@ -104,6 +105,14 @@ public sealed class AdminUserOperationsTests : IAsyncLifetime
         db.UserRoles.Add(new IdentityUserRole<int> { UserId = user.Id, RoleId = roleId });
         await db.SaveChangesAsync();
         return user.Id;
+    }
+
+    private sealed class RejectingUserValidator : IUserValidator<ApplicationUser>
+    {
+        public Task<IdentityResult> ValidateAsync(UserManager<ApplicationUser> manager, ApplicationUser user) =>
+            Task.FromResult(user.UserName == "reddedilen.kullanici"
+                ? IdentityResult.Failed(new IdentityError { Code = "Test", Description = "Reddedildi." })
+                : IdentityResult.Success);
     }
 
     private (AdminUsersController Controller, IServiceScope Scope) NewController(int actorId)
@@ -527,6 +536,110 @@ public sealed class AdminUserOperationsTests : IAsyncLifetime
             Assert.Null(row.BannedAt);
             Assert.Null(row.BannedByUserId);
         }
+    }
+
+    [Fact]
+    public async Task Bulk_create_rolls_back_everything_when_identity_rejects_a_later_row()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        var (controller, scope) = NewController(_mudur);
+        using (scope)
+        {
+            var before = await CountUsersAsync();
+            var errors = ValidationErrors(await controller.BulkCreate(new BulkCreateUsersRequest(
+            [
+                new BulkUserItemRequest("geri.al1", "A", "B", "ogrenci", null),
+                new BulkUserItemRequest("geri.al2", "A", "B", "ogretmen", null),
+                new BulkUserItemRequest("reddedilen.kullanici", "A", "B", "ogrenci", null)
+            ]), CancellationToken.None));
+
+            Assert.Equal(["items[2].userName"], errors.Keys.ToArray());
+            Assert.Equal(before, await CountUsersAsync());
+            await using var db = TestDatabase.Open(_database);
+            Assert.False(await db.Users.AnyAsync(u => u.UserName!.StartsWith("geri.al")));
+        }
+    }
+
+    [Fact]
+    public async Task Class_name_is_stored_only_for_students_in_bulk_and_single_create()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        var (controller, scope) = NewController(_mudur);
+        using (scope)
+        {
+            var bulk = Assert.IsType<BulkCreatedUsersResponse>(Assert.IsType<CreatedAtActionResult>(await controller.BulkCreate(new BulkCreateUsersRequest(
+            [
+                new BulkUserItemRequest("sinif.ogrenci", "A", "B", "ogrenci", "8-A"),
+                new BulkUserItemRequest("sinif.ogretmen", "A", "B", "ogretmen", "8-A")
+            ]), CancellationToken.None)).Value);
+            Assert.Equal("8-A", bulk.Users[0].User.ClassName);
+            Assert.Null(bulk.Users[1].User.ClassName);
+
+            var teacher = Assert.IsType<CreatedAtActionResult>((await controller.Create(new CreateUserRequest("tek.ogretmen", "A", "B", "ogretmen", "8-A"), CancellationToken.None)).Result);
+            Assert.Null(Assert.IsType<CreatedUserResponse>(teacher.Value).User.ClassName);
+            var student = Assert.IsType<CreatedAtActionResult>((await controller.Create(new CreateUserRequest("tek.ogrenci", "A", "B", "ogrenci", " 8-B "), CancellationToken.None)).Result);
+            Assert.Equal("8-B", Assert.IsType<CreatedUserResponse>(student.Value).User.ClassName);
+
+            await using var db = TestDatabase.Open(_database);
+            Assert.Null((await db.Users.AsNoTracking().SingleAsync(u => u.UserName == "sinif.ogretmen")).ClassName);
+            Assert.Null((await db.Users.AsNoTracking().SingleAsync(u => u.UserName == "tek.ogretmen")).ClassName);
+        }
+    }
+
+    [Fact]
+    public async Task Repeated_ban_keeps_the_original_record()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        var (controller, scope) = NewController(_mudur);
+        using (scope)
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var other = await AddMudurLikeAsync();
+
+            Assert.IsType<NoContentResult>(await controller.Ban(_student2));
+            DateTime firstAt;
+            await using (var db = TestDatabase.Open(_database))
+            {
+                firstAt = (await db.Users.AsNoTracking().SingleAsync(u => u.Id == _student2)).BannedAt!.Value;
+            }
+
+            await Task.Delay(50);
+            var (second, secondScope) = NewController(other);
+            using (secondScope)
+            {
+                Assert.IsType<NoContentResult>(await second.Ban(_student2));
+            }
+
+            await using var check = TestDatabase.Open(_database);
+            var row = await check.Users.AsNoTracking().SingleAsync(u => u.Id == _student2);
+            Assert.True(row.IsBanned);
+            Assert.Equal(_mudur, row.BannedByUserId);
+            Assert.Equal(firstAt, row.BannedAt);
+
+            var loaded = await users.FindByIdAsync(_student2.ToString());
+            var direct = await users.SetBannedAsync(loaded!, true, other);
+            Assert.True(direct.Succeeded);
+            await using var again = TestDatabase.Open(_database);
+            Assert.Equal(_mudur, (await again.Users.AsNoTracking().SingleAsync(u => u.Id == _student2)).BannedByUserId);
+        }
+    }
+
+    private async Task<int> AddMudurLikeAsync()
+    {
+        await using var db = TestDatabase.Open(_database);
+        return await AddUserAsync(db, "mudur2", Roles.MudurId);
     }
 
     private async Task AddReportAsync(int reportedUserId, int reporterUserId, ReportTargetType type, ReportStatus status = ReportStatus.Pending)

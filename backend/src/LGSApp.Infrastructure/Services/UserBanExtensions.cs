@@ -13,6 +13,11 @@ public static class UserBanExtensions
             return IdentityResult.Failed(new IdentityError { Code = SystemAccounts.MudurBanErrorCode, Description = SystemAccounts.MudurBanMessage });
         }
 
+        if (banned && user.IsBanned)
+        {
+            return IdentityResult.Success;
+        }
+
         user.IsBanned = banned;
         user.BannedAt = banned ? DateTime.UtcNow : null;
         user.BannedByUserId = banned ? bannedByUserId : null;

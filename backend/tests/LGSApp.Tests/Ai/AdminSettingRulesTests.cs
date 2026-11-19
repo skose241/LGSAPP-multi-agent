@@ -73,7 +73,7 @@ public class AdminSettingRulesTests
             SettingKeys.AiCozumAktifMi, SettingKeys.AiSoruDogrulamaAktifMi, SettingKeys.SoruUretimAktifMi,
             SettingKeys.SoruCarpani, SettingKeys.AiOkunamadiBeklemeSaat
         };
-        var critical = new[] { SettingKeys.YorumMaxDerinlik, SettingKeys.YorumGorunurDerinlik, SettingKeys.CozumEsikCevapSayisi, SettingKeys.CozumEsikYanlisOrani };
+        var critical = new[] { SettingKeys.GunlukSoruYuklemeLimiti, SettingKeys.YorumMaxDerinlik, SettingKeys.YorumGorunurDerinlik, SettingKeys.CozumEsikCevapSayisi, SettingKeys.CozumEsikYanlisOrani };
 
         foreach (var d in AdminSettingRules.Definitions)
         {

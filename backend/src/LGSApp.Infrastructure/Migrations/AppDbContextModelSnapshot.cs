@@ -1544,7 +1544,7 @@ namespace LGSApp.Infrastructure.Migrations
                         new
                         {
                             Key = "gunlukSoruYuklemeLimiti",
-                            Description = "Öğrenci başına günlük soru yükleme sınırı.",
+                            Description = "Öğrenci başına günlük soru yükleme sınırı (0 = hiçbir öğrenci soru yükleyemez).",
                             Value = "20"
                         },
                         new

@@ -55,7 +55,7 @@ public static class SettingKeys
         (SikayetMinKarakter, 10, "Şikayet açıklamasının asgari karakter sayısı."),
         (GunlukDosyaLimitiOgrenci, 60, "Öğrenci başına günlük fotoğraf yükleme sınırı."),
         (GunlukDosyaLimitiOgretmen, 500, "Öğretmen ve müdür başına günlük fotoğraf yükleme sınırı."),
-        (GunlukSoruYuklemeLimiti, 20, "Öğrenci başına günlük soru yükleme sınırı."),
+        (GunlukSoruYuklemeLimiti, 20, "Öğrenci başına günlük soru yükleme sınırı (0 = hiçbir öğrenci soru yükleyemez)."),
         (PuanliSoruYuklemeGunluk, 5, "Günde puan kazandıran soru yükleme sayısı.")
     ];
 }

@@ -7,6 +7,7 @@ using LGSApp.Domain.Constants;
 using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services;
+using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -210,7 +211,7 @@ public class AdminUsersController : ControllerBase
                     UserName = userName,
                     FirstName = request.FirstName.Trim(),
                     LastName = request.LastName.Trim(),
-                    ClassName = string.IsNullOrWhiteSpace(request.ClassName) ? null : request.ClassName.Trim(),
+                    ClassName = role == Roles.Ogrenci && !string.IsNullOrWhiteSpace(request.ClassName) ? request.ClassName.Trim() : null,
                     MustChangePassword = true,
                     CreatedAt = DateTime.UtcNow,
                     CreatedByUserId = createdBy,
@@ -235,7 +236,7 @@ public class AdminUsersController : ControllerBase
                 user = candidate;
             });
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex) when (ex.IsUniqueViolation())
         {
             return Problem(statusCode: StatusCodes.Status409Conflict, title: "Bu kullanıcı adı zaten kayıtlı.");
         }

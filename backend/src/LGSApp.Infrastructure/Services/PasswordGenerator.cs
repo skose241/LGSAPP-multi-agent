@@ -17,6 +17,7 @@ public static class PasswordGenerator
         }
 
         var all = Upper + Lower + Digits + Symbols;
+        var first = Pick(Upper + Lower + Digits);
         var chars = new List<char>
         {
             Pick(Upper),
@@ -25,7 +26,7 @@ public static class PasswordGenerator
             Pick(Symbols)
         };
 
-        while (chars.Count < length)
+        while (chars.Count < length - 1)
         {
             chars.Add(Pick(all));
         }
@@ -36,7 +37,7 @@ public static class PasswordGenerator
             (chars[i], chars[j]) = (chars[j], chars[i]);
         }
 
-        return new string(chars.ToArray());
+        return first + new string(chars.ToArray());
     }
 
     private static char Pick(string set) => set[RandomNumberGenerator.GetInt32(set.Length)];
