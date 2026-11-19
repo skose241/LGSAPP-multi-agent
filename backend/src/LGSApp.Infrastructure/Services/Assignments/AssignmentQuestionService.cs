@@ -4,6 +4,7 @@ using LGSApp.Domain.Entities;
 using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Files;
+using LGSApp.Infrastructure.Services.Questions;
 using Microsoft.EntityFrameworkCore;
 
 namespace LGSApp.Infrastructure.Services.Assignments;
@@ -40,7 +41,7 @@ public interface IAssignmentQuestionService
     Task<ServiceResult<AddedQuestionView>> UpdateAsync(Actor actor, int assignmentId, int questionId, UpdateAssignmentQuestionCommand command, CancellationToken cancellationToken = default);
 }
 
-public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock, IStoredFileValidator fileValidator) : IAssignmentQuestionService
+public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock, IStoredFileValidator fileValidator, IAnswerKeyService answerKeys) : IAssignmentQuestionService
 {
     private const string NotEditableMessage = "Yalnızca taslak veya başlamamış planlı ödevlerin soruları değiştirilebilir.";
     private const string LinkedElsewhereMessage = "Soru başka bir ödevde kullanılıyor.";
@@ -120,13 +121,40 @@ public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock,
                 return failure;
             }
 
+            var branchDenied = await AuthorizeBranchAsync(actor, assignment!.LessonId, token);
+            if (branchDenied is Failure branchFailure)
+            {
+                return branchFailure;
+            }
+
             var existing = await db.AssignmentQuestions
                 .Where(aq => aq.AssignmentId == assignmentId)
                 .GroupBy(aq => aq.AssignmentId)
                 .Select(g => new { Count = g.Count(), MaxOrder = g.Max(x => x.OrderNo) })
                 .FirstOrDefaultAsync(token);
             var existingCount = existing?.Count ?? 0;
-            if (existingCount + drafts.Count > AssignmentRules.MaxQuestionsPerAssignment)
+
+            var requestedImages = drafts.Where(d => d.ImageFileId is not null).Select(d => d.ImageFileId!.Value).Distinct().ToList();
+            var replayed = requestedImages.Count == 0
+                ? new Dictionary<int, AddedQuestionView>()
+                : (await (
+                    from aq in db.AssignmentQuestions.AsNoTracking()
+                    where aq.AssignmentId == assignmentId && aq.CreatedForAssignment
+                    join q in db.Questions.AsNoTracking() on aq.QuestionId equals q.Id
+                    where q.ImageFileId != null && requestedImages.Contains(q.ImageFileId.Value)
+                    select new { ImageId = q.ImageFileId!.Value, q.Id, aq.OrderNo, q.RowVersion }).ToListAsync(token))
+                    .ToDictionary(x => x.ImageId, x => new AddedQuestionView(x.Id, x.OrderNo, x.RowVersion));
+
+            bool IsReplay(int i) => drafts[i].ImageFileId is int imageId && replayed.ContainsKey(imageId);
+            var newIndexes = Enumerable.Range(0, drafts.Count).Where(i => !IsReplay(i)).ToList();
+
+            if (newIndexes.Count == 0)
+            {
+                var replayOnly = Enumerable.Range(0, drafts.Count).Select(i => replayed[drafts[i].ImageFileId!.Value]).ToList();
+                return ServiceResult<AddedQuestionsView>.Ok(new AddedQuestionsView(replayOnly.Count, existingCount, replayOnly));
+            }
+
+            if (existingCount + newIndexes.Count > AssignmentRules.MaxQuestionsPerAssignment)
             {
                 return Fail.Conflict($"Bir ödeve en fazla {AssignmentRules.MaxQuestionsPerAssignment} soru eklenebilir.");
             }
@@ -139,7 +167,7 @@ public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock,
                     .Select(t => t.Id)
                     .ToListAsync(token)).ToHashSet();
 
-            var imageErrors = await ValidateImagesAsync(actor, drafts.Select(d => d.ImageFileId).ToList(), "items[{0}].imageFileId", null, token);
+            var imageErrors = await ValidateImagesAsync(actor, drafts.Select((d, i) => IsReplay(i) ? null : d.ImageFileId).ToList(), "items[{0}].imageFileId", null, token);
             for (var i = 0; i < items.Count; i++)
             {
                 if (items[i].TopicId is int topicId && !validTopics.Contains(topicId))
@@ -154,8 +182,8 @@ public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock,
             }
 
             var now = clock.UtcNow;
-            var questions = new List<Question>(drafts.Count);
-            for (var i = 0; i < drafts.Count; i++)
+            var questions = new List<Question>(newIndexes.Count);
+            foreach (var i in newIndexes)
             {
                 var d = drafts[i];
                 questions.Add(new Question
@@ -197,10 +225,17 @@ public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock,
             db.AssignmentQuestions.AddRange(links);
             await db.SaveChangesAsync(token);
 
-            var added = questions
+            var created = questions
                 .Select((q, i) => new AddedQuestionView(q.Id, startOrder + i, q.RowVersion))
                 .ToList();
-            return ServiceResult<AddedQuestionsView>.Ok(new AddedQuestionsView(added.Count, existingCount + added.Count, added));
+            var cursor = 0;
+            var added = new List<AddedQuestionView>(drafts.Count);
+            for (var i = 0; i < drafts.Count; i++)
+            {
+                added.Add(IsReplay(i) ? replayed[drafts[i].ImageFileId!.Value] : created[cursor++]);
+            }
+
+            return ServiceResult<AddedQuestionsView>.Ok(new AddedQuestionsView(added.Count, existingCount + created.Count, added));
         }, cancellationToken);
     }
 
@@ -246,6 +281,12 @@ public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock,
             }
 
             var json = JsonSerializer.Serialize(questionIds);
+            var branchDenied = await AuthorizeBranchAsync(actor, assignment!.LessonId, token);
+            if (branchDenied is Failure branchFailure)
+            {
+                return branchFailure;
+            }
+
             var found = await db.Questions
                 .FromSqlInterpolated($"SELECT * FROM [Questions] WITH (UPDLOCK, ROWLOCK) WHERE [Id] IN (SELECT CAST([value] AS int) FROM OPENJSON({json}))")
                 .AsNoTracking()
@@ -511,6 +552,17 @@ public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock,
                 return Fail.Conflict("Havuzdan eklenen sorunun yalnızca doğru şıkkı değiştirilebilir.");
             }
 
+            if (!link.CreatedForAssignment && command.CorrectOption is byte pooledOption && pooledOption != question.CorrectOption)
+            {
+                var keyChange = await answerKeys.ApplyAsync(actor, questionId, new ChangeAnswerKeyCommand(pooledOption, command.RowVersion, null), true, token);
+                if (!keyChange.Succeeded)
+                {
+                    return ServiceResult<AddedQuestionView>.From(keyChange);
+                }
+
+                return ServiceResult<AddedQuestionView>.Ok(new AddedQuestionView(question.Id, link.OrderNo, question.RowVersion));
+            }
+
             var text = command.Text is null ? question.Text : AssignmentText.Clean(command.Text);
             var description = command.Description is null ? question.Description : AssignmentText.Clean(command.Description);
             int? imageId = command.ImageFileId switch
@@ -583,6 +635,11 @@ public sealed class AssignmentQuestionService(AppDbContext db, TurkeyTime clock,
             return ServiceResult<AddedQuestionView>.Ok(new AddedQuestionView(question.Id, link.OrderNo, question.RowVersion));
         }, cancellationToken);
     }
+
+    private Task<Failure?> AuthorizeBranchAsync(Actor actor, int lessonId, CancellationToken token) =>
+        actor.IsTeacher
+            ? AnswerKeyScope.AuthorizeAsync(db, actor, lessonId, token)
+            : Task.FromResult<Failure?>(null);
 
     private Failure? CheckEditable(Actor actor, Assignment? assignment)
     {

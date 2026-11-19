@@ -23,7 +23,12 @@ export function StudentDashboard() {
     <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-5">
         <section aria-label="Açık ödevler" className="flex flex-col gap-3">
-          <h2 className="text-xl">Açık ödevler</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-xl">Açık ödevler</h2>
+            <Button asChild variant="ghost">
+              <Link href="/odevler">Tüm ödevler</Link>
+            </Button>
+          </div>
           {assignments.isPending ? (
             <div role="status" aria-label="Ödevler yükleniyor" className="h-28 animate-pulse rounded-lg bg-surface-muted" />
           ) : assignments.isError ? (
@@ -58,7 +63,7 @@ export function StudentDashboard() {
                           {item.myAnsweredCount} / {item.totalQuestions} soru yapıldı, {item.myCorrectCount} doğru
                         </p>
                         <Button asChild variant="secondary" className="self-start">
-                          <Link href={`/sorular?ders=${item.lesson.id}`}>Soruları çöz</Link>
+                          <Link href={`/odevler/${item.id}`}>Ödevi aç</Link>
                         </Button>
                       </CardContent>
                     </Card>

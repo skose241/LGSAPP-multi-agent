@@ -17,3 +17,5 @@ export function shouldGuardNavigation(
   if (url.origin !== current.origin) return true;
   return url.pathname !== current.pathname || url.search !== current.search;
 }
+
+export const DIRTY_LEAVE_MESSAGE = "Kaydedilmemiş değişiklikler var. Sayfadan ayrılırsan kaybolur. Ayrılmak istiyor musun?";

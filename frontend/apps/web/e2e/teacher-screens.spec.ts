@@ -6,7 +6,7 @@ import { backend, banAccount } from "./support/backend";
 import { expect, login, test } from "./support/fixtures";
 import { activeUser, answerQuestion, createOpenAssignment, createTextQuestion } from "./support/student-data";
 import { answerPool, namedStudent, needsSolutionIds, reportQuestion, studentQuestion, wrongAnsweredQuestion } from "./support/teacher-data";
-import { validExplanation, world } from "./support/world";
+import { validExplanation, world, authorFor } from "./support/world";
 
 async function loginAs(page: Page, user: { userName: string; password: string }) {
   await login(page, user.userName, user.password);
@@ -26,9 +26,8 @@ test.describe("öğrenciler", () => {
     const first = await namedStudent("Ahmet", stamp);
     const second = await namedStudent("Zeynep", stamp);
     const teacher = await branchTeacher(w.lessons[0]!.id);
-    const creator = await activeUser("ogretmen", "yazar");
-    const q1 = await createTextQuestion(creator, w.lessons[0]!.id, `Profil sorusu ${stamp}: Hangisi doğrudur?`, 2);
-    const q2 = await createTextQuestion(creator, w.lessons[1]!.id, `Profil sorusu ${stamp} iki: Hangisi doğrudur?`, 2);
+    const q1 = await createTextQuestion(await authorFor(w.lessons[0]!.id), w.lessons[0]!.id, `Profil sorusu ${stamp}: Hangisi doğrudur?`, 2);
+    const q2 = await createTextQuestion(await authorFor(w.lessons[1]!.id), w.lessons[1]!.id, `Profil sorusu ${stamp} iki: Hangisi doğrudur?`, 2);
     await answerQuestion(second, q1.id, 2, validExplanation(w.settings.aciklamaMinKarakter));
     await answerQuestion(second, q2.id, 3, validExplanation(w.settings.aciklamaMinKarakter));
     await banAccount(first.id);
@@ -191,7 +190,7 @@ test.describe("çözüm bekleyenler", () => {
     const w = await world();
     const lesson = w.lessons[0]!;
     const otherLesson = w.lessons[1]!;
-    const creator = await activeUser("ogretmen", "yazar");
+    const creator = await authorFor(lesson.id);
     const question = await wrongAnsweredQuestion(creator, lesson.id, null, "Müdür filtre sorusu");
     const mudur = await activeUser("mudur", "mudur");
 
@@ -279,7 +278,7 @@ test.describe("şikâyetler", () => {
     const lesson = w.lessons[0]!;
     const teacher = await branchTeacher(lesson.id);
     const student = await activeUser("ogrenci", "ogrenci");
-    const creator = await activeUser("ogretmen", "yazar");
+    const creator = await authorFor(lesson.id);
     const question = await createTextQuestion(creator, lesson.id, `Şikâyet sorusu ${Date.now().toString(36)}: Hangisi doğrudur?`, 2);
     const description = `Soru metni eksik görünüyor ${Date.now().toString(36)}`;
     await reportQuestion(student, question.id, "incomplete", description);
@@ -326,7 +325,7 @@ test.describe("şikâyetler", () => {
     const otherLesson = w.lessons[1]!;
     const outsider = await branchTeacher(otherLesson.id);
     const student = await activeUser("ogrenci", "ogrenci");
-    const creator = await activeUser("ogretmen", "yazar");
+    const creator = await authorFor(lesson.id);
     const question = await createTextQuestion(creator, lesson.id, `Anahtar şikâyeti ${Date.now().toString(36)}: Hangisi doğrudur?`, 2);
     await answerQuestion(student, question.id, 3, validExplanation(w.settings.aciklamaMinKarakter));
     const description = `Anahtar yanlış olmalı ${Date.now().toString(36)}`;
@@ -362,7 +361,7 @@ test.describe("şikâyet çakışması", () => {
     const teacher = await branchTeacher(lesson.id);
     const other = await branchTeacher(lesson.id);
     const student = await activeUser("ogrenci", "ogrenci");
-    const creator = await activeUser("ogretmen", "yazar");
+    const creator = await authorFor(lesson.id);
     const question = await createTextQuestion(creator, lesson.id, `Çakışma sorusu ${Date.now().toString(36)}: Hangisi doğrudur?`, 2);
     const description = `Çakışma şikâyeti ${Date.now().toString(36)}`;
     await reportQuestion(student, question.id, "incomplete", description);

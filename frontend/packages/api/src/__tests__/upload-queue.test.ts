@@ -139,6 +139,53 @@ describe("UploadQueue yeniden deneme", () => {
     expect(count).toBe(2);
   });
 
+  it("dolu dosya için sunucunun 'Dosya zorunludur' demesi geçici sayılır ve aynı dosya yeniden gönderilir", async () => {
+    const calls: TransportRequest[] = [];
+    const responses = [fail(400, { title: "Doğrulama", errors: { file: ["Dosya zorunludur."] }, code: "file_empty" }), ok()];
+    const { queue, sleeps } = build({
+      transport: async (request) => {
+        calls.push(request);
+        return responses.shift()!;
+      },
+    });
+    queue.add(blob(), "QuestionImage", undefined);
+    await queue.whenIdle();
+
+    expect(calls).toHaveLength(2);
+    expect(calls[1]!.file.size).toBe(10);
+    expect(new Set(calls.map((call) => call.fields.clientUploadId)).size).toBe(1);
+    expect(sleeps).toEqual([1000]);
+    expect(queue.getSnapshot()[0]).toMatchObject({ status: "done" });
+  });
+
+  it("gerçekten boş dosyada 'Dosya zorunludur' yeniden denenmez", async () => {
+    let count = 0;
+    const { queue } = build({
+      transport: async () => {
+        count += 1;
+        return fail(400, { title: "Doğrulama", errors: { file: ["Dosya zorunludur."] }, code: "file_empty" });
+      },
+    });
+    queue.add(Object.assign(new Blob([], { type: "image/jpeg" }), { name: "bos.jpg" }), "QuestionImage", undefined);
+    await queue.whenIdle();
+    expect(count).toBe(1);
+    expect(queue.getSnapshot()[0]).toMatchObject({ status: "failed", failure: { kind: "validation" } });
+  });
+
+  it("kodsuz 'Dosya zorunludur' mesajı geçici sayılmaz", async () => {
+    let count = 0;
+    const { queue } = build({
+      transport: async () => {
+        count += 1;
+        return fail(400, { title: "Doğrulama", errors: { file: ["Dosya zorunludur."] } });
+      },
+    });
+    queue.add(blob(), "QuestionImage", undefined);
+    await queue.whenIdle();
+    expect(count).toBe(1);
+    expect(queue.getSnapshot()[0]).toMatchObject({ status: "failed", failure: { kind: "validation" } });
+  });
+
   it("400'de tekrar denemez ve backend mesajını gösterir", async () => {
     let count = 0;
     const { queue, sleeps } = build({

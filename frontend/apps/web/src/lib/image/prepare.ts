@@ -7,6 +7,8 @@ export const PREVIEW_QUALITY = 0.7;
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const SAFE_UPLOAD_BYTES = Math.floor(MAX_UPLOAD_BYTES * 0.95);
 export const MIN_EDGE = 200;
+export const MIN_ENCODED_BYTES = 64;
+const RENDER_ATTEMPTS = 2;
 
 export interface EncodeStep {
   edge: number;
@@ -109,12 +111,18 @@ export async function prepareImage(
     let result: { blob: Blob; width: number; height: number } | null = null;
     for (const step of ENCODE_LADDER) {
       const size = fitWithin(decoded.width, decoded.height, step.edge);
-      let blob: Blob;
-      try {
-        blob = await deps.render(decoded, size.width, size.height, step.quality);
-      } catch {
-        throw new PrepareError("encode", "Fotoğraf küçültülemedi. Tekrar dene ya da başka bir fotoğraf seç.");
+      let blob: Blob | null = null;
+      for (let attempt = 0; attempt < RENDER_ATTEMPTS && !blob; attempt += 1) {
+        try {
+          const rendered = await deps.render(decoded, size.width, size.height, step.quality);
+          if (rendered.size >= MIN_ENCODED_BYTES) blob = rendered;
+        } catch (error) {
+          console.warn("[image/prepare] render failed", error);
+          blob = null;
+        }
+        throwIfAborted(options.signal);
       }
+      if (!blob) throw new PrepareError("encode", "Fotoğraf küçültülemedi. Tekrar dene ya da başka bir fotoğraf seç.");
       throwIfAborted(options.signal);
       if (blob.size <= SAFE_UPLOAD_BYTES) {
         result = { blob, width: size.width, height: size.height };
@@ -129,7 +137,8 @@ export async function prepareImage(
     try {
       const preview = fitWithin(decoded.width, decoded.height, PREVIEW_EDGE);
       previewBlob = await deps.render(decoded, preview.width, preview.height, PREVIEW_QUALITY);
-    } catch {
+    } catch (error) {
+      console.warn("[image/prepare] preview render failed", error);
       previewBlob = null;
     }
 

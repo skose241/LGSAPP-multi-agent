@@ -46,6 +46,44 @@ describe("boyut hesabı", () => {
   });
 });
 
+describe("boş çıktı koruması", () => {
+  it("canvas boş blob üretirse bir kez daha dener ve gönderilecek dosya boş olmaz", async () => {
+    let calls = 0;
+    const { deps } = fakeDeps({
+      render: async () => {
+        calls += 1;
+        return new Blob([new Uint8Array(calls === 1 ? 0 : 1000)], { type: "image/jpeg" });
+      },
+    });
+    const result = await prepareImage(file("a.jpg", "image/jpeg"), deps);
+    expect(result.blob.size).toBe(1000);
+  });
+
+  it("canvas sürekli boş blob üretirse encode hatası verir", async () => {
+    const { deps } = fakeDeps({ render: async () => new Blob([], { type: "image/jpeg" }) });
+    await expect(prepareImage(file("a.jpg", "image/jpeg"), deps)).rejects.toMatchObject({ kind: "encode" });
+  });
+});
+
+describe("render hatası günlüğü", () => {
+  it("yakalanan render hatasını önekle console.warn ile bildirir ve yeniden dener", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const failure = new Error("canvas");
+    let calls = 0;
+    const { deps } = fakeDeps({
+      render: async () => {
+        calls += 1;
+        if (calls === 1) throw failure;
+        return new Blob([new Uint8Array(1000)], { type: "image/jpeg" });
+      },
+    });
+    const result = await prepareImage(file("a.jpg", "image/jpeg"), deps);
+    expect(result.blob.size).toBe(1000);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("[image/prepare]"), failure);
+    warn.mockRestore();
+  });
+});
+
 describe("HEIC tespiti", () => {
   it("tür ve uzantıdan tanır", () => {
     expect(isHeicLike({ type: "image/heic", name: "a" })).toBe(true);

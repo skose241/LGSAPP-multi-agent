@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { activeUser, answerQuestion, createTextQuestion, postComment, uploadQuestionImage } from "./support/student-data";
 import { expect, test } from "./support/fixtures";
-import { freshQuestion, studentLogin, validExplanation, world } from "./support/world";
+import { freshQuestion, studentLogin, validExplanation, world, authorFor } from "./support/world";
 
 const outDir = process.env.F3_SCREENSHOT_DIR ?? path.join(process.cwd(), "test-results", "f3");
 const widths = [375, 1280];
@@ -50,8 +50,9 @@ test.describe("öğrenci ekranları", () => {
   test("pano, sorular ve cevaplanmamış soru", async ({ page }, testInfo) => {
     const w = await world();
     await freshQuestion(`Ekran sorusu ${Date.now().toString(36)}: $x^2+3x$ ifadesinin değeri kaçtır?`);
-    const imageId = await uploadQuestionImage(w.teacher);
-    const withImage = await createTextQuestion(w.teacher, w.lessons[0]!.id, "Görselli soru", 3, {
+    const author = await authorFor(w.lessons[0]!.id);
+    const imageId = await uploadQuestionImage(author);
+    const withImage = await createTextQuestion(author, w.lessons[0]!.id, "Görselli soru", 3, {
       text: null,
       imageFileId: imageId,
       optionA: null,

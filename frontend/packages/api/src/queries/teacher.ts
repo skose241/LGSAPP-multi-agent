@@ -47,6 +47,8 @@ export interface ReportListParams {
 
 export interface ManageAssignmentParams {
   status?: "draft" | "scheduled" | "open" | "closed";
+  lessonId?: number;
+  mine?: boolean;
   page: number;
   pageSize: number;
 }
@@ -61,6 +63,7 @@ export const teacherKeys = {
   reportsAll: ["teacher", "reports"] as const,
   reports: (params: ReportListParams) => ["teacher", "reports", "list", params] as const,
   report: (id: number) => ["teacher", "reports", "detail", id] as const,
+  topicPlansAll: ["teacher", "topic-plans"] as const,
   topicPlans: (from: string, to: string) => ["teacher", "topic-plans", from, to] as const,
   manageAssignments: (params: ManageAssignmentParams) => ["teacher", "assignments", "manage", params] as const,
 };
@@ -157,7 +160,7 @@ export function manageAssignmentsQuery(client: ApiClient, params: ManageAssignme
     queryFn: () =>
       unwrap(
         client.GET("/api/assignments/manage", {
-          params: { query: { status: params.status, page: params.page, pageSize: params.pageSize } },
+          params: { query: { status: params.status, lessonId: params.lessonId, mine: params.mine ? true : undefined, page: params.page, pageSize: params.pageSize } },
         }),
       ),
     staleTime: 30_000,
@@ -165,6 +168,10 @@ export function manageAssignmentsQuery(client: ApiClient, params: ManageAssignme
 }
 
 export const teacherMutations = {
+  saveTopicPlan: (client: ApiClient, date: string, lessonId: number, body: components["schemas"]["SaveTopicPlanRequest"]) =>
+    unwrap(client.PUT("/api/topic-plans/{date}/{lessonId}", { params: { path: { date, lessonId } }, body })),
+  deleteTopicPlan: (client: ApiClient, date: string, lessonId: number, rowVersion: string) =>
+    unwrap(client.DELETE("/api/topic-plans/{date}/{lessonId}", { params: { path: { date, lessonId }, query: { rowVersion } } })),
   markSolutionNotNeeded: (client: ApiClient, id: number) =>
     unwrap(client.PUT("/api/questions/{id}/solution-not-needed", { params: { path: { id } } })),
   clearSolutionNotNeeded: (client: ApiClient, id: number) =>

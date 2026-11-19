@@ -9480,6 +9480,10 @@
           "totalQuestions",
           "totalStudents",
           "participantCount",
+          "completedCount",
+          "partialCount",
+          "missedCount",
+          "notStartedCount",
           "page",
           "pageSize",
           "students",
@@ -9506,6 +9510,22 @@
             "format": "int32"
           },
           "participantCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "partialCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "missedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notStartedCount": {
             "type": "integer",
             "format": "int32"
           },

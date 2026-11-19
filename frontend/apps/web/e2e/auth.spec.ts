@@ -266,8 +266,8 @@ test.describe("rol bazlı yönlendirme", () => {
     await login(page, account.userName, account.password);
     await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible();
     await page.goto("/ogretmen/odevler");
-    await expect(page.getByRole("heading", { name: "Ödev Yönetimi" })).toBeVisible();
-    await expect(page.getByText("Çok yakında")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ödev Yönetimi", level: 1 })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Yeni ödev" }).first()).toBeVisible();
     await page.goto("/yonetim/ayarlar");
     await expect(page).toHaveURL(/\/$/);
   });

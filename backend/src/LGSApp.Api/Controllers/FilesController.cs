@@ -53,7 +53,7 @@ public class FilesController(IFileUploadService files, IOptions<UploadOptions> u
         var file = form.Files.GetFile("file");
         if (file is null || file.Length == 0)
         {
-            return Failure(FileErrors.FileKey, "Dosya zorunludur.");
+            return Failure(FileErrors.FileKey, "Dosya zorunludur.", FileEmptyCode);
         }
 
         if (!Guid.TryParse(form["clientUploadId"].ToString(), out var clientUploadId) || clientUploadId == Guid.Empty)
@@ -95,13 +95,22 @@ public class FilesController(IFileUploadService files, IOptions<UploadOptions> u
         _ => null
     };
 
-    private IActionResult Failure(string key, string message)
+    public const string ErrorCodeExtension = "code";
+    public const string FileEmptyCode = "file_empty";
+
+    private IActionResult Failure(string key, string message, string? code = null)
     {
         var modelState = new ModelStateDictionary();
         modelState.AddModelError(key, message);
-        return ValidationProblem(
+        var result = ValidationProblem(
             statusCode: StatusCodes.Status400BadRequest,
             title: "Bir veya daha fazla doğrulama hatası oluştu.",
             modelStateDictionary: modelState);
+        if (code is not null && result is ObjectResult { Value: ProblemDetails problem })
+        {
+            problem.Extensions[ErrorCodeExtension] = code;
+        }
+
+        return result;
     }
 }

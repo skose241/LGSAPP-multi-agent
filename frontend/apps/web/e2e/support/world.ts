@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { activeUser, createTextQuestion, lessonsFor, publicSettings, type ActiveUser } from "./student-data";
+import { activeUser, branchTeacher, createTextQuestion, lessonsFor, publicSettings, type ActiveUser } from "./student-data";
 import { expect, login } from "./fixtures";
 
 export interface World {
@@ -22,11 +22,22 @@ export function world(): Promise<World> {
   return cached;
 }
 
+const authors = new Map<number, Promise<ActiveUser>>();
+
+export function authorFor(lessonId: number): Promise<ActiveUser> {
+  let author = authors.get(lessonId);
+  if (!author) {
+    author = branchTeacher(lessonId);
+    authors.set(lessonId, author);
+  }
+  return author;
+}
+
 export async function freshQuestion(text?: string, correctOption = 2, lessonIndex = 0) {
   const w = await world();
   const lesson = w.lessons[lessonIndex] ?? w.lessons[0]!;
   const body = text ?? `Deneme sorusu ${Date.now().toString(36)}: Hangisi doğrudur?`;
-  const question = await createTextQuestion(w.teacher, lesson.id, body, correctOption);
+  const question = await createTextQuestion(await authorFor(lesson.id), lesson.id, body, correctOption);
   return { question, lesson, world: w };
 }
 

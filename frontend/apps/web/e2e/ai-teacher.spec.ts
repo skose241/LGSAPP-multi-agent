@@ -4,7 +4,7 @@ import { activateAccount, adminToken, backend, createAccount, VALID_PASSWORD } f
 import { expectNoAxeViolations } from "./support/axe";
 import { expect, login, test } from "./support/fixtures";
 import { activeUser, answerQuestion, createTextQuestion } from "./support/student-data";
-import { validExplanation, world } from "./support/world";
+import { validExplanation, world, authorFor } from "./support/world";
 
 interface DisputedList {
   items: { questionId: number; aiSuggestedOption: number | null; correctOption: number; hiddenAiSolutionId: number | null }[];
@@ -261,7 +261,7 @@ test.describe("öğretmen yapay zekâ isteği", () => {
   test("moderatör kişisel limite takılmaz ve yanıtta kota yoktur", async () => {
     const w = await world();
     const teacher = await branchTeacher(w.lessons[0]!.id);
-    const creator = await activeUser("ogretmen", "yazar");
+    const creator = await authorFor(w.lessons[0]!.id);
     const question = await createTextQuestion(creator, w.lessons[0]!.id, `Moderatör isteği ${Date.now().toString(36)}: Hangisi doğrudur?`, 2);
     const result = await requestAi(teacher, question.id);
     expect([200, 201]).toContain(result.status);

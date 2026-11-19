@@ -11,6 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, CloudOff, EyeOff, Flag, Lock, ShieldQuestion, ThumbsUp, XCircle } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { MathText } from "@/components/math-text";
@@ -27,6 +28,7 @@ import { SolutionsSection } from "@/features/student/solutions-section";
 import { TeacherSolutionSection } from "@/features/teacher/teacher-solution-section";
 import { usePublicSettings } from "@/features/student/use-settings";
 import { api } from "@/lib/api/client";
+import { parseAssignmentBack } from "@/lib/student/assignments";
 import { cn } from "@/lib/utils";
 
 function LikeButton({ question }: { question: QuestionDetailData }) {
@@ -110,6 +112,8 @@ export function QuestionDetail({ id }: { id: number }) {
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [reporting, setReporting] = useState(false);
   const settings = usePublicSettings();
+  const searchParams = useSearchParams();
+  const backAssignment = parseAssignmentBack(searchParams.get("odev"));
 
   if (question.isPending) {
     return <div role="status" aria-label="Soru yükleniyor" className="h-96 animate-pulse rounded-lg bg-surface-muted" />;
@@ -174,9 +178,12 @@ export function QuestionDetail({ id }: { id: number }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Link href="/sorular" className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4">
+      <Link
+        href={backAssignment ? `/odevler/${backAssignment}` : "/sorular"}
+        className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4"
+      >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        Sorular
+        {backAssignment ? "Ödeve dön" : "Sorular"}
       </Link>
 
       {hiddenBand}

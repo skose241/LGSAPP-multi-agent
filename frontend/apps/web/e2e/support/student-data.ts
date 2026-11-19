@@ -1,5 +1,5 @@
 import zlib from "node:zlib";
-import { activateAccount, apiUrl, backend, createAccount, loginApi, randomIp, VALID_PASSWORD, type CreatedAccount } from "./backend";
+import { activateAccount, adminToken, apiUrl, backend, createAccount, loginApi, randomIp, VALID_PASSWORD, type CreatedAccount } from "./backend";
 
 export interface ActiveUser extends CreatedAccount {
   password: string;
@@ -18,6 +18,18 @@ export async function refreshToken(user: ActiveUser): Promise<string> {
   const login = await loginApi(user.userName, user.password);
   if (!login) throw new Error("Giriş başarısız.");
   return login.token;
+}
+
+export async function setBranch(teacherId: number, lessonId: number | null) {
+  const token = await adminToken();
+  const result = await backend("PUT", `/api/admin/users/${teacherId}/branch-lesson`, { token, body: { branchLessonId: lessonId } });
+  if (result.status !== 200) throw new Error(`Branş atanamadı: ${result.status} ${JSON.stringify(result.body)}`);
+}
+
+export async function branchTeacher(lessonId: number): Promise<ActiveUser> {
+  const teacher = await activeUser("ogretmen", "brans");
+  await setBranch(teacher.id, lessonId);
+  return teacher;
 }
 
 interface LessonRef {

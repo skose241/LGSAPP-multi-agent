@@ -1,6 +1,8 @@
 import { adminToken, backend } from "./backend";
-import { activeUser, answerQuestion, createTextQuestion, type ActiveUser } from "./student-data";
-import { validExplanation, world } from "./world";
+import { answerQuestion, branchTeacher, createTextQuestion, type ActiveUser } from "./student-data";
+
+export { branchTeacher, setBranch } from "./student-data";
+import { authorFor, validExplanation, world } from "./world";
 
 export interface AiSolutionResult {
   status: number;
@@ -33,18 +35,6 @@ export async function readSettings(): Promise<Record<string, number>> {
   return Object.fromEntries(result.body.map((item) => [item.key, item.value]));
 }
 
-export async function setBranch(teacherId: number, lessonId: number | null) {
-  const token = await adminToken();
-  const result = await backend("PUT", `/api/admin/users/${teacherId}/branch-lesson`, { token, body: { branchLessonId: lessonId } });
-  if (result.status !== 200) throw new Error(`Branş atanamadı: ${result.status} ${JSON.stringify(result.body)}`);
-}
-
-export async function branchTeacher(lessonId: number): Promise<ActiveUser> {
-  const teacher = await activeUser("ogretmen", "brans");
-  await setBranch(teacher.id, lessonId);
-  return teacher;
-}
-
 export interface Dispute {
   questionId: number;
   questionText: string;
@@ -60,7 +50,7 @@ const MAX_ATTEMPTS = 6;
 export async function produceDispute(lessonIndex = 0): Promise<Dispute> {
   const w = await world();
   const lesson = w.lessons[lessonIndex] ?? w.lessons[0]!;
-  const creator = await activeUser("ogretmen", "yazar");
+  const creator = await authorFor(lesson.id);
   const originalKey = 2;
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {

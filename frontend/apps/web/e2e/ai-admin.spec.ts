@@ -4,7 +4,7 @@ import { activateAccount, backend, createAccount, VALID_PASSWORD } from "./suppo
 import { expectNoAxeViolations } from "./support/axe";
 import { expect, login, test } from "./support/fixtures";
 import { activeUser } from "./support/student-data";
-import { studentLogin, world } from "./support/world";
+import { studentLogin, world, authorFor } from "./support/world";
 
 async function mudurSession(page: Page) {
   const account = await createAccount("mudur");
@@ -132,8 +132,8 @@ test.describe("müdür yapay zekâ ekranı", () => {
   });
 
   test("çözüm anahtarı kapatılınca öğrenci panelinde ulaşılamıyor durumu görünür", async ({ page, browser }) => {
-    const creator = await activeUser("ogretmen", "yazar");
     const w = await world();
+    const creator = await authorFor(w.lessons[0]!.id);
     const studentContext = await browser.newContext();
     const studentPage = await studentContext.newPage();
     try {

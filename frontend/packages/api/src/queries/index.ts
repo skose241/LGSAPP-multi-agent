@@ -8,3 +8,4 @@ export { ApiError, isApiError, unwrap } from "../errors";
 export * from "./files";
 export * from "./ai";
 export * from "./teacher";
+export * from "./assignments";

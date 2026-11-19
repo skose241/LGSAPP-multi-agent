@@ -1,14 +1,15 @@
 import { todayInIstanbul, addDaysToDateOnly } from "@lgs/api";
 import { createOpenAssignment, createTextQuestion, uploadQuestionImage } from "./support/student-data";
 import { expect, test } from "./support/fixtures";
-import { studentLogin, world } from "./support/world";
+import { authorFor, studentLogin, world } from "./support/world";
 
 test.describe("görselli sorular ve ödev kartı", () => {
   test("listede küçük resim, detayda tam boy görsel kullanılır", async ({ page }) => {
     const w = await world();
-    const imageId = await uploadQuestionImage(w.teacher);
     const lesson = w.lessons[0]!;
-    const question = await createTextQuestion(w.teacher, lesson.id, "Görselli soru", 2, {
+    const author = await authorFor(lesson.id);
+    const imageId = await uploadQuestionImage(author);
+    const question = await createTextQuestion(author, lesson.id, "Görselli soru", 2, {
       text: null,
       imageFileId: imageId,
       optionA: null,
@@ -44,8 +45,9 @@ test.describe("görselli sorular ve ödev kartı", () => {
 
   test("süresi dolan görsel bir kez yenilenir ve yeni adresle yüklenir", async ({ page }) => {
     const w = await world();
-    const imageId = await uploadQuestionImage(w.teacher);
-    const question = await createTextQuestion(w.teacher, w.lessons[0]!.id, "Süre dolumu sorusu", 2, {
+    const author = await authorFor(w.lessons[0]!.id);
+    const imageId = await uploadQuestionImage(author);
+    const question = await createTextQuestion(author, w.lessons[0]!.id, "Süre dolumu sorusu", 2, {
       text: null,
       imageFileId: imageId,
       optionA: null,
@@ -82,7 +84,7 @@ test.describe("görselli sorular ve ödev kartı", () => {
     const w = await world();
     const today = todayInIstanbul();
     const title = `Pano ödevi ${Date.now().toString(36)}`;
-    await createOpenAssignment(w.teacher, w.lessons[0]!.id, title, today, addDaysToDateOnly(today, 3));
+    await createOpenAssignment(await authorFor(w.lessons[0]!.id), w.lessons[0]!.id, title, today, addDaysToDateOnly(today, 3));
     await studentLogin(page);
     await page.goto("/");
     const card = page.getByTestId("open-assignment").filter({ hasText: title });

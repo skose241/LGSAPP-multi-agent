@@ -2,8 +2,8 @@ import { answeredQuestion, produceDispute, requestAi, setSettings } from "./supp
 import { backend } from "./support/backend";
 import { expectNoAxeViolations } from "./support/axe";
 import { expect, test } from "./support/fixtures";
-import { activeUser, answerQuestion } from "./support/student-data";
-import { studentLogin, validExplanation, world } from "./support/world";
+import { answerQuestion } from "./support/student-data";
+import { studentLogin, validExplanation, world, authorFor } from "./support/world";
 
 test.beforeAll(async () => {
   await setSettings({ aiGunlukCozumGlobalLimit: 1000, aiGunlukCozumLimit: 5, aiCozumAktifMi: 1 });
@@ -17,8 +17,8 @@ async function quotaOf(token: string) {
 test.describe("öğrenci yapay zekâ çözümü", () => {
   test("istek: bekleme durumu, çözüm ve kota düşüşü", async ({ page }) => {
     await produceDispute();
-    const creator = await activeUser("ogretmen", "yazar");
     const w = await world();
+    const creator = await authorFor(w.lessons[0]!.id);
     const student = await studentLogin(page);
     const question = await answeredQuestion(student, creator, w.lessons[0]!.id, 2, "Yapay zekâ isteği");
 
@@ -48,8 +48,8 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
   test("kişisel limit dolunca 429 mesajı gösterilir ve istek kapanır", async ({ page }) => {
     test.setTimeout(240_000);
     await produceDispute();
-    const creator = await activeUser("ogretmen", "yazar");
     const w = await world();
+    const creator = await authorFor(w.lessons[0]!.id);
     const lessonId = w.lessons[0]!.id;
     const student = await studentLogin(page);
 
@@ -97,8 +97,8 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
 
   test("aynı soruya eşzamanlı istekler tek çözüm üretir ve hakkı bir kez düşer", async ({ page }) => {
     await produceDispute();
-    const creator = await activeUser("ogretmen", "yazar");
     const w = await world();
+    const creator = await authorFor(w.lessons[0]!.id);
     const student = await studentLogin(page);
     const question = await answeredQuestion(student, creator, w.lessons[0]!.id, 2, "Eşzamanlı");
 
@@ -112,8 +112,8 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
   });
 
   test("dakikalık sınır ve sağlayıcı hatasında geri sayım çalışır", async ({ page }) => {
-    const creator = await activeUser("ogretmen", "yazar");
     const w = await world();
+    const creator = await authorFor(w.lessons[0]!.id);
     const student = await studentLogin(page);
     const question = await answeredQuestion(student, creator, w.lessons[0]!.id, 2, "Geri sayım");
 
@@ -155,8 +155,8 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
   });
 
   test("durum metinleri aiSolutionState değerine göre gösterilir, bilinmeyen değer none sayılır", async ({ page }) => {
-    const creator = await activeUser("ogretmen", "yazar");
     const w = await world();
+    const creator = await authorFor(w.lessons[0]!.id);
     const student = await studentLogin(page);
     const question = await answeredQuestion(student, creator, w.lessons[0]!.id, 2, "Durum metni");
 

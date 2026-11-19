@@ -71,6 +71,15 @@ public sealed class QuestionAuthoringService(
             return Fail.Forbidden("Bu işlem için yetkiniz yok.");
         }
 
+        if (actor.IsTeacher)
+        {
+            var denied = await AnswerKeyScope.AuthorizeAsync(db, actor, command.LessonId, cancellationToken);
+            if (denied is Failure branchFailure)
+            {
+                return branchFailure;
+            }
+        }
+
         var errors = new ValidationErrors();
         var text = AssignmentText.Clean(command.Text);
         string?[] options =

@@ -15,7 +15,7 @@ export function useQueueItems<TMeta>(queue: UploadQueue<TMeta>): readonly Upload
   return useSyncExternalStore(queue.subscribe, queue.getSnapshot, queue.getSnapshot);
 }
 
-export function useBeforeUnload(active: boolean) {
+export function useBeforeUnload(active: boolean, message: string = LEAVE_MESSAGE) {
   useEffect(() => {
     if (!active) return;
     function handler(event: BeforeUnloadEvent) {
@@ -31,7 +31,7 @@ export function useBeforeUnload(active: boolean) {
         search: window.location.search,
       });
       if (!guard) return;
-      if (!window.confirm(LEAVE_MESSAGE)) {
+      if (!window.confirm(message)) {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -42,7 +42,7 @@ export function useBeforeUnload(active: boolean) {
       window.removeEventListener("beforeunload", handler);
       document.removeEventListener("click", onClick, true);
     };
-  }, [active]);
+  }, [active, message]);
 }
 
 function subscribeOnline(callback: () => void) {

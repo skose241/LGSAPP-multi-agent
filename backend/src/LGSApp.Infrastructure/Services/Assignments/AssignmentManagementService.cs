@@ -4,6 +4,7 @@ using LGSApp.Infrastructure.Persistence;
 using LGSApp.Infrastructure.Services.Common;
 using LGSApp.Infrastructure.Services.Files;
 using LGSApp.Infrastructure.Services.Questions;
+using LGSApp.Infrastructure.Services.Stats;
 using Microsoft.EntityFrameworkCore;
 
 namespace LGSApp.Infrastructure.Services.Assignments;
@@ -61,6 +62,15 @@ public sealed class AssignmentManagementService(
         if (!actor.IsModerator)
         {
             return Fail.Forbidden("Yalnızca öğretmen veya müdür ödev oluşturabilir.");
+        }
+
+        if (actor.IsTeacher)
+        {
+            var denied = await AnswerKeyScope.AuthorizeAsync(db, actor, command.LessonId, cancellationToken);
+            if (denied is Failure branchFailure)
+            {
+                return branchFailure;
+            }
         }
 
         var lesson = await db.Lessons.AsNoTracking()
@@ -734,10 +744,35 @@ public sealed class AssignmentManagementService(
             .Distinct()
             .CountAsync(cancellationToken);
 
+        var effectiveState = AssignmentState.Compute(head.Status, head.StartDate, head.EndDate, clock.Today);
+        var answeredCounts = await rows.Select(r => r.Answered).ToListAsync(cancellationToken);
+        var completed = 0;
+        var partial = 0;
+        var missed = 0;
+        var notStarted = 0;
+        foreach (var answered in answeredCounts)
+        {
+            switch (StatsRules.Classify(totalQuestions, answered, effectiveState == AssignmentEffectiveState.Closed))
+            {
+                case ParticipationStatus.Completed:
+                    completed++;
+                    break;
+                case ParticipationStatus.Partial:
+                    partial++;
+                    break;
+                case ParticipationStatus.Missed:
+                    missed++;
+                    break;
+                case ParticipationStatus.NotStarted:
+                    notStarted++;
+                    break;
+            }
+        }
+
         var desc = query.Descending;
         var ordered = query.Sort switch
         {
-            AssignmentResultSort.Name => desc ? rows.OrderByDescending(r => r.UserName) : rows.OrderBy(r => r.UserName),
+            AssignmentResultSort.Name => desc ? rows.OrderByDescending(r => r.FirstName + " " + r.LastName) : rows.OrderBy(r => r.FirstName + " " + r.LastName),
             AssignmentResultSort.Correct => desc ? rows.OrderByDescending(r => r.Correct) : rows.OrderBy(r => r.Correct),
             AssignmentResultSort.LastAnswered => desc ? rows.OrderByDescending(r => r.Last) : rows.OrderBy(r => r.Last),
             _ => desc ? rows.OrderByDescending(r => r.Answered) : rows.OrderBy(r => r.Answered)
@@ -747,7 +782,7 @@ public sealed class AssignmentManagementService(
         var page = offset >= totalStudents
             ? new List<ResultRow>()
             : await ordered
-                .ThenBy(r => r.UserName)
+                .ThenBy(r => r.FirstName + " " + r.LastName)
                 .ThenBy(r => r.UserId)
                 .Skip((int)offset)
                 .Take(query.PageSize)
@@ -789,10 +824,14 @@ public sealed class AssignmentManagementService(
         return ServiceResult<AssignmentResultsView>.Ok(new AssignmentResultsView(
             head.Id,
             head.Title,
-            AssignmentState.Compute(head.Status, head.StartDate, head.EndDate, clock.Today),
+            effectiveState,
             totalQuestions,
             totalStudents,
             participants,
+            completed,
+            partial,
+            missed,
+            notStarted,
             query.Page,
             query.PageSize,
             studentViews,

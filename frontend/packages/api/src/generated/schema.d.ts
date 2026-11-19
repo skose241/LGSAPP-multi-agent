@@ -8101,6 +8101,14 @@ export interface components {
             /** Format: int32 */
             participantCount: number;
             /** Format: int32 */
+            completedCount: number;
+            /** Format: int32 */
+            partialCount: number;
+            /** Format: int32 */
+            missedCount: number;
+            /** Format: int32 */
+            notStartedCount: number;
+            /** Format: int32 */
             page: number;
             /** Format: int32 */
             pageSize: number;

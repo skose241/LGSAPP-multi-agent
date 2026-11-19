@@ -63,6 +63,10 @@ export function defaultSleep(ms: number, signal: AbortSignal): Promise<void> {
 
 type Listener = () => void;
 
+function hasErrorCode(body: unknown, code: string): boolean {
+  return typeof body === "object" && body !== null && (body as { code?: unknown }).code === code;
+}
+
 function isPending(status: UploadItem["status"]): boolean {
   return status === "queued" || status === "preparing" || status === "uploading" || status === "waiting";
 }
@@ -328,18 +332,17 @@ export class UploadQueue<TMeta = undefined> {
       if (response.status === 200 || response.status === 201) {
         return { ok: true, file: response.body as UploadedFile };
       }
-      return {
-        ok: false,
-        failure: classifyFailure(
-          {
-            status: response.status,
-            body: response.body,
-            retryAfterHeader: response.retryAfter,
-            sessionRefreshed: response.sessionRefreshed,
-          },
-          this.maxRetryAfterMs,
-        ),
-      };
+      const classified = classifyFailure(
+        {
+          status: response.status,
+          body: response.body,
+          retryAfterHeader: response.retryAfter,
+          sessionRefreshed: response.sessionRefreshed,
+        },
+        this.maxRetryAfterMs,
+      );
+      const emptyOnServer = response.status === 400 && prepared.blob.size > 0 && hasErrorCode(response.body, "file_empty");
+      return { ok: false, failure: emptyOnServer ? { ...classified, retryable: true, manualRetry: true } : classified };
     } catch (error) {
       const kind = error instanceof TransportError && error.kind === "timeout" ? "timeout" : "network";
       return { ok: false, failure: classifyFailure({ status: 0, body: null, transport: kind }) };

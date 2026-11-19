@@ -514,3 +514,25 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
   - Yayında geliştirme pepper'ını reddeden başlangıç kontrolü eklensin mi?
 - Gerçek cihazda denenecekler: iPhone'da HEIC çevrimi ve 10+ fotoğraf toplu yükleme (`npx pnpm@10 dev:lan`, http://192.168.1.117:3000).
 - Sıradaki: F6 öğretmen ekranları (önce backend: `GET /api/students`, `/students/{id}/stats`, `GET /api/questions/needs-solution`), sonra F7, F8.
+
+### Oturum 8 (frontend-agent, F6b düzeltme turu) — 2026-11-18
+- Commit atılmadı; F6b ekranları ve bu turun değişiklikleri çalışma ağacında.
+- Yapılanlar:
+  - `schema.d.ts` yeniden üretildi (sonuçlara `completedCount`/`partialCount`/`missedCount`/`notStartedCount`).
+  - E2E fixture'ları branşlı yazara geçti: `authorFor(lessonId)` (support/world.ts), `branchTeacher`/`setBranch` support/student-data.ts'e taşındı (ai.ts yeniden dışa aktarır). Branşsız öğretmenin kullanıldığı `student-upload` ve `licenses` ile müdür/şikâyet çözme yardımcıları aynen kaldı.
+  - Yeni E2E: başka branşa ödev/soru/ödev sorusu 403; ödevde ilk yanıt kaybolup yeniden gönderme (tek soru); kayıp yanıttan sonra şık değişimi (PATCH ile D olur); sayfadan ayrılma uyarısı; konu temizleme; 60 gün aşımı.
+  - Composer: `requestId` yalnız kesin 4xx'te yenilenir; belirsiz hatada `uncertain` anlık görüntü, aynı bilgilerle önce kesinleştirme, ödev yolunda `reconcileCard` (PATCH), havuz yolunda "düzenleme uygulanmadı" notu; tam tekrarda "zaten vardı" bilgisi; panel sökülürse `onDiscard` + banner + kullanılmamış dosya silme.
+  - Sonuç sayfası yeni dört sayıyı kullanır; `participationSummary` silindi.
+  - Konu temizleme (`topicId: 0`), geçmiş başlangıçlı taslakta yayın engeli, tarih doğrulaması (60 gün, 1 yıl, geçmiş başlangıç), sunucu 400 mesajlarının alana bağlanması, kirli form için ayrılma uyarısı (`DIRTY_LEAVE_MESSAGE`).
+  - Sonuç sayfasında uzun öğrenci adı 375 px'te taşıyordu: `min-w-0` eklendi.
+- iPhone "Dosya zorunludur." (webkit-iphone, aralıklı ~1/128): kök neden BULUNAMADI.
+  - Elenen: canvas `toBlob` (3000 tur temiz), `page.route` etkisi (60+60 yükleme temiz), 30/dk hız sınırı (kullanıcı başına).
+  - Kalan şüphe: dosyanın istemci-sunucu arasında (WebKit XHR/FormData veya BFF akışı) boşa düşmesi.
+  - Sağlamlaştırma: `prepare.ts` 64 bayttan küçük çıktıyı reddedip bir kez yeniden dener; `queue.ts` dolu blob için sunucunun 400 "Dosya zorunludur" yanıtını geçici sayıp aynı `clientUploadId` ile yeniden dener. Belirtiyi örtüyor olabilir, nedeni çözdüğü kanıtlı değil; gerçek cihazda gözlem gerekir.
+- Son durum: lint/typecheck/build temiz; vitest web 197, api 97; tam E2E 377 geçti / 3 skip / 0 kaldı (log: scratchpad `e2e-f6b-fix.log`).
+- Açık:
+  - Havuz yolunda sonradan soru düzenleme ucu yok (kayıp yanıt + şık değişimi yalnız not gösterir).
+  - Ödev paneli sökülme bannerı için ayrı E2E yok.
+  - Gerçek cihazda iPhone toplu yükleme gözlemi.
+  - E2E çalıştırırken tüm node/dotnet süreçlerini toptan sonlandırma denenmemeli; yalnız `e2e:run` süreç ağacı sonlandırılır (dotnet.exe VS Code'a ait olabilir).
+- Sıradaki: değişiklikleri reviewer'a ver, onaylanırsa commit + push (origin/main); sonra F7 müdür operasyon, F8 sertleştirme + yayın.
