@@ -1,14 +1,16 @@
 "use client";
 
-import { adminUsersQuery, passwordResetRequestsQuery } from "@lgs/api/queries";
+import { adminUsersQuery, passwordResetRequestsQuery, schedulerStatusQuery } from "@lgs/api/queries";
 import { useQuery } from "@tanstack/react-query";
-import { Hammer, KeyRound, Users } from "lucide-react";
+import { KeyRound, Timer, Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { EmptyState } from "@/components/empty-state";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api/client";
+import { RunStatusBadge } from "@/features/admin/scheduler-runs";
+import { kindLabel, SCHEDULER_KINDS } from "@/lib/admin/scheduler";
 import { countByRole } from "@/lib/admin/users";
 
 function Stat({ value, label, loading }: { value: number | null; label: string; loading: boolean }) {
@@ -41,6 +43,33 @@ function StatCard({ title, icon, href, action, children }: { title: string; icon
   );
 }
 
+function SchedulerSummary() {
+  const status = useQuery(schedulerStatusQuery(api()));
+  if (status.isPending) {
+    return <div role="status" aria-label="Zamanlayıcı yükleniyor" className="h-20 animate-pulse rounded-md bg-surface-muted" />;
+  }
+  if (status.isError) {
+    return <p className="text-sm text-muted-foreground">Zamanlayıcı durumu alınamadı.</p>;
+  }
+  const jobs = SCHEDULER_KINDS.map((kind) => status.data.jobs.find((job) => job.kind === kind)).filter((job) => job !== undefined);
+  return (
+    <div className="flex flex-col gap-3" data-testid="dashboard-scheduler">
+      <p className="flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">Otomatik zamanlayıcı:</span>
+        <Badge tone={status.data.timerEnabled ? "success" : "warning"}>{status.data.timerEnabled ? "Açık" : "Kapalı"}</Badge>
+      </p>
+      <ul className="flex flex-col gap-1.5">
+        {jobs.map((job) => (
+          <li key={job.kind} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span>{kindLabel(job.kind)}</span>
+            {job.lastRun ? <RunStatusBadge status={job.lastRun.status} /> : <span className="text-muted-foreground">Henüz çalışmadı</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function MudurDashboard() {
   const users = useQuery(adminUsersQuery(api()));
   const requests = useQuery(passwordResetRequestsQuery(api()));
@@ -59,12 +88,9 @@ export function MudurDashboard() {
       <StatCard title="Şifre talepleri" icon={<KeyRound className="size-5" aria-hidden="true" />} href="/yonetim/sifre-talepleri" action="Taleplere git">
         <Stat value={requests.data?.length ?? null} label="Bekleyen talep" loading={requests.isPending} />
       </StatCard>
-      <EmptyState
-        icon={Hammer}
-        as="h2"
-        title="Zamanlayıcı"
-        description="Günlük görevlerin durumu ve elle çalıştırma çok yakında burada olacak."
-      />
+      <StatCard title="Zamanlayıcı" icon={<Timer className="size-5" aria-hidden="true" />} href="/yonetim/zamanlayici" action="Zamanlayıcıya git">
+        <SchedulerSummary />
+      </StatCard>
     </div>
   );
 }

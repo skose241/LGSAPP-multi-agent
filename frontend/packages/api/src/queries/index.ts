@@ -9,3 +9,4 @@ export * from "./files";
 export * from "./ai";
 export * from "./teacher";
 export * from "./assignments";
+export * from "./scheduler";

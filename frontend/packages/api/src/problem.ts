@@ -3,6 +3,7 @@ export interface ParsedProblem {
   fieldErrors: Record<string, string[]>;
   formError: string | null;
   retryAfter: number | null;
+  extensions?: Record<string, unknown>;
 }
 
 interface ProblemLike {
@@ -10,6 +11,8 @@ interface ProblemLike {
   detail?: unknown;
   errors?: unknown;
 }
+
+const STANDARD_KEYS = new Set(["type", "title", "status", "detail", "instance", "errors", "traceId"]);
 
 const DEFAULT_MESSAGE = "Beklenmeyen bir hata oluştu.";
 
@@ -64,6 +67,13 @@ export function parseProblem(
     }
   }
 
+  const extensions: Record<string, unknown> = {};
+  if (isRecord(body)) {
+    for (const [key, value] of Object.entries(body)) {
+      if (!STANDARD_KEYS.has(key)) extensions[key] = value;
+    }
+  }
+
   const message = asText(problem.detail) ?? asText(problem.title) ?? DEFAULT_MESSAGE;
 
   return {
@@ -71,9 +81,15 @@ export function parseProblem(
     fieldErrors,
     formError,
     retryAfter: parseRetryAfter(retryAfterHeader),
+    extensions,
   };
 }
 
 export function fieldError(parsed: ParsedProblem, field: string): string | undefined {
   return parsed.fieldErrors[normalizeFieldKey(field)]?.[0];
+}
+
+export function problemRunId(problem: ParsedProblem): number | null {
+  const value = problem.extensions?.runId;
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
 }

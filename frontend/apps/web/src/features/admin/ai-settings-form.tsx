@@ -205,7 +205,7 @@ export function AiSettingsForm() {
             action={<Button onClick={() => settings.refetch()}>Tekrar Dene</Button>}
           />
         ) : (
-          <SettingsEditor settings={settings.data} />
+          <SettingsEditor settings={settings.data.filter((item) => item.group === "ai")} />
         )}
       </CardContent>
     </Card>

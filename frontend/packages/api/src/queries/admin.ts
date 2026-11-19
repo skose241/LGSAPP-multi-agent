@@ -8,6 +8,8 @@ export type PasswordResetRequest = components["schemas"]["PasswordResetRequestDt
 export type CreateUserBody = components["schemas"]["CreateUserRequest"];
 export type CreatedUser = components["schemas"]["CreatedUserResponse"];
 export type OneTimePassword = components["schemas"]["OneTimePasswordResponse"];
+export type GenerationSchedule = components["schemas"]["GenerationScheduleView"];
+export type ScheduleItem = components["schemas"]["ScheduleItemRequest"];
 
 export const adminKeys = {
   all: ["admin"] as const,
@@ -15,6 +17,7 @@ export const adminKeys = {
   usersByRole: (role: string | undefined) => [...adminKeys.users(), "list", role ?? "all"] as const,
   user: (id: number) => [...adminKeys.users(), "detail", id] as const,
   resetRequests: () => [...adminKeys.all, "password-reset-requests"] as const,
+  generationSchedule: () => [...adminKeys.all, "generation-schedule"] as const,
 };
 
 export function adminUsersQuery(client: ApiClient, role?: string) {
@@ -44,7 +47,17 @@ export function passwordResetRequestsQuery(client: ApiClient) {
   });
 }
 
+export function generationScheduleQuery(client: ApiClient) {
+  return queryOptions({
+    queryKey: adminKeys.generationSchedule(),
+    queryFn: () => unwrap(client.GET("/api/admin/generation-schedule")),
+    staleTime: 15_000,
+  });
+}
+
 export const adminMutations = {
+  replaceGenerationSchedule: (client: ApiClient, items: ScheduleItem[]) =>
+    unwrap(client.PUT("/api/admin/generation-schedule", { body: { items } })),
   createUser: (client: ApiClient, body: CreateUserBody) => unwrap(client.POST("/api/admin/users", { body })),
   ban: (client: ApiClient, id: number) =>
     unwrap(client.POST("/api/admin/users/{id}/ban", { params: { path: { id } } })),

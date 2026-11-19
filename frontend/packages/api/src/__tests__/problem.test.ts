@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fieldError, parseProblem, parseRetryAfter } from "../problem";
+import { fieldError, parseProblem, parseRetryAfter, problemRunId } from "../problem";
 
 describe("parseProblem", () => {
   it("detail alanını title alanına tercih eder", () => {
@@ -58,5 +58,20 @@ describe("parseRetryAfter", () => {
     expect(parseRetryAfter("yarın")).toBeNull();
     expect(parseRetryAfter("")).toBeNull();
     expect(parseRetryAfter(-3)).toBeNull();
+  });
+});
+
+describe("parseProblem extensions", () => {
+  it("standart olmayan alanları extensions içine alır", () => {
+    const result = parseProblem({ title: "Çakışma", status: 409, traceId: "x", runId: 12 });
+    expect(result.extensions).toEqual({ runId: 12 });
+    expect(problemRunId(result)).toBe(12);
+  });
+
+  it("runId yoksa veya geçersizse null döner", () => {
+    expect(parseProblem({ title: "Çakışma" }).extensions).toEqual({});
+    expect(problemRunId(parseProblem({ runId: "abc" }))).toBeNull();
+    expect(problemRunId(parseProblem({ runId: -1 }))).toBeNull();
+    expect(problemRunId(parseProblem(null))).toBeNull();
   });
 });
