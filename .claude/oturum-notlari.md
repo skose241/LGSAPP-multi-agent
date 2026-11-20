@@ -567,3 +567,30 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 1. `gh auth login` sonrası CI koşularını `gh run list` ile izle; E2E taslağını bir kez elle çalıştırıp doğrula.
 2. Abonelik açılınca F8e (`scripts/deploy/first-install.ps1`, `infra/README.md`): bütçe → bicep what-if → deploy → set-secrets → migrate + seed-reference-data → API (Seed__) → web → ilk müdür girişi → Seed değişkenlerini sil → Gemini duman testi (ayrı v2 anahtarı, onaylı) → gerçek iPhone HEIC/toplu yükleme → birkaç gün sonra CSP zorlayıcı.
 3. Yayın sonrası: SQL managed identity geçişi, web Key Vault rol kapsamı, alan adı (önce azurewebsites.net pilot, sonra netpesinde.com).
+
+## Oturum 10 — 2026-11-20
+
+### Bu oturumda yapılanlar
+- Yerel, kalıcı olmayan demo ortamı anlatıldı (betik yazılmadı): ayrı `LGSApp_Demo` LocalDB veritabanı (açılışta ve kapanışta `dotnet ef database drop --force`), `%TEMP%\lgs-demo-azurite` klasöründe Azurite (kapanışta silinir), backend `Ai__Provider=Fake`, `Scheduler__Enabled=false`, `Seed__AdminUserName/Password`, `Bff__ProxyKey` = web `.env.development.local` BFF_PROXY_KEY; web `npx pnpm@10 dev`. Asıl `LGSApp` veritabanına dokunulmaz.
+- `7724bc5` arayüz metin revizyonu (154 frontend dosyası, push edildi):
+  - Kısa yazılar (başlık, menü, buton, sekme, tablo başlığı, etiket, rozet, dialog/boş durum başlığı, kısa aria-label, sayfa başlığı) her kelimenin baş harfi büyük; bağlaçlar (ve, ile, veya, ya da, ki, de/da) küçük; kısaltmalar aynen.
+  - Tüm rollerde tam cümleler "siz" hitabıyla; cümleler Title Case değil.
+  - `packages/api` içindeki görünen etiket/mesajlar da kapsamda.
+  - Doğrulama: lint/typecheck temiz, vitest api 108 + web 252, build 35/35; tam E2E 457 geçti / 3 skip / 5 kaldı (2'si metin kaçağı, düzeltildi; 3'ü makine uykusu) → kalan 5 testin tekrarı 8/8 geçti. Reviewer: kritik yok; `--list` HEAD ve sonrası 466 test (kayıp yok).
+
+### Kalıcı kararlar
+- Arama placeholder'ları "…arayın" biçiminde kalır.
+- Kısa aria-label'lar Title Case.
+- Tablo hücresi/değer niteliğindeki metinler ("Henüz cevap yok", "Konu seçilmemiş", "Görselli soru") cümle yazımında kalır.
+- Kişiye hitap etmeyen nötr cümlelere dokunulmaz.
+
+### Açık kalanlar (kullanıcı "şimdilik yeterli" dedi)
+- Reviewer'a göre kısa aria-label ve "…yükleniyor" etiketlerinin bir kısmı hâlâ Title Case değil (ör. `bulk-users-page.tsx:379` "CSV dosyası seç", `users-list.tsx:86` "Rol filtresi", `assignment-add-panels.tsx:388` "Soru ekle"; tarama: `grep -rnoE "aria-label=..." apps/web/src`). E2E `getByLabel` seçicileri birlikte güncellenmeli.
+- `scheduler-page.tsx:105` rozet "Zamanı geldi" → "Zamanı Geldi".
+- Backend'den gelen kullanıcı mesajları "siz" hitabı açısından taranmadı (örneklemde zaten "siz"li).
+- E2E uzun koşuda makine uykuya geçerse testler zaman aşımına düşüyor; koşu sırasında uyku kapatılmalı.
+- Demo ortamı için tek komutluk betik (Ctrl+C'de DB + Azurite temizliği, yalnız `LGSApp_Demo` adına izin) önerildi, yazılmadı.
+
+### Sıradaki adımlar
+1. İstenirse kalan aria-label/rozet Title Case turu + backend mesaj taraması.
+2. Önceki listedeki sıra geçerli: `gh auth login` → CI izleme; abonelik açılınca F8e ilk kurulum.
