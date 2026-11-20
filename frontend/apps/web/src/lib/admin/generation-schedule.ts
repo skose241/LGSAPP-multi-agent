@@ -13,7 +13,7 @@ export const SCHEDULE_DAYS: { day: number; name: string }[] = [
   { day: 7, name: "Pazar" },
 ];
 
-export const CELL_RANGE_MESSAGE = `0 ile ${MAX_QUESTIONS_PER_CELL} arasında bir tam sayı gir.`;
+export const CELL_RANGE_MESSAGE = `0 ile ${MAX_QUESTIONS_PER_CELL} arasında bir tam sayı girin.`;
 
 export function cellKey(day: number, lessonId: number): string {
   return `${day}-${lessonId}`;

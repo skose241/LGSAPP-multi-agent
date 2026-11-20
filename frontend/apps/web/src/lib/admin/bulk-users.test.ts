@@ -161,7 +161,7 @@ describe("şifre çıktısı", () => {
       { user: { firstName: "Ayşe", lastName: "Öz", userName: "ayse.oz", className: null, role: "ogretmen" }, oneTimePassword: "Xyz\t9" },
     ]);
     expect(passwordsToTsv(rows)).toBe(
-      "Ad soyad\tKullanıcı adı\tSınıf\tRol\tŞifre\nAli Veli\tali.veli\t8-A\tÖğrenci\tAbc-123\nAyşe Öz\tayse.oz\t\tÖğretmen\tXyz 9",
+      "Ad Soyad\tKullanıcı Adı\tSınıf\tRol\tŞifre\nAli Veli\tali.veli\t8-A\tÖğrenci\tAbc-123\nAyşe Öz\tayse.oz\t\tÖğretmen\tXyz 9",
     );
   });
 });

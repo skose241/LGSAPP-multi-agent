@@ -19,7 +19,7 @@ export default function DashboardPage() {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title="Bilgilerin yüklenemedi"
+          title="Bilgileriniz Yüklenemedi"
           description={me.error.message}
           action={<Button onClick={() => me.refetch()}>Tekrar Dene</Button>}
         />

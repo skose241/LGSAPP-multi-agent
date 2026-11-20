@@ -46,7 +46,7 @@ function EditSolution({ solution, questionId, onDone }: { solution: Solution; qu
   const mutation = useMutation({
     mutationFn: () => solutionMutations.update(api(), solution.id, text.trim() === "" ? null : text.trim(), photo.fileId, solution.rowVersion ?? ""),
     onSuccess: async () => {
-      toast.success("Çözümün güncellendi.");
+      toast.success("Çözümünüz güncellendi.");
       await queryClient.invalidateQueries({ queryKey: solutionKeys.list(questionId) });
       await queryClient.invalidateQueries({ queryKey: questionKeys.detail(questionId) });
       onDone();
@@ -63,7 +63,7 @@ function EditSolution({ solution, questionId, onDone }: { solution: Solution; qu
     <div className="flex flex-col gap-2">
       <ProblemBanner state={error} conflictAsMessage />
       <textarea
-        aria-label="Çözümü düzenle"
+        aria-label="Çözümü Düzenle"
         value={text}
         onChange={(event) => setText(event.target.value)}
         className="min-h-32 w-full resize-y rounded-md border border-border-strong bg-surface px-4 py-3 text-base focus-visible:border-primary"
@@ -71,7 +71,7 @@ function EditSolution({ solution, questionId, onDone }: { solution: Solution; qu
       <p className={tooShort || tooLong ? "text-xs font-semibold text-warning-soft-foreground" : "text-xs text-muted-foreground"} data-testid="edit-counter">
         {photo.fileId !== null ? `${length} / en fazla ${max} karakter (fotoğraf olduğu için yazı isteğe bağlı)` : `${length} / en az ${min}, en fazla ${max} karakter`}
       </p>
-      <PhotoAttachment controller={photo} label="Çözüm fotoğrafı" disabled={mutation.isPending} />
+      <PhotoAttachment controller={photo} label="Çözüm Fotoğrafı" disabled={mutation.isPending} />
       <div className="flex gap-2">
         <Button
           type="button"
@@ -107,7 +107,7 @@ function SolutionCard({ solution, questionId, minReport }: { solution: Solution;
             <TypeBadge type={solution.type} />
             <span className="font-semibold" data-testid="solution-author">
               {authorName}
-              {solution.isMine ? " (Sen)" : ""}
+              {solution.isMine ? " (Siz)" : ""}
             </span>
             <span className="text-xs text-muted-foreground">{formatDateTimeShort(solution.createdAt)}</span>
             {solution.updatedAt ? <span className="text-xs text-muted-foreground" data-testid="solution-edited">(düzenlendi)</span> : null}
@@ -160,7 +160,7 @@ function SolutionCard({ solution, questionId, minReport }: { solution: Solution;
             {!solution.isMine ? (
               <Button type="button" variant="ghost" className="h-11 px-3" onClick={() => setReporting(true)}>
                 <Flag aria-hidden="true" />
-                Şikâyet et
+                Şikâyet Et
               </Button>
             ) : null}
           </div>
@@ -197,12 +197,12 @@ export function SolutionsSection({ questionId, aiSlot }: { questionId: number; a
         <EmptyState
           icon={CloudOff}
           as="h3"
-          title="Çözümler yüklenemedi"
+          title="Çözümler Yüklenemedi"
           description={solutions.error.message}
           action={<Button onClick={() => solutions.refetch()}>Tekrar Dene</Button>}
         />
       ) : ordered.length === 0 ? (
-        <EmptyState icon={MessageSquare} as="h3" title="Henüz çözüm yok" description="Çözümler burada görünecek." />
+        <EmptyState icon={MessageSquare} as="h3" title="Henüz Çözüm Yok" description="Çözümler burada görünecek." />
       ) : (
         <ul className="flex flex-col gap-3" aria-label="Çözüm listesi">
           {ordered.map((solution) => (

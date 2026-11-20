@@ -83,14 +83,14 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
     >
       <ProblemBanner state={error} conflictAsMessage />
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-semibold">Cevabın</p>
+        <p className="text-sm font-semibold">Cevabınız</p>
         <OptionPicker value={option} onValueChange={setOption} label="Cevap şıkları" />
-        {hasTextOptions ? null : <p className="text-xs text-muted-foreground">Soru görselindeki şıklardan birini seç.</p>}
+        {hasTextOptions ? null : <p className="text-xs text-muted-foreground">Soru görselindeki şıklardan birini seçin.</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor={`${counterId}-text`} className="text-sm font-semibold">
-          Çözümünü anlat
+          Çözümünüzü Anlatın
           <span className="ml-1 text-danger" aria-hidden="true">
             *
           </span>
@@ -104,7 +104,7 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
           }}
           aria-describedby={`${counterId}-hint`}
           aria-invalid={Boolean(textError) || tooLong || undefined}
-          placeholder="Soruyu nasıl çözdün? Nerede takıldın?"
+          placeholder="Soruyu nasıl çözdünüz? Nerede takıldınız?"
           className="min-h-36 w-full resize-y rounded-md border border-border-strong bg-surface px-4 py-3 text-base hover:border-neutral-600 focus-visible:border-primary aria-invalid:border-danger aria-invalid:bg-danger-soft"
         />
         <p
@@ -112,7 +112,7 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
           data-testid="answer-counter"
           className={tooShort || tooLong ? "text-xs font-semibold text-warning-soft-foreground" : "text-xs text-muted-foreground"}
         >
-          {hasPhoto ? `${length} / en fazla ${max} karakter (fotoğraf eklediğin için yazı isteğe bağlı)` : `${length} / en az ${min}, en fazla ${max} karakter`}
+          {hasPhoto ? `${length} / en fazla ${max} karakter (fotoğraf eklediğiniz için yazı isteğe bağlı)` : `${length} / en az ${min}, en fazla ${max} karakter`}
         </p>
         {textError ? (
           <p role="alert" className="text-sm font-medium text-danger">
@@ -123,8 +123,8 @@ export function AnswerForm({ question, onAnswered }: AnswerFormProps) {
 
       <PhotoAttachment
         controller={photo}
-        label="Çözüm fotoğrafı (isteğe bağlı)"
-        hint="Çözümünü kâğıda yazdıysan fotoğrafını ekleyebilirsin. Fotoğraf ekleyince yazı zorunlu olmaz."
+        label="Çözüm Fotoğrafı (İsteğe Bağlı)"
+        hint="Çözümünüzü kâğıda yazdıysanız fotoğrafını ekleyebilirsiniz. Fotoğraf ekleyince yazı zorunlu olmaz."
         disabled={mutation.isPending}
       />
 

@@ -14,7 +14,7 @@ export async function expectClearOfTabBar(page: Page, name: string, projectName:
   fs.mkdirSync(outDir, { recursive: true });
   await page.screenshot({ path: path.join(outDir, `alt-bosluk-${name}-${projectName}.png`) });
   const result = await page.evaluate(() => {
-    const nav = document.querySelector('nav[aria-label="Alt menü"]');
+    const nav = document.querySelector('nav[aria-label="Alt Menü"]');
     if (!nav) return null;
     const top = nav.getBoundingClientRect().top;
     let bottom = 0;

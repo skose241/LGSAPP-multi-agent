@@ -53,14 +53,14 @@ function StatusBadge({ lesson, date, tomorrow }: { lesson: TopicPlanLesson; date
   if (state === "missing") {
     return highlightsMissing(lesson, date, tomorrow) ? (
       <Badge tone="warning" data-testid="missing-badge">
-        Konu seçilmedi
+        Konu Seçilmedi
       </Badge>
     ) : (
-      <Badge tone="neutral">Konu seçilmedi</Badge>
+      <Badge tone="neutral">Konu Seçilmedi</Badge>
     );
   }
   if (state === "locked") return <Badge tone="neutral">{lesson.usedAt ? "Kullanıldı" : "Değiştirilemez"}</Badge>;
-  return <Badge tone="neutral">Üretim yok</Badge>;
+  return <Badge tone="neutral">Üretim Yok</Badge>;
 }
 
 function RowActions({ date, lesson, ctx }: { date: string; lesson: TopicPlanLesson; ctx: RowContext }) {
@@ -70,7 +70,7 @@ function RowActions({ date, lesson, ctx }: { date: string; lesson: TopicPlanLess
     <div className="flex flex-wrap gap-2">
       <Button type="button" variant={lesson.topic ? "secondary" : "primary"} onClick={(event) => ctx.onEdit({ date, lesson }, event.currentTarget)} aria-label={`${lesson.topic ? "Konuyu değiştir" : "Konu seç"}: ${label}`} data-testid="plan-edit">
         <Pencil aria-hidden="true" />
-        {lesson.topic ? "Değiştir" : "Konu seç"}
+        {lesson.topic ? "Değiştir" : "Konu Seç"}
       </Button>
       {lesson.topic ? (
         <Button type="button" variant="secondary" onClick={(event) => ctx.onDelete({ date, lesson }, event.currentTarget)} aria-label={`Konuyu sil: ${label}`} data-testid="plan-delete">
@@ -88,7 +88,7 @@ function DayTable({ day, ctx }: { day: TopicPlanDay; ctx: RowContext }) {
       <table className="w-full table-fixed text-left text-sm" data-testid="plan-table" data-date={day.date}>
         <caption className="bg-surface-muted px-3 py-3 text-left text-base font-semibold">
           {weekdayLabel(day.date)}, {formatDateOnly(day.date)}
-          {day.date === ctx.today ? " (bugün)" : day.date === ctx.tomorrow ? " (yarın)" : ""}
+          {day.date === ctx.today ? " (Bugün)" : day.date === ctx.tomorrow ? " (Yarın)" : ""}
         </caption>
         <colgroup>
           <col className="w-[20%]" />
@@ -146,7 +146,7 @@ function DayCards({ day, ctx }: { day: TopicPlanDay; ctx: RowContext }) {
     <section aria-label={`${weekdayLabel(day.date)} ${formatDateOnly(day.date)}`} className="flex flex-col gap-2 md:hidden" data-date={day.date}>
       <h2 className="text-lg">
         {weekdayLabel(day.date)}, {formatDateOnly(day.date)}
-        {day.date === ctx.today ? " (bugün)" : day.date === ctx.tomorrow ? " (yarın)" : ""}
+        {day.date === ctx.today ? " (Bugün)" : day.date === ctx.tomorrow ? " (Yarın)" : ""}
       </h2>
       <ul className="flex flex-col gap-2">
         {day.lessons.map((lesson) => {
@@ -163,7 +163,7 @@ function DayCards({ day, ctx }: { day: TopicPlanDay; ctx: RowContext }) {
                 <span className="font-semibold">{lesson.lessonName}</span>
                 <StatusBadge lesson={lesson} date={day.date} tomorrow={ctx.tomorrow} />
               </div>
-              <p className="text-sm">{lesson.topic?.name ?? <span className="text-muted-foreground">Konu seçilmedi</span>}</p>
+              <p className="text-sm">{lesson.topic?.name ?? <span className="text-muted-foreground">Konu Seçilmedi</span>}</p>
               <p className="text-xs text-muted-foreground">Hedef: {lesson.targetCount} soru</p>
               <RowActions date={day.date} lesson={lesson} ctx={ctx} />
             </li>
@@ -216,7 +216,7 @@ function PlanDialog({ target, topics, isMudur, onClose, onSaved, onConflict, onC
     setTopicError(undefined);
     setTargetError(undefined);
     if (topicId === null) {
-      setTopicError("Konuyu seç.");
+      setTopicError("Konuyu seçin.");
       return;
     }
     let targetCount: number | null = null;
@@ -233,11 +233,11 @@ function PlanDialog({ target, topics, isMudur, onClose, onSaved, onConflict, onC
 
   return (
     <Dialog open onOpenChange={(open) => (!open && !save.isPending ? onClose() : undefined)}>
-      <DialogContent title={`${lesson.lessonName} konusu`} description={`${weekdayLabel(date)}, ${formatDateOnly(date)} için konu seç.`} onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent title={`${lesson.lessonName} Konusu`} description={`${weekdayLabel(date)}, ${formatDateOnly(date)} için konu seçin.`} onCloseAutoFocus={onCloseAutoFocus}>
         <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
           <ProblemBanner state={error} conflictAsMessage />
           <SelectField label="Konu" required value={topicId ?? ""} error={topicError} disabled={save.isPending} onChange={(event) => setTopicId(event.target.value ? Number(event.target.value) : null)}>
-            <option value="">Konu seç</option>
+            <option value="">Konu Seç</option>
             {topics.map((topic) => (
               <option key={topic.id} value={topic.id}>
                 {topic.name}
@@ -246,13 +246,13 @@ function PlanDialog({ target, topics, isMudur, onClose, onSaved, onConflict, onC
           </SelectField>
           {isMudur ? (
             <TextField
-              label="Hedef soru sayısı"
+              label="Hedef Soru Sayısı"
               inputMode="numeric"
               value={targetText}
               placeholder={String(lesson.targetCount)}
               error={targetError}
               disabled={save.isPending}
-              hint="Boş bırakırsan ders programındaki varsayılan hedef kullanılır."
+              hint="Boş bırakırsanız ders programındaki varsayılan hedef kullanılır."
               onChange={(event) => setTargetText(event.target.value)}
             />
           ) : (
@@ -373,7 +373,7 @@ export function TopicPlanPage() {
           Konu Planı
         </h1>
         <p className="text-muted-foreground">
-          {isMudur ? "Tüm derslerin günlük konularını planla." : "Branş dersin için günlük soru üretim konusunu seç."} Seçilmeyen günlerde konu otomatik belirlenir.
+          {isMudur ? "Tüm derslerin günlük konularını planlayın." : "Branş dersiniz için günlük soru üretim konusunu seçin."} Seçilmeyen günlerde konu otomatik belirlenir.
         </p>
       </div>
 
@@ -395,13 +395,13 @@ export function TopicPlanPage() {
       <nav aria-label="Hafta gezintisi" className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="secondary" disabled={previous === null} onClick={() => goto(previous)} data-testid="week-prev">
           <ChevronLeft aria-hidden="true" />
-          Önceki hafta
+          Önceki Hafta
         </Button>
         <Button type="button" variant="secondary" disabled={start === today} onClick={() => goto(today)} data-testid="week-today">
-          Bu hafta
+          Bu Hafta
         </Button>
         <Button type="button" variant="secondary" disabled={next === null} onClick={() => goto(next)} data-testid="week-next">
-          Sonraki hafta
+          Sonraki Hafta
           <ChevronRight aria-hidden="true" />
         </Button>
         <p className="text-sm text-muted-foreground" data-testid="week-range">
@@ -416,9 +416,9 @@ export function TopicPlanPage() {
           ))}
         </div>
       ) : plan.isError ? (
-        <EmptyState icon={CloudOff} as="h2" title="Konu planı yüklenemedi" description={plan.error.message} action={<Button onClick={() => plan.refetch()}>Tekrar Dene</Button>} />
+        <EmptyState icon={CloudOff} as="h2" title="Konu Planı Yüklenemedi" description={plan.error.message} action={<Button onClick={() => plan.refetch()}>Tekrar Dene</Button>} />
       ) : plan.data.days.length === 0 ? (
-        <EmptyState icon={CalendarClock} as="h2" title="Plan bulunamadı" description="Bu hafta için gösterilecek gün yok." />
+        <EmptyState icon={CalendarClock} as="h2" title="Plan Bulunamadı" description="Bu hafta için gösterilecek gün yok." />
       ) : (
         <div className="flex flex-col gap-4" data-testid="plan-days">
           {plan.data.days.map((day) => (
@@ -453,7 +453,7 @@ export function TopicPlanPage() {
         }}
         title="Konu planı silinsin mi?"
         description={deleting ? `${deleting.lesson.lessonName} dersinin ${formatDateOnly(deleting.date)} konusu silinir. O gün konu otomatik belirlenir.` : ""}
-        confirmLabel="Planı sil"
+        confirmLabel="Planı Sil"
         tone="danger"
         pending={remove.isPending}
         error={deleteError}

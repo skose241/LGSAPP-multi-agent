@@ -76,7 +76,7 @@ export function Showcase() {
     <main className="mx-auto flex w-full max-w-screen-2xl flex-col gap-12 px-safe py-8 pt-safe">
       <header className="flex flex-col gap-3">
         <Badge tone="accent" className="self-start">
-          Geliştirme vitrini
+          Geliştirme Vitrini
         </Badge>
         <h1 className="text-3xl md:text-4xl">LGS Hazırlık Tasarım Sistemi</h1>
         <p className="max-w-prose text-lg text-muted-foreground">
@@ -84,12 +84,12 @@ export function Showcase() {
         </p>
       </header>
 
-      <Section id="renkler" title="Renk paleti" description="Birincil mavi-mor, sıcak turuncu vurgu ve hafif sıcak nötr ölçek.">
-        <SwatchRow label="Birincil · Gece mavisi" swatches={primaryScale} />
-        <SwatchRow label="Vurgu · Mercan turuncusu" swatches={accentScale} />
-        <SwatchRow label="Nötr · Kâğıt ve mürekkep" swatches={neutralScale} />
-        <SwatchGrid label="Durum renkleri" swatches={statusSwatches} />
-        <SwatchGrid label="Durum zeminleri" swatches={statusSoftSwatches} />
+      <Section id="renkler" title="Renk Paleti" description="Birincil mavi-mor, sıcak turuncu vurgu ve hafif sıcak nötr ölçek.">
+        <SwatchRow label="Birincil · Gece Mavisi" swatches={primaryScale} />
+        <SwatchRow label="Vurgu · Mercan Turuncusu" swatches={accentScale} />
+        <SwatchRow label="Nötr · Kâğıt ve Mürekkep" swatches={neutralScale} />
+        <SwatchGrid label="Durum Renkleri" swatches={statusSwatches} />
+        <SwatchGrid label="Durum Zeminleri" swatches={statusSoftSwatches} />
       </Section>
 
       <Section id="tipografi" title="Tipografi" description="Başlıklarda Bricolage Grotesque, gövdede Figtree. İkisi de Türkçe karakterleri destekler.">
@@ -98,12 +98,12 @@ export function Showcase() {
             <p className="font-display text-2xl">ĞÜŞİÖÇ ğüşıöç · İstanbul ışığı, şeker, çağrı</p>
             <p className="text-base">
               Gövde metni: Bir üçgenin iç açıları toplamı 180 derecedir. Dikdörtgenin çevresini bulurken kısa ve uzun
-              kenarın toplamını ikiyle çarparız. Işık, ses ve elektrik konularını tekrar etmeyi unutma.
+              kenarın toplamını ikiyle çarparız. Işık, ses ve elektrik konularını tekrar etmeyi unutmayın.
             </p>
             <ul className="flex flex-col gap-2 border-t border-border pt-4">
               {typeScale.map((item) => (
                 <li key={item.name} className="flex flex-wrap items-baseline justify-between gap-x-4">
-                  <span className={`${item.cls} ${item.font} font-bold`}>Günün sorusu</span>
+                  <span className={`${item.cls} ${item.font} font-bold`}>Günün Sorusu</span>
                   <span className="text-xs text-muted-foreground">{item.name}</span>
                 </li>
               ))}
@@ -124,27 +124,27 @@ export function Showcase() {
                 <Trash2 aria-hidden="true" />
                 Tehlike
               </Button>
-              <Button disabled>Devre dışı</Button>
+              <Button disabled>Devre Dışı</Button>
               <Button loading={loadingDemo} onClick={runLoading}>
-                {loadingDemo ? "Gönderiliyor" : "Yükleniyor durumunu dene"}
+                {loadingDemo ? "Gönderiliyor" : "Yükleniyor Durumunu Dene"}
               </Button>
               <Button variant="secondary" size="icon" aria-label="Ekle">
                 <Plus aria-hidden="true" />
               </Button>
             </div>
             <Button size="lg" className="w-full md:w-auto md:self-start">
-              Büyük birincil buton
+              Büyük Birincil Buton
             </Button>
           </CardContent>
         </Card>
       </Section>
 
-      <Section id="formlar" title="Form alanları" description="Girdi yazısı 16 piksel, böylece iPhone yakınlaştırma yapmaz.">
+      <Section id="formlar" title="Form Alanları" description="Girdi yazısı 16 piksel, böylece iPhone yakınlaştırma yapmaz.">
         <Card>
           <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <TextField label="Kullanıcı adı" placeholder="ornek.ogrenci" hint="Müdürün verdiği kullanıcı adı." autoComplete="username" />
+            <TextField label="Kullanıcı Adı" placeholder="ornek.ogrenci" hint="Müdürün verdiği kullanıcı adı." autoComplete="username" />
             <TextField
-              label="Yeni şifre"
+              label="Yeni Şifre"
               type="password"
               defaultValue="abc"
               required
@@ -153,24 +153,24 @@ export function Showcase() {
             />
             <TextAreaField
               className="md:col-span-2 xl:col-span-3"
-              label="Nerede takıldın?"
-              placeholder="Soruyu çözerken hangi adımda zorlandığını yaz."
-              hint="Açıklaman öğretmenlerin seni takip etmesine yardım eder."
+              label="Nerede Takıldınız?"
+              placeholder="Soruyu çözerken hangi adımda zorlandığınızı yazın."
+              hint="Açıklamanız öğretmenlerin sizi takip etmesine yardım eder."
             />
-            <TextField label="Devre dışı alan" defaultValue="Değiştirilemez" disabled />
+            <TextField label="Devre Dışı Alan" defaultValue="Değiştirilemez" disabled />
           </CardContent>
         </Card>
       </Section>
 
-      <Section id="kartlar" title="Kartlar, rozetler ve bildirim" description="Ders, konu ve durum etiketleri ile bildirim sayacı.">
+      <Section id="kartlar" title="Kartlar, Rozetler ve Bildirim" description="Ders, konu ve durum etiketleri ile bildirim sayacı.">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle>Aktif ödev</CardTitle>
-              <CardDescription>Son teslim: 20 Kasım 2026, 23:59</CardDescription>
+              <CardTitle>Aktif Ödev</CardTitle>
+              <CardDescription>Son Teslim: 20 Kasım 2026, 23:59</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <p>Matematik · Üslü ifadeler konusundan 10 soru çöz.</p>
+              <p>Matematik · Üslü ifadeler konusundan 10 soru çözün.</p>
               <div
                 role="progressbar"
                 aria-label="Ödev ilerlemesi"
@@ -199,7 +199,7 @@ export function Showcase() {
                 <Badge tone="neutral">Türkçe</Badge>
                 <Badge tone="success">Doğru</Badge>
                 <Badge tone="danger">Yanlış</Badge>
-                <Badge tone="warning">Şüpheli anahtar</Badge>
+                <Badge tone="warning">Şüpheli Anahtar</Badge>
                 <Badge tone="info">Yeni</Badge>
               </div>
               <div className="flex items-center gap-6">
@@ -217,7 +217,7 @@ export function Showcase() {
         </div>
       </Section>
 
-      <Section id="soru" title="Soru kartı" description="Cevaplamadan önce, doğru ve yanlış sonuç durumları.">
+      <Section id="soru" title="Soru Kartı" description="Cevaplamadan önce, doğru ve yanlış sonuç durumları.">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <QuestionCard
             lesson="Matematik"
@@ -250,7 +250,7 @@ export function Showcase() {
         </div>
       </Section>
 
-      <Section id="ai" title="Yapay zekâ çözüm paneli" description="Sunucudan gelen aiSolutionState değerlerine göre. Bilinmeyen değer none gibi davranır.">
+      <Section id="ai" title="Yapay Zekâ Çözüm Paneli" description="Sunucudan gelen aiSolutionState değerlerine göre. Bilinmeyen değer none gibi davranır.">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {aiStates.map(({ state, caption }) => (
             <div key={state} className="flex flex-col gap-1.5">
@@ -260,8 +260,8 @@ export function Showcase() {
                 quotaLeft={state === "none" ? 2 : undefined}
                 solution={
                   <ol className="list-decimal space-y-1 pl-5 text-base">
-                    <li>Önce her iki tarafı da ortak paydada yaz.</li>
-                    <li>Payları birbirinden çıkar ve sadeleştir.</li>
+                    <li>Önce her iki tarafı da ortak paydada yazın.</li>
+                    <li>Payları birbirinden çıkarın ve sadeleştirin.</li>
                     <li>Sonuç 2/3 olur, doğru cevap B şıkkıdır.</li>
                   </ol>
                 }
@@ -274,7 +274,7 @@ export function Showcase() {
               state={aiDemo}
               quotaLeft={2}
               onRequest={requestAi}
-              solution={<p className="text-base">Çözüm hazır. Adımları kendi çözümünle karşılaştır.</p>}
+              solution={<p className="text-base">Çözüm hazır. Adımları kendi çözümünüzle karşılaştırın.</p>}
             />
             {aiDemo === "available" ? (
               <Button variant="ghost" className="self-start" onClick={() => setAiDemo("none")}>
@@ -285,8 +285,8 @@ export function Showcase() {
         </div>
       </Section>
 
-      <Section id="liderlik" title="Liderlik tablosu" description="Haftalık sıralama satırları. Mevcut kullanıcı vurgulanır.">
-        <ol className="grid gap-2 lg:grid-cols-2" aria-label="Haftalık liderlik">
+      <Section id="liderlik" title="Liderlik Tablosu" description="Haftalık sıralama satırları. Mevcut kullanıcı vurgulanır.">
+        <ol className="grid gap-2 lg:grid-cols-2" aria-label="Haftalık Liderlik">
           <LeaderboardRow rank={1} name="Elif Yılmaz" detail="7 günlük seri" points={248} />
           <LeaderboardRow rank={2} name="Çağan Öztürk" detail="5 günlük seri" points={231} />
           <LeaderboardRow rank={3} name="İrem Şahin" detail="4 günlük seri" points={219} />
@@ -295,12 +295,12 @@ export function Showcase() {
         </ol>
       </Section>
 
-      <Section id="bos" title="Boş durum ve bildirimler" description="Veri yokken yol gösterir; toast sonucu kısaca bildirir.">
+      <Section id="bos" title="Boş Durum ve Bildirimler" description="Veri yokken yol gösterir; toast sonucu kısaca bildirir.">
         <div className="grid gap-4 md:grid-cols-2">
           <EmptyState
             icon={Inbox}
-            title="Henüz ödevin yok"
-            description="Öğretmenin bir ödev verdiğinde burada görünecek. Bu arada havuzdan soru çözebilirsin."
+            title="Henüz Ödeviniz Yok"
+            description="Öğretmeniniz bir ödev verdiğinde burada görünecek. Bu arada havuzdan soru çözebilirsiniz."
             action={
               <Button variant="secondary">
                 <BookOpenCheck aria-hidden="true" />
@@ -310,27 +310,27 @@ export function Showcase() {
           />
           <EmptyState
             icon={CloudOff}
-            title="Bağlantı kurulamadı"
-            description="İnternet bağlantını kontrol edip tekrar dene. Yazdıkların kaybolmadı."
+            title="Bağlantı Kurulamadı"
+            description="İnternet bağlantınızı kontrol edip tekrar deneyin. Yazdıklarınız kaybolmadı."
             action={<Button>Tekrar Dene</Button>}
           />
         </div>
         <Card>
           <CardContent className="flex flex-wrap gap-3">
-            <Button variant="secondary" onClick={() => toast.success("Cevabın kaydedildi.")}>
-              Başarı toast
+            <Button variant="secondary" onClick={() => toast.success("Cevabınız kaydedildi.")}>
+              Başarı Toast
             </Button>
-            <Button variant="secondary" onClick={() => toast.error("Kayıt başarısız. Lütfen tekrar dene.")}>
-              Hata toast
+            <Button variant="secondary" onClick={() => toast.error("Kayıt başarısız. Lütfen tekrar deneyin.")}>
+              Hata Toast
             </Button>
             <Button variant="secondary" onClick={() => toast("Yeni bir ödev atandı.", { description: "Matematik · Çarpanlar" })}>
-              Bilgi toast
+              Bilgi Toast
             </Button>
           </CardContent>
         </Card>
       </Section>
 
-      <Section id="kabuk" title="Uygulama kabuğu" description="Mobilde alt sekme çubuğu, 1024 piksel ve üzerinde yan menü. Tarayıcı genişliğine göre değişir.">
+      <Section id="kabuk" title="Uygulama Kabuğu" description="Mobilde alt sekme çubuğu, 1024 piksel ve üzerinde yan menü. Tarayıcı genişliğine göre değişir.">
         <div className="overflow-hidden rounded-lg border border-border shadow-md">
           <AppShell
             items={showcaseNav}
@@ -346,13 +346,13 @@ export function Showcase() {
                 <div className="flex flex-col gap-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Bugünkü hedefin</CardTitle>
-                      <CardDescription>5 sorudan 3 tanesini çözdün.</CardDescription>
+                      <CardTitle>Bugünkü Hedefiniz</CardTitle>
+                      <CardDescription>5 sorudan 3 tanesini çözdünüz.</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div
                         role="progressbar"
-                        aria-label="Günlük hedef"
+                        aria-label="Günlük Hedef"
                         aria-valuemin={0}
                         aria-valuemax={5}
                         aria-valuenow={3}
@@ -364,7 +364,7 @@ export function Showcase() {
                   </Card>
                   <Card>
                     <CardHeader>
-                      <CardTitle>Aktif ödevler</CardTitle>
+                      <CardTitle>Aktif Ödevler</CardTitle>
                     </CardHeader>
                     <CardContent className="grid gap-3 xl:grid-cols-2">
                       <div className="rounded-md border border-border p-3">
@@ -375,7 +375,7 @@ export function Showcase() {
                       <div className="rounded-md border border-border p-3">
                         <Badge tone="accent">Fen Bilimleri</Badge>
                         <p className="pt-2 font-semibold">Basınç</p>
-                        <p className="text-sm text-muted-foreground">Son gün: 20 Kasım</p>
+                        <p className="text-sm text-muted-foreground">Son Gün: 20 Kasım</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -383,10 +383,10 @@ export function Showcase() {
                 <div className="flex flex-col gap-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Bu haftanın sıralaması</CardTitle>
+                      <CardTitle>Bu Haftanın Sıralaması</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ol className="flex flex-col gap-2" aria-label="Kabuk içi liderlik">
+                      <ol className="flex flex-col gap-2" aria-label="Kabuk İçi Liderlik">
                         <LeaderboardRow rank={1} name="Elif Yılmaz" detail="7 günlük seri" points={248} />
                         <LeaderboardRow rank={4} name="Ahmet Kaya" detail="2 günlük seri" points={187} isMe />
                       </ol>
@@ -398,7 +398,7 @@ export function Showcase() {
                     </CardHeader>
                     <CardContent className="flex flex-col gap-2 text-sm">
                       <p>Yeni ödev atandı: Matematik · Çarpanlar</p>
-                      <p>Şikâyet ettiğin soru öğretmen tarafından incelendi.</p>
+                      <p>Şikâyet ettiğiniz soru öğretmen tarafından incelendi.</p>
                     </CardContent>
                   </Card>
                 </div>

@@ -10,13 +10,13 @@ export const DEFAULT_REPORT_STATUS: ReportStatusValue = "pending";
 
 export const REPORT_STATUS_OPTIONS: { value: ReportFilters["status"]; label: string }[] = [
   { value: "pending", label: "Bekleyen" },
-  { value: "resolved", label: "İşlem yapılan" },
+  { value: "resolved", label: "İşlem Yapılan" },
   { value: "rejected", label: "Reddedilen" },
   { value: "all", label: "Tümü" },
 ];
 
 export const REPORT_TARGET_OPTIONS: { value: ReportFilters["targetType"]; label: string }[] = [
-  { value: "all", label: "Tüm türler" },
+  { value: "all", label: "Tüm Türler" },
   { value: "question", label: "Soru" },
   { value: "solution", label: "Çözüm" },
   { value: "comment", label: "Yorum" },
@@ -24,7 +24,7 @@ export const REPORT_TARGET_OPTIONS: { value: ReportFilters["targetType"]; label:
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Bekliyor",
-  resolved: "İşlem yapıldı",
+  resolved: "İşlem Yapıldı",
   rejected: "Reddedildi",
 };
 
@@ -35,10 +35,10 @@ const TARGET_LABELS: Record<string, string> = {
 };
 
 const ACTION_LABELS: Record<string, string> = {
-  none: "İşlem yapılmadı",
-  contentHidden: "İçerik gizlendi",
-  answerKeyChanged: "Cevap anahtarı değiştirildi",
-  userBanned: "Kullanıcı engellendi",
+  none: "İşlem Yapılmadı",
+  contentHidden: "İçerik Gizlendi",
+  answerKeyChanged: "Cevap Anahtarı Değiştirildi",
+  userBanned: "Kullanıcı Engellendi",
 };
 
 export function reportStatusLabel(value: string): string {
@@ -88,14 +88,14 @@ export function resolveChoices(input: {
   isMudur: boolean;
 }): ResolveChoice[] {
   const choices: ResolveChoice[] = [
-    { value: "reject", label: "Şikâyeti reddet", description: "Herhangi bir işlem yapılmaz, şikâyet eden bilgilendirilir.", tone: "primary" },
-    { value: "hideContent", label: "İçeriği gizle", description: "İçerik öğrencilere gösterilmez.", tone: "danger" },
+    { value: "reject", label: "Şikâyeti Reddet", description: "Herhangi bir işlem yapılmaz, şikâyet eden bilgilendirilir.", tone: "primary" },
+    { value: "hideContent", label: "İçeriği Gizle", description: "İçerik öğrencilere gösterilmez.", tone: "danger" },
   ];
   if (input.targetType === "question") {
-    choices.push({ value: "changeAnswerKey", label: "Cevap anahtarını değiştir", description: "Soruyu cevaplayan öğrencilerin sonucu ve puanı yeniden hesaplanır.", tone: "primary" });
+    choices.push({ value: "changeAnswerKey", label: "Cevap Anahtarını Değiştir", description: "Soruyu cevaplayan öğrencilerin sonucu ve puanı yeniden hesaplanır.", tone: "primary" });
   }
   if (input.isMudur) {
-    choices.push({ value: "banUser", label: "Kullanıcıyı engelle", description: "İçerik sahibinin hesabı engellenir.", tone: "danger" });
+    choices.push({ value: "banUser", label: "Kullanıcıyı Engelle", description: "İçerik sahibinin hesabı engellenir.", tone: "danger" });
   }
   return choices;
 }

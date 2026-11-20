@@ -31,7 +31,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const [pending, setPending] = useState(false);
   return (
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
-      <DialogContent title="Bilgileri düzenle" description="Ad, soyad ve (öğrenciler için) sınıf güncellenir. Rol değişmez.">
+      <DialogContent title="Bilgileri Düzenle" description="Ad, soyad ve (öğrenciler için) sınıf güncellenir. Rol değişmez.">
         <EditUserForm user={user} onClose={() => onOpenChange(false)} onPending={setPending} />
       </DialogContent>
     </Dialog>
@@ -61,7 +61,7 @@ function EditUserForm({ user, onClose, onPending }: { user: AdminUser; onClose: 
     },
     onError: async (error: unknown) => {
       if (!isApiError(error)) {
-        setProblem({ status: 0, at: Date.now(), problem: emptyProblem("Bağlantı kurulamadı. Tekrar dene.") });
+        setProblem({ status: 0, at: Date.now(), problem: emptyProblem("Bağlantı kurulamadı. Tekrar deneyin.") });
         return;
       }
       for (const name of FIELDS) {

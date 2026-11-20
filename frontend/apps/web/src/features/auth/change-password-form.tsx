@@ -16,7 +16,7 @@ interface ChangePasswordFormProps {
   submitLabel?: string;
 }
 
-export function ChangePasswordForm({ minLength, onSuccess, submitLabel = "Şifreyi değiştir" }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ minLength, onSuccess, submitLabel = "Şifreyi Değiştir" }: ChangePasswordFormProps) {
   const [problem, setProblem] = useState<ProblemState | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const {
@@ -58,14 +58,14 @@ export function ChangePasswordForm({ minLength, onSuccess, submitLabel = "Şifre
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
       <ProblemBanner state={problem} countdown={countdown} />
       <PasswordField
-        label="Mevcut şifre"
+        label="Mevcut Şifre"
         autoComplete="current-password"
         required
         error={errors.currentPassword?.message}
         {...register("currentPassword")}
       />
       <PasswordField
-        label="Yeni şifre"
+        label="Yeni Şifre"
         autoComplete="new-password"
         required
         hint={`En az ${minLength} karakter, bir rakam, bir büyük ve bir küçük harf.`}
@@ -73,7 +73,7 @@ export function ChangePasswordForm({ minLength, onSuccess, submitLabel = "Şifre
         {...register("newPassword")}
       />
       <PasswordField
-        label="Yeni şifre (tekrar)"
+        label="Yeni Şifre (Tekrar)"
         autoComplete="new-password"
         required
         error={errors.confirmPassword?.message}

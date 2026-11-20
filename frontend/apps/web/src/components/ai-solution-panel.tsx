@@ -32,25 +32,25 @@ interface StateInfo {
 const info: Record<Exclude<AiPanelState, "none" | "loading" | "available">, StateInfo> = {
   underReview: {
     icon: ShieldAlert,
-    title: "Çözüm inceleniyor",
+    title: "Çözüm İnceleniyor",
     text: "Yapay zekâ bu soruda cevap anahtarından farklı bir sonuca ulaştı; soru öğretmen incelemesinde. İnceleme bitene kadar yapay zekâ çözümü gösterilmez.",
     tone: "border-warning bg-warning-soft text-warning-soft-foreground",
   },
   removed: {
     icon: EyeOff,
-    title: "Çözüm kaldırıldı",
-    text: "Bu soru için yapay zekâ çözümü kaldırıldı. Çözümü kendin yazarak katkı verebilirsin.",
+    title: "Çözüm Kaldırıldı",
+    text: "Bu soru için yapay zekâ çözümü kaldırıldı. Çözümü kendiniz yazarak katkı verebilirsiniz.",
     tone: "border-border-strong bg-surface-muted text-foreground",
   },
   unavailable: {
     icon: WifiOff,
-    title: "Şu an ulaşılamıyor",
-    text: "Bu soru için şu an yapay zekâ çözümü üretilemiyor. Özellik kapalı olabilir ya da yapay zekâ güvenilir bir çözüm bulamamış olabilir. Çözümü kendin yazarak katkı verebilirsin.",
+    title: "Şu An Ulaşılamıyor",
+    text: "Bu soru için şu an yapay zekâ çözümü üretilemiyor. Özellik kapalı olabilir ya da yapay zekâ güvenilir bir çözüm bulamamış olabilir. Çözümü kendiniz yazarak katkı verebilirsiniz.",
     tone: "border-info bg-info-soft text-info-soft-foreground",
   },
   unreadable: {
     icon: ScanSearch,
-    title: "Görsel okunamadı",
+    title: "Görsel Okunamadı",
     text: "Soru görseli net okunamadığı için çözüm üretilemedi. Bu soru için bir süre (genellikle 24 saat) yeniden denenmez.",
     tone: "border-danger bg-danger-soft text-danger-soft-foreground",
   },
@@ -59,14 +59,14 @@ const info: Record<Exclude<AiPanelState, "none" | "loading" | "available">, Stat
 export function AiSolutionPanel({ state, quotaLeft, quotaText, onRequest, requestDisabled = false, notice, solution }: AiSolutionPanelProps) {
   if (state === "none") {
     return (
-      <PanelFrame tone="border-primary-200 bg-primary-soft text-primary-soft-foreground" icon={Sparkles} title="Yapay zekâ çözümü">
-        <p className="text-sm">{onRequest ? "Takıldığın yerde yapay zekâdan adım adım çözüm isteyebilirsin." : "Bu soru için henüz yapay zekâ çözümü istenmedi."}</p>
+      <PanelFrame tone="border-primary-200 bg-primary-soft text-primary-soft-foreground" icon={Sparkles} title="Yapay Zekâ Çözümü">
+        <p className="text-sm">{onRequest ? "Takıldığınız yerde yapay zekâdan adım adım çözüm isteyebilirsiniz." : "Bu soru için henüz yapay zekâ çözümü istenmedi."}</p>
         {quotaText ? (
           <p className="text-xs font-semibold" data-testid="ai-quota">
             {quotaText}
           </p>
         ) : quotaLeft !== undefined ? (
-          <p className="text-xs font-semibold">Bugün kalan hakkın: {quotaLeft}</p>
+          <p className="text-xs font-semibold">Bugün Kalan Hakkınız: {quotaLeft}</p>
         ) : null}
         {notice}
         {onRequest ? (
@@ -81,9 +81,9 @@ export function AiSolutionPanel({ state, quotaLeft, quotaText, onRequest, reques
 
   if (state === "loading") {
     return (
-      <PanelFrame tone="border-primary-200 bg-primary-soft text-primary-soft-foreground" icon={Hourglass} title="Çözüm hazırlanıyor" busy>
+      <PanelFrame tone="border-primary-200 bg-primary-soft text-primary-soft-foreground" icon={Hourglass} title="Çözüm Hazırlanıyor" busy>
         <p className="text-sm" role="status">
-          Bu birkaç saniye sürebilir. Sayfayı kapatma.
+          Bu birkaç saniye sürebilir. Sayfayı kapatmayın.
         </p>
         <div className="mt-1 flex flex-col gap-2" aria-hidden="true">
           <div className="h-3 w-full animate-pulse rounded-pill bg-primary-200" />
@@ -96,10 +96,10 @@ export function AiSolutionPanel({ state, quotaLeft, quotaText, onRequest, reques
 
   if (state === "available") {
     return (
-      <PanelFrame tone="border-primary-200 bg-surface text-foreground" icon={Bot} title="Yapay zekâ çözümü" testId="ai-solution">
+      <PanelFrame tone="border-primary-200 bg-surface text-foreground" icon={Bot} title="Yapay Zekâ Çözümü" testId="ai-solution">
         {solution}
         <p className="text-xs text-muted-foreground">
-          Bu çözüm yapay zekâ tarafından üretildi. Hata olabilir, kendi çözümünle karşılaştır.
+          Bu çözüm yapay zekâ tarafından üretildi. Hata olabilir, kendi çözümünüzle karşılaştırın.
         </p>
       </PanelFrame>
     );

@@ -17,7 +17,7 @@ test.describe("liderlik ve profil", () => {
       await expect(page.getByTestId("my-rank")).toContainText("puan", { timeout: 4000 });
     }).toPass({ timeout: 90_000, intervals: [3000] });
     const mine = page.getByRole("list", { name: "Sıralama" }).locator("[aria-current='true']");
-    const outside = page.getByText(/içinde değilsin, sıran/);
+    const outside = page.getByText(/içinde değilsiniz, sıranız/);
     await expect(mine.or(outside).first()).toBeVisible();
 
     const range = await page.getByTestId("period-range").textContent();
@@ -26,9 +26,9 @@ test.describe("liderlik ve profil", () => {
     await expect(page.getByTestId("my-rank")).toBeVisible();
     await expect(page.getByTestId("period-range")).not.toHaveText(range ?? "");
 
-    await page.getByRole("button", { name: "Önceki dönem" }).click();
-    await expect(page.getByTestId("period-range")).not.toContainText("(bu dönem)");
-    await expect(page.getByRole("button", { name: "Sonraki dönem" })).toBeEnabled();
+    await page.getByRole("button", { name: "Önceki Dönem" }).click();
+    await expect(page.getByTestId("period-range")).not.toContainText("(Bu Dönem)");
+    await expect(page.getByRole("button", { name: "Sonraki Dönem" })).toBeEnabled();
   });
 
   test("profil istatistikleri çözülen soruları gösterir", async ({ page }) => {
@@ -42,11 +42,11 @@ test.describe("liderlik ve profil", () => {
     await page.goto("/profil");
     const stats = page.getByTestId("profile-stats");
     await expect(stats).toBeVisible();
-    await expect(stats.getByText("Genel başarı")).toBeVisible();
+    await expect(stats.getByText("Genel Başarı")).toBeVisible();
     await expect(stats.getByTestId("lesson-bar").first()).toBeVisible();
     await expect(stats.getByRole("img", { name: new RegExp(`${first.lesson.name}: 2 sorudan 1 doğru, 1 yanlış`) })).toBeVisible();
     await expect(stats.getByText("Katkılarım")).toBeVisible();
-    await expect(stats.getByText("Ödev katılımı")).toBeVisible();
+    await expect(stats.getByText("Ödev Katılımı")).toBeVisible();
   });
 });
 
@@ -55,8 +55,8 @@ test.describe("pano", () => {
     await freshQuestion(`Pano sorusu ${Date.now().toString(36)}`);
     await studentLogin(page);
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Açık ödevler" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Son 7 günün soruları" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Açık Ödevler" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Son 7 Günün Soruları" })).toBeVisible();
     await expect(page.getByTestId("pool-question").first()).toBeVisible();
     await expect(page.getByTestId("weekly-points")).toBeVisible();
     await expect(page.getByTestId("unread-summary")).toContainText(/bildirim/);

@@ -11,11 +11,11 @@ export function SessionActions({ layout = "stack" }: { layout?: "stack" | "row" 
     <div className={layout === "row" ? "flex flex-wrap gap-3" : "flex flex-col gap-2"}>
       <Button type="button" variant="secondary" loading={pending === "one"} disabled={pending === "all"} onClick={logout}>
         <LogOut aria-hidden="true" />
-        Çıkış yap
+        Çıkış Yap
       </Button>
       <Button type="button" variant="ghost" loading={pending === "all"} disabled={pending === "one"} onClick={logoutAll}>
         <MonitorOff aria-hidden="true" />
-        Tüm cihazlardan çık
+        Tüm Cihazlardan Çık
       </Button>
     </div>
   );

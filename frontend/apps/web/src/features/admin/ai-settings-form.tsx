@@ -16,7 +16,7 @@ export function AiSettingsForm() {
   return (
     <Card data-testid="ai-settings">
       <CardHeader>
-        <CardTitle as="h2">Yapay zekâ ayarları</CardTitle>
+        <CardTitle as="h2">Yapay Zekâ Ayarları</CardTitle>
       </CardHeader>
       <CardContent>
         {settings.isPending ? (
@@ -25,7 +25,7 @@ export function AiSettingsForm() {
           <EmptyState
             icon={CloudOff}
             as="h3"
-            title="Ayarlar alınamadı"
+            title="Ayarlar Alınamadı"
             description={settings.error.message}
             action={<Button onClick={() => settings.refetch()}>Tekrar Dene</Button>}
           />
@@ -33,7 +33,7 @@ export function AiSettingsForm() {
           <SettingsEditor
             sections={[{ id: "ai", settings: orderSettings(settings.data.filter((item) => item.group === "ai")) }]}
             describe={aiSettingInfo}
-            ariaLabel="Yapay zekâ ayarları"
+            ariaLabel="Yapay Zekâ Ayarları"
           />
         )}
       </CardContent>

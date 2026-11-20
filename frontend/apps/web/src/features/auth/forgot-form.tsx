@@ -51,12 +51,12 @@ export function ForgotForm() {
         <div role="status" className="flex items-start gap-3 rounded-md border border-success bg-success-soft p-3 text-success-soft-foreground">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
           <p className="font-medium">
-            {SAME_MESSAGE} Müdür onaylayınca sana tek seferlik bir şifre verilecek. Şifreni aldıktan sonra giriş yapıp yeni
-            şifreni belirleyebilirsin.
+            {SAME_MESSAGE} Müdür onaylayınca size tek seferlik bir şifre verilecek. Şifrenizi aldıktan sonra giriş yapıp yeni
+            şifrenizi belirleyebilirsiniz.
           </p>
         </div>
         <Button asChild variant="secondary" size="lg">
-          <Link href="/giris">Girişe dön</Link>
+          <Link href="/giris">Girişe Dön</Link>
         </Button>
       </div>
     );
@@ -66,7 +66,7 @@ export function ForgotForm() {
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
       <ProblemBanner state={problem} countdown={countdown} />
       <TextField
-        label="Kullanıcı adı"
+        label="Kullanıcı Adı"
         autoComplete="username"
         autoCapitalize="none"
         autoCorrect="off"
@@ -76,10 +76,10 @@ export function ForgotForm() {
         {...register("userName")}
       />
       <Button type="submit" size="lg" loading={submitting} disabled={blocked}>
-        {blocked ? `Bekle (${countdown})` : "Talep gönder"}
+        {blocked ? `Bekle (${countdown})` : "Talep Gönder"}
       </Button>
       <Link href="/giris" className="inline-flex min-h-touch items-center justify-center text-sm font-semibold text-primary underline underline-offset-4">
-        Girişe dön
+        Girişe Dön
       </Link>
     </form>
   );

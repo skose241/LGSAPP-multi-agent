@@ -13,11 +13,11 @@ export type StatsPerspective = "self" | "teacher";
 
 const COPY = {
   self: {
-    totalDescription: "Çözdüğün tüm sorular",
-    pointsDescription: "Katkılarınla kazandığın puanlar",
-    lessonsEmpty: "Henüz soru çözmedin. İlk sorunu çözünce burada görünecek.",
+    totalDescription: "Çözdüğünüz tüm sorular",
+    pointsDescription: "Katkılarınızla kazandığınız puanlar",
+    lessonsEmpty: "Henüz soru çözmediniz. İlk sorunuzu çözünce burada görünecek.",
     contributions: "Katkılarım",
-    contributionsDescription: "Arkadaşlarına yaptığın katkılar",
+    contributionsDescription: "Arkadaşlarınıza yaptığınız katkılar",
   },
   teacher: {
     totalDescription: "Çözdüğü tüm sorular",
@@ -68,7 +68,7 @@ function LessonTable({ lessons }: { lessons: StudentStats["lessons"] }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm" data-testid="lesson-table">
-        <caption className="sr-only">Ders bazında çözülen sorular</caption>
+        <caption className="sr-only">Ders Bazında Çözülen Sorular</caption>
         <thead className="text-xs text-muted-foreground">
           <tr>
             <th scope="col" className="py-2 pr-3 font-semibold">
@@ -111,7 +111,7 @@ export function StatsPanels({ data, perspective }: { data: StudentStats; perspec
   const assignments = data.assignments;
   const participation = [
     { label: "Tamamlanan", value: assignments.completed },
-    { label: "Kısmen yapılan", value: assignments.partial },
+    { label: "Kısmen Yapılan", value: assignments.partial },
     { label: "Kaçırılan", value: assignments.missed },
     { label: "Başlanmamış", value: assignments.notStarted },
   ];
@@ -120,7 +120,7 @@ export function StatsPanels({ data, perspective }: { data: StudentStats; perspec
     <div className="grid gap-4 lg:grid-cols-2" data-testid="profile-stats">
       <Card>
         <CardHeader>
-          <CardTitle as="h2">Genel başarı</CardTitle>
+          <CardTitle as="h2">Genel Başarı</CardTitle>
           <CardDescription>{copy.totalDescription}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -135,23 +135,23 @@ export function StatsPanels({ data, perspective }: { data: StudentStats; perspec
 
       <Card>
         <CardHeader>
-          <CardTitle as="h2">Puan ve sıra</CardTitle>
+          <CardTitle as="h2">Puan ve Sıra</CardTitle>
           <CardDescription>{copy.pointsDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-3 gap-4">
-            <Stat label="Toplam puan" value={data.points.total} />
-            <Stat label="Haftalık sıra" value={rankLabel(data.points.weekly.rank)} />
-            <Stat label="Aylık sıra" value={rankLabel(data.points.monthly.rank)} />
-            <Stat label="Haftalık puan" value={data.points.weekly.points} />
-            <Stat label="Aylık puan" value={data.points.monthly.points} />
+            <Stat label="Toplam Puan" value={data.points.total} />
+            <Stat label="Haftalık Sıra" value={rankLabel(data.points.weekly.rank)} />
+            <Stat label="Aylık Sıra" value={rankLabel(data.points.monthly.rank)} />
+            <Stat label="Haftalık Puan" value={data.points.weekly.points} />
+            <Stat label="Aylık Puan" value={data.points.monthly.points} />
           </dl>
         </CardContent>
       </Card>
 
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle as="h2">Ders bazında başarı</CardTitle>
+          <CardTitle as="h2">Ders Bazında Başarı</CardTitle>
           {perspective === "self" ? (
             <CardDescription>
               <span className="inline-flex items-center gap-1.5">
@@ -182,7 +182,7 @@ export function StatsPanels({ data, perspective }: { data: StudentStats; perspec
 
       <Card>
         <CardHeader>
-          <CardTitle as="h2">Ödev katılımı</CardTitle>
+          <CardTitle as="h2">Ödev Katılımı</CardTitle>
           <CardDescription>Toplam {assignments.assigned} ödev verildi</CardDescription>
         </CardHeader>
         <CardContent>
@@ -201,8 +201,8 @@ export function StatsPanels({ data, perspective }: { data: StudentStats; perspec
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-2 gap-4">
-            <Stat label="Yüklenen soru" value={data.contributions.questionsUploaded} />
-            <Stat label="Yazılan çözüm" value={data.contributions.solutionsWritten} />
+            <Stat label="Yüklenen Soru" value={data.contributions.questionsUploaded} />
+            <Stat label="Yazılan Çözüm" value={data.contributions.solutionsWritten} />
           </dl>
         </CardContent>
       </Card>
@@ -222,7 +222,7 @@ export function ProfileStats() {
       <EmptyState
         icon={CloudOff}
         as="h2"
-        title="İstatistikler yüklenemedi"
+        title="İstatistikler Yüklenemedi"
         description={stats.error.message}
         action={<Button onClick={() => stats.refetch()}>Tekrar Dene</Button>}
       />

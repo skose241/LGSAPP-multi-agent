@@ -22,8 +22,8 @@ import { cn } from "@/lib/utils";
 const PAGE_SIZE = 12;
 
 const TABS: { value: StudentAssignmentTab; label: string }[] = [
-  { value: "open", label: "Açık ödevler" },
-  { value: "closed", label: "Kapanmış ödevler" },
+  { value: "open", label: "Açık Ödevler" },
+  { value: "closed", label: "Kapanmış Ödevler" },
 ];
 
 type Item = StudentAssignmentList["items"][number];
@@ -87,7 +87,7 @@ export function StudentAssignmentsPage() {
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-3xl">Ödevlerim</h1>
-        <p className="text-muted-foreground">Öğretmenlerinin verdiği ödevleri takip et ve soruları çöz.</p>
+        <p className="text-muted-foreground">Öğretmenlerinizin verdiği ödevleri takip edin ve soruları çözün.</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-[1fr_16rem] md:items-end">
@@ -108,7 +108,7 @@ export function StudentAssignmentsPage() {
           ))}
         </div>
         <SelectField label="Ders" value={filters.lessonId ?? ""} onChange={(event) => update({ lessonId: event.target.value ? Number(event.target.value) : undefined })}>
-          <option value="">Tüm dersler</option>
+          <option value="">Tüm Dersler</option>
           {(lessons.data ?? []).map((lesson) => (
             <option key={lesson.id} value={lesson.id}>
               {lesson.name}
@@ -124,13 +124,13 @@ export function StudentAssignmentsPage() {
           ))}
         </div>
       ) : list.isError ? (
-        <EmptyState icon={CloudOff} as="h2" title="Ödevler yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
+        <EmptyState icon={CloudOff} as="h2" title="Ödevler Yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
       ) : data && data.items.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
           as="h2"
-          title={filters.tab === "open" ? "Açık ödevin yok" : "Kapanmış ödev yok"}
-          description={filters.tab === "open" ? "Öğretmenin bir ödev verdiğinde burada görünecek." : "Süresi dolan ödevlerin burada listelenir."}
+          title={filters.tab === "open" ? "Açık Ödeviniz Yok" : "Kapanmış Ödev Yok"}
+          description={filters.tab === "open" ? "Öğretmeniniz bir ödev verdiğinde burada görünecek." : "Süresi dolan ödevleriniz burada listelenir."}
         />
       ) : data ? (
         <>

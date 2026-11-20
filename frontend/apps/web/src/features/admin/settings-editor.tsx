@@ -226,7 +226,7 @@ export function SettingsEditor({ sections, describe, ariaLabel, guardLeave = fal
             setServerFields(null);
           }}
         >
-          Değişiklikleri geri al
+          Değişiklikleri Geri Al
         </Button>
         <p className="text-sm text-muted-foreground" role="status">
           {changedCount === 0 ? "Değişiklik yok." : `${changedCount} ayar değişti.`}

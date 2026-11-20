@@ -14,11 +14,11 @@ async function student() {
 }
 
 async function logoutAllViaUi(page: Page) {
-  const sidebarButton = page.getByRole("button", { name: "Tüm cihazlardan çık" });
+  const sidebarButton = page.getByRole("button", { name: "Tüm Cihazlardan Çık" });
   if (!(await sidebarButton.first().isVisible())) {
     await page.goto("/profil");
   }
-  await page.getByRole("button", { name: "Tüm cihazlardan çık" }).locator("visible=true").first().click();
+  await page.getByRole("button", { name: "Tüm Cihazlardan Çık" }).locator("visible=true").first().click();
   await page.waitForURL(/\/giris/);
 }
 
@@ -32,7 +32,7 @@ test.describe("open redirect", () => {
     test(`next=${name} kendi sitemizin dışına çıkarmaz`, async ({ page }) => {
       const account = await student();
       await page.goto(`/giris?next=${next}`);
-      await page.getByLabel("Kullanıcı adı").fill(account.userName);
+      await page.getByLabel("Kullanıcı Adı").fill(account.userName);
       await page.getByLabel(/^Şifre\*?$/).fill(account.password);
       await page.getByRole("button", { name: "Giriş Yap" }).click();
       await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible();

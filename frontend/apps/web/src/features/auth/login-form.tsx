@@ -61,7 +61,7 @@ export function LoginForm() {
       ) : null}
       <ProblemBanner state={problem} countdown={countdown} />
       <TextField
-        label="Kullanıcı adı"
+        label="Kullanıcı Adı"
         autoComplete="username"
         autoCapitalize="none"
         autoCorrect="off"
@@ -76,10 +76,10 @@ export function LoginForm() {
       </Button>
       <div className="flex flex-col items-center gap-1 text-sm">
         <Link href="/sifremi-unuttum" className="inline-flex min-h-touch items-center font-semibold text-primary underline underline-offset-4">
-          Şifremi unuttum
+          Şifremi Unuttum
         </Link>
         <Link href="/kurtarma" className="inline-flex min-h-touch items-center text-muted-foreground underline underline-offset-4">
-          Müdür kurtarma
+          Müdür Kurtarma
         </Link>
       </div>
     </form>

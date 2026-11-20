@@ -24,7 +24,7 @@ export function PoolQuestionCard({ item, onImageExpired }: { item: QuestionPoolI
         <Badge tone={item.source === "ai" ? "info" : item.source === "teacher" ? "accent" : "neutral"}>
           {questionSourceLabel(item.source)}
         </Badge>
-        {item.isMine ? <Badge tone="success">Senin</Badge> : null}
+        {item.isMine ? <Badge tone="success">Sizin</Badge> : null}
       </span>
 
       {item.image ? (
@@ -47,7 +47,7 @@ export function PoolQuestionCard({ item, onImageExpired }: { item: QuestionPoolI
           >
             {item.myAnswer?.isCorrect ? <CheckCircle2 className="size-4" aria-hidden="true" /> : <XCircle className="size-4" aria-hidden="true" />}
             {item.myAnswer?.isCorrect ? "Doğru" : "Yanlış"}
-            {item.correctOption ? ` · Doğru şık ${String.fromCharCode(64 + item.correctOption)}` : ""}
+            {item.correctOption ? ` · Doğru Şık ${String.fromCharCode(64 + item.correctOption)}` : ""}
           </span>
         ) : (
           <span className="font-semibold text-primary-soft-foreground">Çöz</span>

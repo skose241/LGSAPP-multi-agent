@@ -29,7 +29,7 @@ export function toProblemState(error: unknown): ProblemState {
   return {
     status: 0,
     at: Date.now(),
-    problem: { message: "Bağlantı kurulamadı. Tekrar dene.", fieldErrors: {}, formError: null, retryAfter: null },
+    problem: { message: "Bağlantı kurulamadı. Tekrar deneyin.", fieldErrors: {}, formError: null, retryAfter: null },
   };
 }
 
@@ -67,8 +67,8 @@ export function CommentForm({
   draftKey,
   onDone,
   autoFocus = false,
-  placeholder = "Yorumunu yaz",
-  submitLabel = "Yorum yap",
+  placeholder = "Yorumunuzu yazın",
+  submitLabel = "Yorum Yap",
 }: {
   ctx: CommentContext;
   parentId: number | null;
@@ -166,7 +166,7 @@ function EditForm({ comment, ctx, onDone }: { comment: Comment; ctx: CommentCont
     <div className="flex flex-col gap-2">
       <ProblemBanner state={error} />
       <textarea
-        aria-label="Yorumu düzenle"
+        aria-label="Yorumu Düzenle"
         autoFocus
         value={text}
         onChange={(event) => setText(event.target.value)}
@@ -244,7 +244,7 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
     });
   }
   if (comment.canReport) {
-    menuItems.push({ key: "report", icon: <Flag aria-hidden="true" />, label: "Şikâyet et", onSelect: () => setReporting(true) });
+    menuItems.push({ key: "report", icon: <Flag aria-hidden="true" />, label: "Şikâyet Et", onSelect: () => setReporting(true) });
   }
   if (comment.canDelete) {
     menuItems.push({
@@ -308,7 +308,7 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
                 Yanıtla
               </Button>
             ) : null}
-            <ActionMenu label="Diğer işlemler" items={menuItems} triggerRef={triggerRef} />
+            <ActionMenu label="Diğer İşlemler" items={menuItems} triggerRef={triggerRef} />
           </div>
         ) : null}
 
@@ -318,7 +318,7 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
             parentId={comment.id}
             draftKey={`yanit:${ctx.questionId}:${comment.id}`}
             autoFocus
-            placeholder="Yanıtını yaz"
+            placeholder="Yanıtınızı yazın"
             submitLabel="Yanıtla"
             onDone={() => setReplying(false)}
           />
@@ -339,7 +339,7 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
           className="ml-3 inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4"
         >
           <CornerDownRight className="size-4" aria-hidden="true" />
-          Devamını göster ({comment.hiddenReplyCount} yanıt)
+          Devamını Göster ({comment.hiddenReplyCount} yanıt)
         </Link>
       ) : null}
 
@@ -348,7 +348,7 @@ export function CommentNode({ comment, ctx, depth = 0 }: { comment: Comment; ctx
         onOpenChange={setConfirmDelete}
         title="Yorum silinsin mi?"
         description="Yorumun yerinde [silindi] yazacak. Bu işlem geri alınamaz."
-        confirmLabel="Evet, sil"
+        confirmLabel="Evet, Sil"
         tone="danger"
         onCloseAutoFocus={returnFocus}
         pending={removal.isPending}

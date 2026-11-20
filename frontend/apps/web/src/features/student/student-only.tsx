@@ -14,11 +14,11 @@ export function StudentOnly({ children }: { children: ReactNode }) {
       <EmptyState
         icon={ClipboardList}
         as="h2"
-        title="Bu sayfa öğrenciler için"
-        description="Ödevleri yönetmek için ödev yönetimi ekranını kullanabilirsin."
+        title="Bu Sayfa Öğrenciler İçin"
+        description="Ödevleri yönetmek için ödev yönetimi ekranını kullanabilirsiniz."
         action={
           <Button asChild variant="secondary">
-            <Link href="/ogretmen/odevler">Ödev yönetimi</Link>
+            <Link href="/ogretmen/odevler">Ödev Yönetimi</Link>
           </Button>
         }
       />

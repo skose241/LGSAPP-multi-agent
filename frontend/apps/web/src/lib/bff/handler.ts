@@ -191,7 +191,7 @@ export async function handleBffRequest(request: Request, segments: string[]): Pr
       if (!result.ok) return relayFailure(result);
       setCookies.push(...result.setCookies);
       if (!replayable) {
-        return problem(401, "Oturum yenilendi. İşlemi tekrar dene.", setCookies, { "x-session-refreshed": "1" });
+        return problem(401, "Oturum yenilendi. İşlemi tekrar deneyin.", setCookies, { "x-session-refreshed": "1" });
       }
       accessToken = result.accessToken;
       upstream = await send();

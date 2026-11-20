@@ -60,7 +60,7 @@ function ProgressBadge({ progress }: { progress: QuestionProgress }) {
 function QuestionRow({ question, assignmentId, onImageExpired }: { question: StudentAssignmentQuestion; assignmentId: number; onImageExpired: () => void }) {
   const progress = questionProgress(question);
   const href = assignmentQuestionHref(question.id, assignmentId);
-  const actionLabel = progress === "pending" ? "Çöz" : progress === "locked" ? "Soruyu gör" : "Soruya git";
+  const actionLabel = progress === "pending" ? "Çöz" : progress === "locked" ? "Soruyu Gör" : "Soruya Git";
   return (
     <li data-testid="assignment-question" data-question-id={question.id} data-progress={progress}>
       <Card>
@@ -80,7 +80,7 @@ function QuestionRow({ question, assignmentId, onImageExpired }: { question: Stu
             ) : question.image ? null : (
               <span className="flex items-center gap-1 text-sm text-muted-foreground">
                 <ImageIcon className="size-4" aria-hidden="true" />
-                Önizleme yok
+                Önizleme Yok
               </span>
             )}
           </div>
@@ -121,8 +121,8 @@ export function StudentAssignmentDetailPage({ id }: { id: number }) {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title={missing ? "Ödev bulunamadı" : "Ödev yüklenemedi"}
-          description={missing ? "Bu ödeve erişemiyorsun ya da henüz yayınlanmadı." : detail.error.message}
+          title={missing ? "Ödev Bulunamadı" : "Ödev Yüklenemedi"}
+          description={missing ? "Bu ödeve erişemiyorsunuz ya da henüz yayınlanmadı." : detail.error.message}
           action={missing ? undefined : <Button onClick={() => detail.refetch()}>Tekrar Dene</Button>}
         />
       </div>
@@ -161,14 +161,14 @@ export function StudentAssignmentDetailPage({ id }: { id: number }) {
           </p>
           {next ? (
             <Button asChild className="self-start">
-              <Link href={assignmentQuestionHref(next.id, data.id)}>Sıradaki soruya geç</Link>
+              <Link href={assignmentQuestionHref(next.id, data.id)}>Sıradaki Soruya Geç</Link>
             </Button>
           ) : null}
         </CardContent>
       </Card>
 
       {data.questions.length === 0 ? (
-        <EmptyState icon={CircleDashed} as="h2" title="Bu ödevde soru yok" description="Öğretmenin soru eklediğinde burada görünecek." />
+        <EmptyState icon={CircleDashed} as="h2" title="Bu Ödevde Soru Yok" description="Öğretmeniniz soru eklediğinde burada görünecek." />
       ) : (
         <section aria-label="Ödev soruları" className="flex flex-col gap-3">
           <h2 className="text-xl">Sorular ({data.questions.length})</h2>

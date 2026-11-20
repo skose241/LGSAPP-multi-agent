@@ -51,8 +51,8 @@ function wait(ms: number): Promise<void> {
 
 function errorText(state: ProblemState): string {
   const first = Object.values(state.problem.fieldErrors).find((messages) => messages.length > 0)?.[0];
-  if (state.status === 0) return "Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar dene.";
-  if (state.status >= 500) return "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar dene.";
+  if (state.status === 0) return "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.";
+  if (state.status >= 500) return "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar deneyin.";
   return first ?? state.problem.formError ?? state.problem.message;
 }
 
@@ -87,10 +87,10 @@ function PhotoCard({ index, card, item, lessons, minDescription, showErrors, dis
           <p className="font-semibold">Fotoğraf {number} yüklendi</p>
           {card.questionId ? (
             <Link href={`/sorular/${card.questionId}`} className="font-semibold underline">
-              Soruyu aç
+              Soruyu Aç
             </Link>
           ) : (
-            <p>Bu soru daha önce yüklenmiş görünüyor. Sorularım sayfasından kontrol edebilirsin.</p>
+            <p>Bu soru daha önce yüklenmiş görünüyor. Sorularım sayfasından kontrol edebilirsiniz.</p>
           )}
         </div>
         <CheckCircle2 className="size-6 shrink-0" aria-hidden="true" />
@@ -145,7 +145,7 @@ function PhotoCard({ index, card, item, lessons, minDescription, showErrors, dis
             error={visibleErrors.lesson}
             onChange={(event) => onChange({ lessonId: event.target.value ? Number(event.target.value) : null, topicId: null })}
           >
-            <option value="">Ders seç</option>
+            <option value="">Ders Seç</option>
             {lessons.map((lesson) => (
               <option key={lesson.id} value={lesson.id}>
                 {lesson.name}
@@ -153,12 +153,12 @@ function PhotoCard({ index, card, item, lessons, minDescription, showErrors, dis
             ))}
           </SelectField>
           <SelectField
-            label="Konu (isteğe bağlı)"
+            label="Konu (İsteğe Bağlı)"
             value={card.topicId ?? ""}
             disabled={locked || card.lessonId === null || topics.isPending}
             onChange={(event) => onChange({ topicId: event.target.value ? Number(event.target.value) : null })}
           >
-            <option value="">Konu seç</option>
+            <option value="">Konu Seç</option>
             {(topics.data ?? []).map((topic) => (
               <option key={topic.id} value={topic.id}>
                 {topic.name}
@@ -169,7 +169,7 @@ function PhotoCard({ index, card, item, lessons, minDescription, showErrors, dis
 
         <div className="flex flex-col gap-1.5">
           <p className="text-sm font-semibold">
-            Doğru cevap
+            Doğru Cevap
             <span className="ml-1 text-danger" aria-hidden="true">
               *
             </span>
@@ -184,7 +184,7 @@ function PhotoCard({ index, card, item, lessons, minDescription, showErrors, dis
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor={textId} className="text-sm font-semibold">
-            Nerede takıldın?
+            Nerede Takıldınız?
             <span className="ml-1 text-danger" aria-hidden="true">
               *
             </span>
@@ -196,7 +196,7 @@ function PhotoCard({ index, card, item, lessons, minDescription, showErrors, dis
             onChange={(event) => onChange({ description: event.target.value })}
             aria-invalid={Boolean(visibleErrors.description) || undefined}
             aria-describedby={`${textId}-hint`}
-            placeholder="Soruyu çözerken nerede takıldığını, neyi anlamadığını yaz."
+            placeholder="Soruyu çözerken nerede takıldığınızı, neyi anlamadığınızı yazın."
             className="min-h-28 w-full resize-y rounded-md border border-border-strong bg-surface px-4 py-3 text-base hover:border-neutral-600 focus-visible:border-primary disabled:bg-surface-muted aria-invalid:border-danger aria-invalid:bg-danger-soft"
           />
           <p
@@ -274,8 +274,8 @@ export function UploadQuestionPage() {
     if (accepted.length < files.length) {
       setNotice(
         slots === 0
-          ? "Bugün için soru yükleme hakkın doldu."
-          : `En fazla ${slots} fotoğraf daha ekleyebilirsin. ${files.length - accepted.length} fotoğraf eklenmedi.`,
+          ? "Bugün için soru yükleme hakkınız doldu."
+          : `En fazla ${slots} fotoğraf daha ekleyebilirsiniz. ${files.length - accepted.length} fotoğraf eklenmedi.`,
       );
     }
 
@@ -373,7 +373,7 @@ export function UploadQuestionPage() {
 
       failed += 1;
       const duplicate = outcome.state.status === 409;
-      const message = duplicate ? "Bu fotoğrafla bir soru zaten oluşturulmuş olabilir. Sorularım sayfasından kontrol et." : errorText(outcome.state);
+      const message = duplicate ? "Bu fotoğrafla bir soru zaten oluşturulmuş olabilir. Sorularım sayfasından kontrol edin." : errorText(outcome.state);
       patchCard(card.key, { phase: "editing", error: message, mineLink: duplicate });
       if (outcome.stop) {
         stopped = true;
@@ -393,9 +393,9 @@ export function UploadQuestionPage() {
       ]);
     }
     if (skipped > 0) {
-      setNotice(`${skipped} fotoğraf gönderilmedi. Eksik bilgileri tamamlayıp ya da yüklemesi bitince tekrar gönder.`);
+      setNotice(`${skipped} fotoğraf gönderilmedi. Eksik bilgileri tamamlayıp ya da yüklemesi bitince tekrar gönderin.`);
     } else if (failed > 0) {
-      setNotice(`${failed} fotoğraf gönderilemedi. Kartlardaki uyarıları kontrol edip tekrar gönder.`);
+      setNotice(`${failed} fotoğraf gönderilemedi. Kartlardaki uyarıları kontrol edip tekrar gönderin.`);
     }
   }
 
@@ -403,7 +403,7 @@ export function UploadQuestionPage() {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="text-3xl">Soru Yükle</h1>
-        <EmptyState icon={ImagePlus} as="h2" title="Bu sayfa öğrenciler için" description="Öğretmenler havuza soru eklemeyi kendi menüsünden yapar." />
+        <EmptyState icon={ImagePlus} as="h2" title="Bu Sayfa Öğrenciler İçin" description="Öğretmenler havuza soru eklemeyi kendi menüsünden yapar." />
       </div>
     );
   }
@@ -417,7 +417,7 @@ export function UploadQuestionPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl">Soru Yükle</h1>
-          <p className="text-muted-foreground">Çözemediğin sorunun fotoğrafını yükle, doğru cevabı seç ve nerede takıldığını anlat.</p>
+          <p className="text-muted-foreground">Çözemediğiniz sorunun fotoğrafını yükleyin, doğru cevabı seçin ve nerede takıldığınızı anlatın.</p>
         </div>
         <Button asChild variant="secondary">
           <Link href="/sorularim">
@@ -430,7 +430,7 @@ export function UploadQuestionPage() {
       {!online ? (
         <div role="status" data-testid="offline-banner" className="flex items-start gap-3 rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground">
           <WifiOff className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          Çevrimdışısın. Bağlantı gelince başarısız olan yüklemeler için Tekrar dene düğmesini kullanabilirsin.
+          Çevrimdışısınız. Bağlantı gelince başarısız olan yüklemeler için Tekrar Dene düğmesini kullanabilirsiniz.
         </div>
       ) : null}
 
@@ -438,8 +438,8 @@ export function UploadQuestionPage() {
         {quotaKnown ? (
           <>
             <p>
-              Bugün <strong>{used}</strong> / {limit} soru yükledin.{" "}
-              <strong data-testid="quota-remaining">{remaining}</strong> hakkın kaldı.
+              Bugün <strong>{used}</strong> / {limit} soru yüklediniz.{" "}
+              <strong data-testid="quota-remaining">{remaining}</strong> hakkınız kaldı.
             </p>
             {scored ? (
               <p className="mt-1 text-muted-foreground" data-testid="quota-scored">
@@ -448,9 +448,9 @@ export function UploadQuestionPage() {
             ) : null}
           </>
         ) : stats.isError ? (
-          <p className="text-muted-foreground">Günlük hakkın şu an gösterilemiyor.</p>
+          <p className="text-muted-foreground">Günlük hakkınız şu an gösterilemiyor.</p>
         ) : (
-          <p className="text-muted-foreground">Günlük hakkın yükleniyor.</p>
+          <p className="text-muted-foreground">Günlük hakkınız yükleniyor.</p>
         )}
       </div>
 
@@ -461,8 +461,8 @@ export function UploadQuestionPage() {
           className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong bg-surface px-4 py-6 text-center hover:bg-surface-muted peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
         >
           <ImagePlus className="size-7 text-primary" aria-hidden="true" />
-          <span className="text-base font-semibold">Fotoğraf seç</span>
-          <span className="text-sm text-muted-foreground">Birden fazla fotoğrafı bir seferde seçebilirsin. En fazla {slots} fotoğraf daha ekleyebilirsin.</span>
+          <span className="text-base font-semibold">Fotoğraf Seç</span>
+          <span className="text-sm text-muted-foreground">Birden fazla fotoğrafı bir seferde seçebilirsiniz. En fazla {slots} fotoğraf daha ekleyebilirsiniz.</span>
         </label>
       </div>
 
@@ -478,23 +478,23 @@ export function UploadQuestionPage() {
       ) : null}
       {cooldownLeft > 0 ? (
         <p role="status" data-testid="cooldown" className="rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground">
-          Çok hızlı gönderiyorsun. {cooldownLeft} saniye sonra kalan sorular gönderilecek.
+          Çok hızlı gönderiyorsunuz. {cooldownLeft} saniye sonra kalan sorular gönderilecek.
         </p>
       ) : null}
 
       {cards.length === 0 ? (
         lessons.isError ? (
-          <EmptyState icon={CloudOff} as="h2" title="Dersler yüklenemedi" description={lessons.error.message} action={<Button onClick={() => lessons.refetch()}>Tekrar Dene</Button>} />
+          <EmptyState icon={CloudOff} as="h2" title="Dersler Yüklenemedi" description={lessons.error.message} action={<Button onClick={() => lessons.refetch()}>Tekrar Dene</Button>} />
         ) : (
-          <EmptyState icon={Images} as="h2" title="Henüz fotoğraf seçmedin" description="Yukarıdan bir ya da birkaç fotoğraf seç. Her fotoğraf ayrı bir soru olarak yüklenir." />
+          <EmptyState icon={Images} as="h2" title="Henüz Fotoğraf Seçmediniz" description="Yukarıdan bir ya da birkaç fotoğraf seçin. Her fotoğraf ayrı bir soru olarak yüklenir." />
         )
       ) : (
-        <section aria-label="Yüklenecek sorular" className="flex flex-col gap-4">
+        <section aria-label="Yüklenecek Sorular" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-xl">Yüklenecek sorular ({cards.length})</h2>
+            <h2 className="text-xl">Yüklenecek Sorular ({cards.length})</h2>
             {createdCount > 0 ? (
               <Button type="button" variant="ghost" onClick={clearCreated}>
-                Yüklenenleri temizle
+                Yüklenenleri Temizle
               </Button>
             ) : null}
           </div>
@@ -521,12 +521,12 @@ export function UploadQuestionPage() {
             <div className="flex flex-col gap-2 max-lg:sticky max-lg:bottom-[calc(var(--spacing-tabbar)+env(safe-area-inset-bottom)+0.5rem)] max-lg:z-10 max-lg:rounded-lg max-lg:border max-lg:border-border max-lg:bg-surface max-lg:p-3 max-lg:shadow-md">
               {uploading ? (
                 <p role="status" className="text-sm text-muted-foreground" data-testid="pending-uploads">
-                  {pendingUploads} fotoğraf yükleniyor, bitince gönderebilirsin.
+                  {pendingUploads} fotoğraf yükleniyor, bitince gönderebilirsiniz.
                 </p>
               ) : null}
               <Button type="button" size="lg" onClick={submit} loading={submitting} disabled={uploading || submitting} data-testid="submit-questions">
                 <Send aria-hidden="true" />
-                {editing.length === 1 ? "Soruyu gönder" : `${editing.length} soruyu gönder`}
+                {editing.length === 1 ? "Soruyu Gönder" : `${editing.length} Soruyu Gönder`}
               </Button>
             </div>
           ) : null}

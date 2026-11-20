@@ -49,7 +49,7 @@ export function LeaderboardRow({ rank, name, detail, points, isMe = false }: Lea
       <span className="min-w-0 flex-1">
         <span className="block truncate text-base font-semibold">
           {name}
-          {isMe ? <span className="ml-1.5 text-xs font-bold text-primary-soft-foreground">(Sen)</span> : null}
+          {isMe ? <span className="ml-1.5 text-xs font-bold text-primary-soft-foreground">(Siz)</span> : null}
         </span>
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <Flame className="size-3.5 text-accent-600" aria-hidden="true" />

@@ -10,10 +10,10 @@ export const DEFAULT_STUDENT_SORT: StudentSort = "name";
 export const SEARCH_MAX = 60;
 
 export const STUDENT_SORTS: { value: StudentSort; param: string; label: string }[] = [
-  { value: "name", param: "ad", label: "Ada göre" },
-  { value: "points", param: "puan", label: "Puana göre" },
-  { value: "answered", param: "cevap", label: "Cevap sayısına göre" },
-  { value: "lastActive", param: "son", label: "Son etkinliğe göre" },
+  { value: "name", param: "ad", label: "Ada Göre" },
+  { value: "points", param: "puan", label: "Puana Göre" },
+  { value: "answered", param: "cevap", label: "Cevap Sayısına Göre" },
+  { value: "lastActive", param: "son", label: "Son Etkinliğe Göre" },
 ];
 
 function positiveInt(value: string | null): number {

@@ -76,7 +76,7 @@ test.describe("görselli sorular ve ödev kartı", () => {
     await expect(picture).toBeVisible();
     await expect.poll(() => picture.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     expect(await picture.getAttribute("src")).not.toContain("expiredprobe");
-    await expect(page.getByText("Görsel yüklenemedi")).toHaveCount(0);
+    await expect(page.getByText("Görsel Yüklenemedi")).toHaveCount(0);
     expect(detailCalls).toBe(2);
   });
 

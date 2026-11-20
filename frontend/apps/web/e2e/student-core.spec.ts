@@ -94,25 +94,25 @@ test.describe("soru detayı ve cevaplama", () => {
     await studentLogin(page);
     await page.goto(`/sorular/${question.id}`);
 
-    await expect(page.getByRole("heading", { name: "Tartışma kilitli" })).toBeVisible();
-    await expect(page.getByText("Yorumları ve çözümleri görmek için önce soruyu cevapla.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tartışma Kilitli" })).toBeVisible();
+    await expect(page.getByText("Yorumları ve çözümleri görmek için önce soruyu cevaplayın.")).toBeVisible();
     await expect(page.getByText(question.text)).toBeVisible();
 
     const submit = page.getByRole("button", { name: "Cevabı Gönder" });
     await expect(submit).toBeDisabled();
     await page.getByRole("radio", { name: "C şıkkı" }).click();
-    await page.getByLabel(/^Çözümünü anlat/).fill("kısa");
+    await page.getByLabel(/^Çözümünüzü Anlatın/).fill("kısa");
     await expect(submit).toBeDisabled();
     await expect(page.getByTestId("answer-counter")).toContainText(`en az ${w.settings.aciklamaMinKarakter}`);
 
-    await page.getByLabel(/^Çözümünü anlat/).fill(validExplanation(w.settings.aciklamaMinKarakter));
+    await page.getByLabel(/^Çözümünüzü Anlatın/).fill(validExplanation(w.settings.aciklamaMinKarakter));
     await expect(submit).toBeEnabled();
     await submit.click();
 
-    await expect(page.getByTestId("answer-result")).toContainText("Doğru cevap!");
-    await expect(page.getByTestId("points-earned")).toContainText(/Kazandığın puan: \d+/);
+    await expect(page.getByTestId("answer-result")).toContainText("Doğru Cevap!");
+    await expect(page.getByTestId("points-earned")).toContainText(/Kazandığınız Puan: \d+/);
     await expect(page.getByRole("heading", { name: "Çözümler" })).toBeVisible();
-    await expect(page.getByTestId("solution").first()).toContainText("Sen");
+    await expect(page.getByTestId("solution").first()).toContainText("Siz");
   });
 
   test("yanlış cevapta doğru şık gösterilir", async ({ page }) => {
@@ -120,19 +120,19 @@ test.describe("soru detayı ve cevaplama", () => {
     await studentLogin(page);
     await page.goto(`/sorular/${question.id}`);
     await page.getByRole("radio", { name: "A şıkkı" }).click();
-    await page.getByLabel(/^Çözümünü anlat/).fill(validExplanation(w.settings.aciklamaMinKarakter));
+    await page.getByLabel(/^Çözümünüzü Anlatın/).fill(validExplanation(w.settings.aciklamaMinKarakter));
     await page.getByRole("button", { name: "Cevabı Gönder" }).click();
-    await expect(page.getByTestId("answer-result")).toContainText("Bu sefer olmadı");
-    await expect(page.getByTestId("answer-result")).toContainText("Doğru cevap: D");
+    await expect(page.getByTestId("answer-result")).toContainText("Bu Sefer Olmadı");
+    await expect(page.getByTestId("answer-result")).toContainText("Doğru Cevap: D");
   });
 
   test("taslak sayfa yenilenince korunur", async ({ page }) => {
     const { question } = await freshQuestion(`Taslak sorusu ${Date.now().toString(36)}`);
     await studentLogin(page);
     await page.goto(`/sorular/${question.id}`);
-    await page.getByLabel(/^Çözümünü anlat/).fill("Taslak olarak yazdığım yarım açıklama");
+    await page.getByLabel(/^Çözümünüzü Anlatın/).fill("Taslak olarak yazdığım yarım açıklama");
     await page.reload();
-    await expect(page.getByLabel(/^Çözümünü anlat/)).toHaveValue("Taslak olarak yazdığım yarım açıklama");
+    await expect(page.getByLabel(/^Çözümünüzü Anlatın/)).toHaveValue("Taslak olarak yazdığım yarım açıklama");
   });
 
   test("beğeni optimistic çalışır ve kalıcıdır", async ({ page }) => {
@@ -171,12 +171,12 @@ test.describe("çözümler", () => {
     await answerQuestion(student, question.id, 2, validExplanation(w.settings.aciklamaMinKarakter));
 
     await page.goto(`/sorular/${question.id}`);
-    const mine = page.getByTestId("solution").filter({ hasText: "(Sen)" });
+    const mine = page.getByTestId("solution").filter({ hasText: "(Siz)" });
     await expect(mine).toBeVisible();
     await expect(mine.getByTestId("solution-edited")).toHaveCount(0);
     await mine.getByTestId("solution-edit").click();
     const edited = `Düzenlenmiş çözüm: ${validExplanation(w.settings.aciklamaMinKarakter)}`;
-    await page.getByLabel("Çözümü düzenle").fill(edited);
+    await page.getByLabel("Çözümü Düzenle").fill(edited);
     await page.getByRole("button", { name: "Kaydet" }).click();
     await expect(mine.getByTestId("solution-edited")).toBeVisible();
     await expect(mine).toContainText("Düzenlenmiş çözüm:");
@@ -189,10 +189,10 @@ test.describe("çözümler", () => {
     await answerQuestion(student, question.id, 2, validExplanation(w.settings.aciklamaMinKarakter), imageId);
 
     await page.goto(`/sorular/${question.id}`);
-    const mine = page.getByTestId("solution").filter({ hasText: "(Sen)" });
+    const mine = page.getByTestId("solution").filter({ hasText: "(Siz)" });
     await expect(mine.locator("img[alt='Çözüm görseli']")).toBeVisible();
     await mine.getByTestId("solution-edit").click();
-    await page.getByLabel("Çözümü düzenle").fill(`Görsel kalmalı: ${validExplanation(w.settings.aciklamaMinKarakter)}`);
+    await page.getByLabel("Çözümü Düzenle").fill(`Görsel kalmalı: ${validExplanation(w.settings.aciklamaMinKarakter)}`);
     await page.getByRole("button", { name: "Kaydet" }).click();
     await expect(mine.getByTestId("solution-edited")).toBeVisible();
 
@@ -216,13 +216,13 @@ test.describe("çözümler", () => {
     expect(report.status).toBe(201);
 
     await page.goto(`/sorular/${question.id}`);
-    const mine = page.getByTestId("solution").filter({ hasText: "(Sen)" });
+    const mine = page.getByTestId("solution").filter({ hasText: "(Siz)" });
     await expect(mine.getByTestId("solution-edit")).toBeDisabled();
     await expect(mine.getByTestId("solution-locked")).toContainText("incelenen bir şikâyet var");
 
     expect(await rejectPendingReports(w.teacher, answer.solutionId)).toBe(1);
     await page.reload();
-    await expect(page.getByTestId("solution").filter({ hasText: "(Sen)" }).getByTestId("solution-edit")).toBeEnabled();
+    await expect(page.getByTestId("solution").filter({ hasText: "(Siz)" }).getByTestId("solution-edit")).toBeEnabled();
   });
 
   test("çözümü arayüzden şikâyet etmek sayaçlı formla çalışır", async ({ page }) => {
@@ -233,11 +233,11 @@ test.describe("çözümler", () => {
     await answerQuestion(student, question.id, 1, validExplanation(w.settings.aciklamaMinKarakter));
 
     await page.goto(`/sorular/${question.id}`);
-    const others = page.getByTestId("solution").filter({ hasNotText: "(Sen)" });
-    await others.first().getByRole("button", { name: "Şikâyet et" }).click();
+    const others = page.getByTestId("solution").filter({ hasNotText: "(Siz)" });
+    await others.first().getByRole("button", { name: "Şikâyet Et" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByTestId("report-counter")).toContainText(`en az ${w.settings.sikayetMinKarakter}`);
-    const submit = dialog.getByRole("button", { name: "Şikâyet et" });
+    const submit = dialog.getByRole("button", { name: "Şikâyet Et" });
     await expect(submit).toBeDisabled();
     await dialog.getByLabel("Açıklama").fill("Bu çözüm uygun değil, lütfen incelenmeli.");
     await expect(submit).toBeEnabled();

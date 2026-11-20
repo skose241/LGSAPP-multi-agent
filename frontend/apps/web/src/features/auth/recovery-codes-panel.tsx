@@ -11,7 +11,7 @@ interface RecoveryCodesPanelProps {
   confirmLabel?: string;
 }
 
-export function RecoveryCodesPanel({ codes, onConfirm, confirmLabel = "Devam et" }: RecoveryCodesPanelProps) {
+export function RecoveryCodesPanel({ codes, onConfirm, confirmLabel = "Devam Et" }: RecoveryCodesPanelProps) {
   const [saved, setSaved] = useState(false);
   const checkId = useId();
   const text = codes.join("\n");
@@ -21,7 +21,7 @@ export function RecoveryCodesPanel({ codes, onConfirm, confirmLabel = "Devam et"
       await navigator.clipboard.writeText(text);
       toast.success("Kodlar panoya kopyalandı.");
     } catch {
-      toast.error("Kopyalanamadı. Kodları elle not al.");
+      toast.error("Kopyalanamadı. Kodları elle not alın.");
     }
   }
 
@@ -44,8 +44,8 @@ export function RecoveryCodesPanel({ codes, onConfirm, confirmLabel = "Devam et"
         className="flex items-start gap-3 rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground"
       >
         <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-        Bu kodlar bir daha gösterilmeyecek. Şifreni unutursan her kodla bir kez şifreni yenileyebilirsin. Güvenli bir yere
-        kaydet.
+        Bu kodlar bir daha gösterilmeyecek. Şifrenizi unutursanız her kodla bir kez şifrenizi yenileyebilirsiniz. Güvenli bir yere
+        kaydedin.
       </div>
       <ul aria-label="Kurtarma kodları" className="grid grid-cols-1 gap-2 sm:grid-cols-2" data-testid="recovery-codes">
         {codes.map((code) => (
@@ -64,7 +64,7 @@ export function RecoveryCodesPanel({ codes, onConfirm, confirmLabel = "Devam et"
         </Button>
         <Button type="button" variant="secondary" onClick={download}>
           <Download aria-hidden="true" />
-          .txt indir
+          .txt İndir
         </Button>
       </div>
       <label htmlFor={checkId} className="flex min-h-touch cursor-pointer items-center gap-3 text-base font-semibold">
@@ -75,7 +75,7 @@ export function RecoveryCodesPanel({ codes, onConfirm, confirmLabel = "Devam et"
           onChange={(event) => setSaved(event.target.checked)}
           className="size-6 shrink-0 accent-primary"
         />
-        Kodları güvenli bir yere kaydettim
+        Kodları Güvenli Bir Yere Kaydettim
       </label>
       <Button type="button" size="lg" disabled={!saved} onClick={onConfirm}>
         <Check aria-hidden="true" />

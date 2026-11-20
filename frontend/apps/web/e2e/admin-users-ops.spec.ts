@@ -99,7 +99,7 @@ test.describe("toplu kullanıcı ekleme", () => {
     const third = uniqueName("topluC");
 
     await page.goto("/yonetim/kullanicilar");
-    await page.getByRole("link", { name: "Toplu ekle" }).click();
+    await page.getByRole("link", { name: "Toplu Ekle" }).click();
     await expect(page).toHaveURL(/\/yonetim\/kullanicilar\/toplu$/);
     await page.getByTestId("bulk-text").fill(
       `ad;soyad;kullanıcıAdı;sınıf;rol;branş\nAli;Yılmaz;${first};8-A;ogrenci\nAyşe;Demir;${second};;Öğretmen;${lessonName}\nVeli;Kaya;${third};7-B;ÖĞRENCİ`,
@@ -143,7 +143,7 @@ test.describe("toplu kullanıcı ekleme", () => {
       const copied = await page.evaluate(() => navigator.clipboard.readText());
       expect(copied.split("\n")).toHaveLength(4);
       expect(copied).toContain(credentials[first]!);
-      expect(copied.split("\n")[0]?.trimEnd()).toBe("Ad soyad\tKullanıcı adı\tSınıf\tRol\tŞifre");
+      expect(copied.split("\n")[0]?.trimEnd()).toBe("Ad Soyad\tKullanıcı Adı\tSınıf\tRol\tŞifre");
     }
 
     let dialogMessage = "";
@@ -151,7 +151,7 @@ test.describe("toplu kullanıcı ekleme", () => {
       dialogMessage = dialog.message();
       void dialog.dismiss();
     });
-    await page.getByRole("link", { name: "Listeye dön" }).click();
+    await page.getByRole("link", { name: "Listeye Dön" }).click();
     await expect.poll(() => dialogMessage).toContain("bir daha gösterilmeyecek");
     await expect(page).toHaveURL(/\/yonetim\/kullanicilar\/toplu$/);
     await expect(page.getByTestId("bulk-result")).toBeVisible();
@@ -160,10 +160,10 @@ test.describe("toplu kullanıcı ekleme", () => {
     try {
       await login(other.page, first, credentials[first]!);
       await expect(other.page).toHaveURL(/\/sifre-degistir/);
-      await other.page.getByLabel(/^Mevcut şifre/).fill(credentials[first]!);
-      await other.page.getByLabel(/^Yeni şifre\*?$/).fill(NEW_PASSWORD);
-      await other.page.getByLabel(/^Yeni şifre \(tekrar\)/).fill(NEW_PASSWORD);
-      await other.page.getByRole("button", { name: "Şifreyi kaydet" }).click();
+      await other.page.getByLabel(/^Mevcut Şifre/).fill(credentials[first]!);
+      await other.page.getByLabel(/^Yeni Şifre\*?$/).fill(NEW_PASSWORD);
+      await other.page.getByLabel(/^Yeni Şifre \(Tekrar\)/).fill(NEW_PASSWORD);
+      await other.page.getByRole("button", { name: "Şifreyi Kaydet" }).click();
       await expect(other.page.getByRole("heading", { name: /Merhaba Ali/ })).toBeVisible();
     } finally {
       await other.context.close();
@@ -213,7 +213,7 @@ test.describe("toplu kullanıcı ekleme", () => {
     await page.goto("/yonetim/kullanicilar/toplu");
     await page.getByTestId("bulk-text").fill(`Ali;Yılmaz;${uniqueName("sinir")};8-A;ogrenci`);
     await page.getByTestId("bulk-submit").click();
-    await expect(page.getByTestId("problem-banner")).toContainText("saniye sonra tekrar deneyebilirsin");
+    await expect(page.getByTestId("problem-banner")).toContainText("saniye sonra tekrar deneyebilirsiniz");
     await expect(page.getByTestId("bulk-submit")).toBeDisabled();
     await expect(page.getByTestId("bulk-submit")).toBeEnabled({ timeout: 10_000 });
   });
@@ -327,7 +327,7 @@ test.describe("şikâyet ve engelleme", () => {
     test.setTimeout(120_000);
     const setup = await reportSetup("Engelleme");
     const mudur = await mudurSession(page);
-    const search = page.getByLabel("Kullanıcı ara");
+    const search = page.getByLabel("Kullanıcı Ara");
 
     await page.goto("/yonetim/kullanicilar");
     await search.fill(setup.author.userName);
@@ -338,18 +338,18 @@ test.describe("şikâyet ve engelleme", () => {
     await expect(page).toHaveURL(/sikayetli=1/);
     await expect(page.getByText("Şikâyet var (1)").locator("visible=true")).toHaveCount(1);
     await search.fill(setup.reporter.userName);
-    await expect(page.getByText("Eşleşen kullanıcı yok")).toBeVisible();
+    await expect(page.getByText("Eşleşen Kullanıcı Yok")).toBeVisible();
     await page.reload();
     await expect(page.getByTestId("reported-filter")).toHaveAttribute("aria-pressed", "true");
 
     await page.goto(`/yonetim/kullanicilar/${setup.author.id}`);
     await expect(page.getByTestId("report-info")).toContainText("1");
-    await page.getByRole("link", { name: "Şikâyetlere git" }).click();
+    await page.getByRole("link", { name: "Şikâyetlere Git" }).click();
     await expect(page).toHaveURL(/\/ogretmen\/sikayetler$/);
 
     await page.goto(`/ogretmen/sikayetler/${setup.reportId}`);
     await expect(page.getByTestId("reported-user-link")).toHaveAttribute("href", `/yonetim/kullanicilar/${setup.author.id}`);
-    await page.getByRole("radio", { name: /Kullanıcıyı engelle/ }).check();
+    await page.getByRole("radio", { name: /Kullanıcıyı Engelle/ }).check();
     await page.getByTestId("resolve-submit").click();
     await page.getByRole("dialog").getByRole("button", { name: "Uygula" }).click();
     await expect(page.getByTestId("report-outcome")).toBeVisible();
@@ -367,9 +367,9 @@ test.describe("şikâyet ve engelleme", () => {
     await search.fill(setup.author.userName);
     await expect(page.getByText("Banlı").locator("visible=true")).toHaveCount(1);
     await expect(page.getByTestId("ban-date").locator("visible=true")).toContainText("Engellendi:");
-    await expect(page.getByText(/Şikâyet var \(/)).toHaveCount(0);
+    await expect(page.getByText(/Şikâyet Var \(/)).toHaveCount(0);
     await page.getByTestId("reported-filter").click();
-    await expect(page.getByText("Eşleşen kullanıcı yok")).toBeVisible();
+    await expect(page.getByText("Eşleşen Kullanıcı Yok")).toBeVisible();
   });
 
   test("öğretmen şikâyet detayında kullanıcıyı engelle seçeneğini görmez", async ({ page }) => {
@@ -378,8 +378,8 @@ test.describe("şikâyet ve engelleme", () => {
     await login(page, teacher.userName, teacher.password);
     await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible();
     await page.goto(`/ogretmen/sikayetler/${setup.reportId}`);
-    await expect(page.getByRole("radio", { name: /Şikâyeti reddet/ })).toBeVisible();
-    await expect(page.getByRole("radio", { name: /Kullanıcıyı engelle/ })).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: /Şikâyeti Reddet/ })).toBeVisible();
+    await expect(page.getByRole("radio", { name: /Kullanıcıyı Engelle/ })).toHaveCount(0);
     await expect(page.getByTestId("reported-user-link")).toHaveCount(0);
   });
 });

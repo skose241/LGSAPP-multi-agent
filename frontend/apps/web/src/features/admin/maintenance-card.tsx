@@ -62,7 +62,7 @@ export function MaintenanceCard() {
             }}
           >
             <Eraser className="size-4" aria-hidden="true" />
-            {countdown > 0 ? `Bekle (${countdown})` : "Sahipsiz dosyaları temizle"}
+            {countdown > 0 ? `Bekle (${countdown})` : "Sahipsiz Dosyaları Temizle"}
           </Button>
         </div>
       </CardContent>

@@ -48,7 +48,7 @@ export function AssignmentCreatePage() {
       }),
     onSuccess: async (created) => {
       setError(null);
-      toast.success("Ödev taslak olarak oluşturuldu. Şimdi soru ekleyebilirsin.");
+      toast.success("Ödev taslak olarak oluşturuldu. Şimdi soru ekleyebilirsiniz.");
       await queryClient.invalidateQueries({ queryKey: assignmentKeys.teacherAll });
       router.replace(`/ogretmen/odevler/${created.id}`);
     },
@@ -66,7 +66,7 @@ export function AssignmentCreatePage() {
   const back = (
     <Link href="/ogretmen/odevler" className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4">
       <ArrowLeft className="size-4" aria-hidden="true" />
-      Ödev yönetimi
+      Ödev Yönetimi
     </Link>
   );
 
@@ -89,7 +89,7 @@ export function AssignmentCreatePage() {
       {back}
       <div>
         <h1 className="text-3xl">Yeni Ödev</h1>
-        <p className="text-muted-foreground">Ödev önce taslak olarak kaydedilir. Soruları ekledikten sonra yayınlayabilir ya da ileri bir tarihe planlayabilirsin.</p>
+        <p className="text-muted-foreground">Ödev önce taslak olarak kaydedilir. Soruları ekledikten sonra yayınlayabilir ya da ileri bir tarihe planlayabilirsiniz.</p>
       </div>
 
       <form onSubmit={onSubmit} noValidate>
@@ -107,7 +107,7 @@ export function AssignmentCreatePage() {
                 onChange: setLessonChoice,
                 options: lessonOptions,
                 disabled: !isMudur,
-                error: lessonMissing ? "Dersi seç." : undefined,
+                error: lessonMissing ? "Dersi seçin." : undefined,
                 hint: isMudur ? undefined : "Ödev branş dersine verilir.",
               }}
             />
@@ -116,7 +116,7 @@ export function AssignmentCreatePage() {
                 <Link href="/ogretmen/odevler">Vazgeç</Link>
               </Button>
               <Button type="submit" loading={create.isPending} data-testid="assignment-create">
-                Taslak olarak oluştur
+                Taslak Olarak Oluştur
               </Button>
             </div>
           </CardContent>

@@ -191,7 +191,7 @@ function ScheduleEditor({ schedule }: { schedule: GenerationSchedule }) {
       <ProblemBanner state={banner} countdown={countdown} />
       {errorEntries.length > 0 ? (
         <div role="alert" data-testid="schedule-errors" className="rounded-md border border-danger bg-danger-soft p-3 text-sm font-medium text-danger-soft-foreground">
-          <p>Şu hücreleri düzelt:</p>
+          <p>Şu hücreleri düzeltin:</p>
           <ul className="mt-1 list-disc pl-5">
             {errorEntries.map((entry) => (
               <li key={entry.key} id={`cell-error-${entry.key}`}>
@@ -204,7 +204,7 @@ function ScheduleEditor({ schedule }: { schedule: GenerationSchedule }) {
 
       <div className="hidden lg:block" data-testid="schedule-table">
         <table className="w-full border-collapse text-sm">
-          <caption className="sr-only">Gün ve derse göre günlük soru adedi</caption>
+          <caption className="sr-only">Gün ve Derse Göre Günlük Soru Adedi</caption>
           <thead>
             <tr>
               <th scope="col" className="px-2 py-2 text-left font-semibold">
@@ -236,7 +236,7 @@ function ScheduleEditor({ schedule }: { schedule: GenerationSchedule }) {
           <tfoot>
             <tr className="border-t border-border-strong">
               <th scope="row" className="px-2 py-2 text-left font-semibold">
-                Günlük toplam
+                Günlük Toplam
               </th>
               {SCHEDULE_DAYS.map(({ day }) => (
                 <td key={day} className="px-2 py-2 text-center font-semibold" data-testid="day-total" data-day={day}>
@@ -290,7 +290,7 @@ function ScheduleEditor({ schedule }: { schedule: GenerationSchedule }) {
           {blocked ? `Bekle (${countdown})` : "Kaydet"}
         </Button>
         <Button type="button" variant="ghost" disabled={!dirty || mutation.isPending} onClick={reset}>
-          Değişiklikleri geri al
+          Değişiklikleri Geri Al
         </Button>
         <p className="text-sm text-muted-foreground" role="status">
           {dirty ? `${changed.length} hücre değişti.` : "Değişiklik yok."}
@@ -313,12 +313,12 @@ export function GenerationSchedulePage() {
           </p>
         </div>
         <Button asChild variant="secondary">
-          <Link href="/ogretmen/konu-plani">Konu planına git</Link>
+          <Link href="/ogretmen/konu-plani">Konu Planına Git</Link>
         </Button>
       </div>
       <Card data-testid="schedule-card">
         <CardHeader>
-          <CardTitle as="h2">Haftalık soru adedi</CardTitle>
+          <CardTitle as="h2">Haftalık Soru Adedi</CardTitle>
         </CardHeader>
         <CardContent>
           {schedule.isPending ? (
@@ -327,12 +327,12 @@ export function GenerationSchedulePage() {
             <EmptyState
               icon={CloudOff}
               as="h3"
-              title="Ders programı alınamadı"
+              title="Ders Programı Alınamadı"
               description={schedule.error.message}
               action={<Button onClick={() => schedule.refetch()}>Tekrar Dene</Button>}
             />
           ) : schedule.data.lessons.length === 0 ? (
-            <EmptyState icon={CloudOff} as="h3" title="Aktif ders yok" description="Program oluşturmak için önce aktif bir ders tanımlanmalı." />
+            <EmptyState icon={CloudOff} as="h3" title="Aktif Ders Yok" description="Program oluşturmak için önce aktif bir ders tanımlanmalı." />
           ) : (
             <ScheduleEditor schedule={schedule.data} />
           )}

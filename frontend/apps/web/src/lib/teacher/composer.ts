@@ -12,7 +12,7 @@ export interface ComposerCardErrors {
 
 export function validateComposerCard(input: ComposerCardInput): ComposerCardErrors {
   const errors: ComposerCardErrors = {};
-  if (!input.option) errors.option = "Doğru şıkkı seç.";
+  if (!input.option) errors.option = "Doğru şıkkı seçin.";
   if (input.description.trim().length > CARD_DESCRIPTION_MAX) {
     errors.description = `Açıklama en fazla ${CARD_DESCRIPTION_MAX} karakter olabilir.`;
   }
@@ -46,11 +46,11 @@ export const OPTION_TEXT_MAX = 500;
 export function validateTextQuestion(input: TextQuestionInput): TextQuestionErrors {
   const errors: TextQuestionErrors = {};
   const text = input.text.trim();
-  if (text === "") errors.text = "Soru metnini yaz.";
+  if (text === "") errors.text = "Soru metnini yazın.";
   else if (text.length > QUESTION_TEXT_MAX) errors.text = `Soru metni en fazla ${QUESTION_TEXT_MAX} karakter olabilir.`;
   const filled = input.options.filter((entry) => entry.trim() !== "").length;
   if (filled > 0 && filled < 4) errors.options = "Şıklar ya hep birlikte girilmeli ya da hiç girilmemeli.";
   else if (input.options.some((entry) => entry.trim().length > OPTION_TEXT_MAX)) errors.options = `Şık en fazla ${OPTION_TEXT_MAX} karakter olabilir.`;
-  if (!input.option) errors.option = "Doğru şıkkı seç.";
+  if (!input.option) errors.option = "Doğru şıkkı seçin.";
   return errors;
 }

@@ -17,11 +17,11 @@ interface UploadStatusProps {
 function statusText(item: UploadItem<unknown>, now: number): string {
   switch (item.status) {
     case "queued":
-      return "Sırada bekliyor";
+      return "Sırada Bekliyor";
     case "preparing":
-      return "Fotoğraf hazırlanıyor";
+      return "Fotoğraf Hazırlanıyor";
     case "uploading":
-      return item.attempt > 1 ? `Yükleniyor %${Math.round(item.progress * 100)} (deneme ${item.attempt}/${item.maxAttempts})` : `Yükleniyor %${Math.round(item.progress * 100)}`;
+      return item.attempt > 1 ? `Yükleniyor %${Math.round(item.progress * 100)} (Deneme ${item.attempt}/${item.maxAttempts})` : `Yükleniyor %${Math.round(item.progress * 100)}`;
     case "waiting": {
       const seconds = Math.max(0, Math.ceil(((item.nextRetryAt ?? now) - now) / 1000));
       return `${item.failure?.message ?? "Bağlantı sorunu."} ${seconds} sn sonra yeniden denenecek (deneme ${item.attempt}/${item.maxAttempts}).`;
@@ -29,7 +29,7 @@ function statusText(item: UploadItem<unknown>, now: number): string {
     case "done":
       return item.preparedBytes ? `Yüklendi (${formatBytes(item.preparedBytes)})` : "Yüklendi";
     case "cancelled":
-      return "Yükleme iptal edildi";
+      return "Yükleme İptal Edildi";
     case "failed":
       return item.failure?.message ?? "Yükleme başarısız oldu.";
   }
@@ -92,7 +92,7 @@ export function UploadStatus({ item, label, onRetry, onCancel, className }: Uplo
           {canRetry ? (
             <Button type="button" variant="secondary" className="h-11" onClick={onRetry} data-testid="upload-retry">
               <RotateCw aria-hidden="true" />
-              Tekrar dene
+              Tekrar Dene
             </Button>
           ) : null}
         </div>

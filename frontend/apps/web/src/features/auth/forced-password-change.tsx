@@ -23,12 +23,12 @@ export function ForcedPasswordChange() {
 
   return (
     <AuthCard
-      title="Yeni şifreni belirle"
-      description="Güvenliğin için okulun verdiği tek seferlik şifreyi değiştirmen gerekiyor."
+      title="Yeni Şifrenizi Belirleyin"
+      description="Güvenliğiniz için okulunuzun verdiği tek seferlik şifreyi değiştirmeniz gerekiyor."
     >
       <ChangePasswordForm
         minLength={minPasswordLength(me.data?.role)}
-        submitLabel="Şifreyi kaydet"
+        submitLabel="Şifreyi Kaydet"
         onSuccess={async (codes) => {
           await queryClient.invalidateQueries({ queryKey: ME_KEY });
           if (codes) {

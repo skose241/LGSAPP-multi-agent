@@ -14,7 +14,7 @@ export function OneTimePasswordDialog({ result, onClose }: OneTimePasswordDialog
     <Dialog open={result !== null}>
       {result ? (
         <DialogContent
-          title="Yeni tek seferlik şifre"
+          title="Yeni Tek Seferlik Şifre"
           description={`${result.displayName} için şifre yenilendi. Kullanıcının eski oturumları kapandı.`}
           hideClose
           onEscapeKeyDown={(event) => event.preventDefault()}
@@ -24,7 +24,7 @@ export function OneTimePasswordDialog({ result, onClose }: OneTimePasswordDialog
           <OneTimePasswordPanel userName={result.userName} displayName={result.displayName} password={result.password} />
           <DialogFooter>
             <Button type="button" onClick={onClose}>
-              Şifreyi not aldım
+              Şifreyi Not Aldım
             </Button>
           </DialogFooter>
         </DialogContent>

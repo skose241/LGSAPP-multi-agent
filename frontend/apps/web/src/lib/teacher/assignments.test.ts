@@ -48,13 +48,13 @@ describe("tarih ve durum yardımcıları", () => {
   });
 
   it("kalan süre etiketi duruma göre değişir", () => {
-    expect(remainingLabel("open", "2026-11-10", "2026-11-17", "2026-11-17")).toBe("Son gün bugün");
-    expect(remainingLabel("open", "2026-11-10", "2026-11-18", "2026-11-17")).toBe("Son gün yarın");
-    expect(remainingLabel("open", "2026-11-10", "2026-11-22", "2026-11-17")).toBe("5 gün kaldı");
-    expect(remainingLabel("scheduled", "2026-11-18", "2026-11-22", "2026-11-17")).toBe("Yarın başlar");
-    expect(remainingLabel("scheduled", "2026-11-21", "2026-11-25", "2026-11-17")).toBe("4 gün sonra başlar");
+    expect(remainingLabel("open", "2026-11-10", "2026-11-17", "2026-11-17")).toBe("Son Gün Bugün");
+    expect(remainingLabel("open", "2026-11-10", "2026-11-18", "2026-11-17")).toBe("Son Gün Yarın");
+    expect(remainingLabel("open", "2026-11-10", "2026-11-22", "2026-11-17")).toBe("5 Gün Kaldı");
+    expect(remainingLabel("scheduled", "2026-11-18", "2026-11-22", "2026-11-17")).toBe("Yarın Başlar");
+    expect(remainingLabel("scheduled", "2026-11-21", "2026-11-25", "2026-11-17")).toBe("4 Gün Sonra Başlar");
     expect(remainingLabel("closed", "2026-11-01", "2026-11-05", "2026-11-17")).toBe("Kapandı");
-    expect(remainingLabel("draft", "2026-11-18", "2026-11-22", "2026-11-17")).toBe("Henüz yayınlanmadı");
+    expect(remainingLabel("draft", "2026-11-18", "2026-11-22", "2026-11-17")).toBe("Henüz Yayınlanmadı");
   });
 
   it("ilerleme yüzdesini sınırlar", () => {
@@ -70,7 +70,7 @@ describe("tarih ve durum yardımcıları", () => {
   it("tarih doğrulaması bitişin başlangıçtan önce olmasını yakalar", () => {
     expect(validateAssignmentDates({ startDate: "2026-11-17", endDate: "2026-11-20" })).toEqual({});
     expect(validateAssignmentDates({ startDate: "2026-11-17", endDate: "2026-11-16" }).endDate).toMatch(/önce olamaz/);
-    expect(validateAssignmentDates({ startDate: "", endDate: "" })).toEqual({ startDate: "Başlangıç tarihini seç.", endDate: "Bitiş tarihini seç." });
+    expect(validateAssignmentDates({ startDate: "", endDate: "" })).toEqual({ startDate: "Başlangıç tarihini seçin.", endDate: "Bitiş tarihini seçin." });
   });
 
   it("tarih doğrulaması backend sınırlarını bilir", () => {

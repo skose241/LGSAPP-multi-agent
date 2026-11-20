@@ -56,12 +56,12 @@ export function RecoverForm() {
         <div role="status" className="flex items-start gap-3 rounded-md border border-success bg-success-soft p-3 text-success-soft-foreground">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
           <div className="font-medium">
-            <p>Şifren yenilendi. Yeni şifrenle giriş yapabilirsin.</p>
-            <p className="pt-1 text-sm">Kalan kurtarma kodu sayısı: {remaining}</p>
+            <p>Şifreniz yenilendi. Yeni şifrenizle giriş yapabilirsiniz.</p>
+            <p className="pt-1 text-sm">Kalan Kurtarma Kodu Sayısı: {remaining}</p>
           </div>
         </div>
         <Button asChild size="lg">
-          <Link href="/giris">Giriş yap</Link>
+          <Link href="/giris">Giriş Yap</Link>
         </Button>
       </div>
     );
@@ -71,7 +71,7 @@ export function RecoverForm() {
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
       <ProblemBanner state={problem} countdown={countdown} />
       <TextField
-        label="Kullanıcı adı"
+        label="Kullanıcı Adı"
         autoComplete="username"
         autoCapitalize="none"
         autoCorrect="off"
@@ -85,7 +85,7 @@ export function RecoverForm() {
         name="recoveryCode"
         render={({ field }) => (
           <TextField
-            label="Kurtarma kodu"
+            label="Kurtarma Kodu"
             placeholder="XXXX-XXXX-XXXX"
             inputMode="text"
             autoComplete="off"
@@ -105,7 +105,7 @@ export function RecoverForm() {
         )}
       />
       <PasswordField
-        label="Yeni şifre"
+        label="Yeni Şifre"
         autoComplete="new-password"
         required
         hint={`En az ${MIN_PASSWORD_LENGTH.mudur} karakter, bir rakam, bir büyük ve bir küçük harf.`}
@@ -113,10 +113,10 @@ export function RecoverForm() {
         {...register("newPassword")}
       />
       <Button type="submit" size="lg" loading={submitting} disabled={blocked}>
-        {blocked ? `Bekle (${countdown})` : "Şifremi yenile"}
+        {blocked ? `Bekle (${countdown})` : "Şifremi Yenile"}
       </Button>
       <Link href="/giris" className="inline-flex min-h-touch items-center justify-center text-sm font-semibold text-primary underline underline-offset-4">
-        Girişe dön
+        Girişe Dön
       </Link>
     </form>
   );

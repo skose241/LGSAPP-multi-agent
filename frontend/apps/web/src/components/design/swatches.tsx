@@ -66,17 +66,17 @@ export const statusSwatches: Swatch[] = [
   { name: "Hata", hex: "#b42318", className: "bg-danger-600" },
   { name: "Uyarı", hex: "#8a5a00", className: "bg-warning-600" },
   { name: "Bilgi", hex: "#1d5fa8", className: "bg-info-600" },
-  { name: "Doğru şık", hex: "#0f7b5f", className: "bg-correct-600" },
-  { name: "Yanlış şık", hex: "#b3263e", className: "bg-wrong-600" },
+  { name: "Doğru Şık", hex: "#0f7b5f", className: "bg-correct-600" },
+  { name: "Yanlış Şık", hex: "#b3263e", className: "bg-wrong-600" },
 ];
 
 export const statusSoftSwatches: Swatch[] = [
-  { name: "Başarı zemin", hex: "#e3f5eb", className: "bg-success-50" },
-  { name: "Hata zemin", hex: "#fdecea", className: "bg-danger-50" },
-  { name: "Uyarı zemin", hex: "#fff3d6", className: "bg-warning-50" },
-  { name: "Bilgi zemin", hex: "#e4f0fc", className: "bg-info-50" },
-  { name: "Doğru zemin", hex: "#dff5ec", className: "bg-correct-50" },
-  { name: "Yanlış zemin", hex: "#fce8ec", className: "bg-wrong-50" },
+  { name: "Başarı Zemin", hex: "#e3f5eb", className: "bg-success-50" },
+  { name: "Hata Zemin", hex: "#fdecea", className: "bg-danger-50" },
+  { name: "Uyarı Zemin", hex: "#fff3d6", className: "bg-warning-50" },
+  { name: "Bilgi Zemin", hex: "#e4f0fc", className: "bg-info-50" },
+  { name: "Doğru Zemin", hex: "#dff5ec", className: "bg-correct-50" },
+  { name: "Yanlış Zemin", hex: "#fce8ec", className: "bg-wrong-50" },
 ];
 
 export function SwatchRow({ swatches, label }: { swatches: Swatch[]; label: string }) {

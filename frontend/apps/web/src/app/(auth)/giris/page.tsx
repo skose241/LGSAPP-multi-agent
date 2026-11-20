@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: "Giriş" };
 export default function LoginPage() {
   return (
     <AuthCard
-      title="Giriş yap"
-      description="Okulunun verdiği kullanıcı adı ve şifreyle giriş yap."
+      title="Giriş Yap"
+      description="Okulunuzun verdiği kullanıcı adı ve şifreyle giriş yapın."
       footer={<LicenseLink />}
     >
       <Suspense>

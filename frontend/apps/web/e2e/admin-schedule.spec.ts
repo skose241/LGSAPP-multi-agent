@@ -64,7 +64,7 @@ test.describe("ders programı", () => {
     const next = original === 7 ? 6 : 7;
     await openAsMudur(page);
     await expect(page.getByText("17.30")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Konu planına git" })).toHaveAttribute("href", "/ogretmen/konu-plani");
+    await expect(page.getByRole("link", { name: "Konu Planına Git" })).toHaveAttribute("href", "/ogretmen/konu-plani");
     await expect(page.getByTestId("schedule-save")).toBeDisabled();
 
     const input = cell(page, 1, lesson.id);
@@ -140,7 +140,7 @@ test.describe("ders programı", () => {
     const lesson = snapshot.lessons[0]!;
     await openAsMudur(page);
     const stored = snapshot.items.find((item) => item.isoDayOfWeek === 1 && item.lessonId === lesson.id)!.questionCount;
-    const link = page.getByRole("link", { name: "Konu planına git" });
+    const link = page.getByRole("link", { name: "Konu Planına Git" });
 
     await cell(page, 1, lesson.id).fill(String(stored + 1));
     await cell(page, 1, lesson.id).fill(String(stored));
@@ -156,7 +156,7 @@ test.describe("ders programı", () => {
     await expect.poll(() => messages.length).toBe(1);
     expect(messages[0]).toContain("Kaydedilmemiş değişiklikler");
     await expect(page).toHaveURL(/\/yonetim\/ders-programi$/);
-    await page.getByRole("button", { name: "Değişiklikleri geri al" }).click();
+    await page.getByRole("button", { name: "Değişiklikleri Geri Al" }).click();
     await expect(cell(page, 1, lesson.id)).toHaveValue(String(stored));
   });
 

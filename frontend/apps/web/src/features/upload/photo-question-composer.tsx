@@ -71,10 +71,10 @@ interface ComposerProps {
 
 const MAX_ATTEMPTS = 4;
 
-const UNCERTAIN_NOTE_EDITED = "Önceki gönderimin sonucu belirsiz. Gönderirken önce önceki gönderim aynı bilgilerle kesinleştirilir, ardından yaptığın değişiklik uygulanır.";
-const UNCERTAIN_NOTE_EDITED_NO_RECONCILE = "Önceki gönderimin sonucu belirsiz. Gönderirken önce önceki gönderim aynı bilgilerle kesinleştirilir. Yaptığın değişiklik uygulanmaz; gerekirse soruyu sonradan düzenleyebilirsin.";
+const UNCERTAIN_NOTE_EDITED = "Önceki gönderimin sonucu belirsiz. Gönderirken önce önceki gönderim aynı bilgilerle kesinleştirilir, ardından yaptığınız değişiklik uygulanır.";
+const UNCERTAIN_NOTE_EDITED_NO_RECONCILE = "Önceki gönderimin sonucu belirsiz. Gönderirken önce önceki gönderim aynı bilgilerle kesinleştirilir. Yaptığınız değişiklik uygulanmaz; gerekirse soruyu sonradan düzenleyebilirsiniz.";
 const UNCERTAIN_NOTE_PLAIN = "Önceki gönderimin sonucu belirsiz. Tekrar göndermek aynı soruyu ikinci kez oluşturmaz.";
-const DIVERGED_NOTE = "Önceki gönderim tamamlanmıştı; sonradan yaptığın değişiklik uygulanmadı. Gerekirse soruyu açıp düzenle.";
+const DIVERGED_NOTE = "Önceki gönderim tamamlanmıştı; sonradan yaptığınız değişiklik uygulanmadı. Gerekirse soruyu açıp düzenleyin.";
 
 function sameValues(a: CardValues, b: CardValues): boolean {
   return a.topicId === b.topicId && a.option === b.option && a.description.trim() === b.description.trim();
@@ -96,8 +96,8 @@ function wait(ms: number): Promise<void> {
 
 export function composerErrorText(state: ProblemState): string {
   const first = Object.values(state.problem.fieldErrors).find((messages) => messages.length > 0)?.[0];
-  if (state.status === 0) return "Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar dene.";
-  if (state.status >= 500) return "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar dene.";
+  if (state.status === 0) return "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.";
+  if (state.status >= 500) return "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar deneyin.";
   return first ?? state.problem.formError ?? state.problem.message;
 }
 
@@ -181,7 +181,7 @@ function CardView({ index, card, item, topics, topicsLoading, showErrors, disabl
 
         <div className="flex flex-col gap-1.5">
           <p className="text-sm font-semibold">
-            Doğru cevap
+            Doğru Cevap
             <span className="ml-1 text-danger" aria-hidden="true">
               *
             </span>
@@ -195,12 +195,12 @@ function CardView({ index, card, item, topics, topicsLoading, showErrors, disabl
         </div>
 
         <SelectField
-          label="Konu (isteğe bağlı)"
+          label="Konu (İsteğe Bağlı)"
           value={card.topicId ?? ""}
           disabled={locked || topicsLoading}
           onChange={(event) => onChange({ topicId: event.target.value ? Number(event.target.value) : null })}
         >
-          <option value="">Konu seç</option>
+          <option value="">Konu Seç</option>
           {topics.map((topic) => (
             <option key={topic.id} value={topic.id}>
               {topic.name}
@@ -210,7 +210,7 @@ function CardView({ index, card, item, topics, topicsLoading, showErrors, disabl
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor={textId} className="text-sm font-semibold">
-            Açıklama (isteğe bağlı)
+            Açıklama (İsteğe Bağlı)
           </label>
           <textarea
             id={textId}
@@ -294,7 +294,7 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
     setNotice(null);
     const accepted = files.slice(0, slots);
     if (accepted.length < files.length) {
-      setNotice(slots === 0 ? `Aynı anda en fazla ${maxCards} fotoğraf hazırlanabilir.` : `En fazla ${slots} fotoğraf daha ekleyebilirsin. ${files.length - accepted.length} fotoğraf eklenmedi.`);
+      setNotice(slots === 0 ? `Aynı anda en fazla ${maxCards} fotoğraf hazırlanabilir.` : `En fazla ${slots} fotoğraf daha ekleyebilirsiniz. ${files.length - accepted.length} fotoğraf eklenmedi.`);
     }
     const last = cards[cards.length - 1];
     const fresh: CardState[] = accepted.map((file) => ({
@@ -352,7 +352,7 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
     const fix = await reconcileCard(outcome.id, toInput(current, fileId, requestId));
     if (fix.ok) return { ...base, note: null };
     const reason = fix.message ?? composerErrorText(fix.state);
-    return { ...base, note: `Soru eklendi ancak son düzenlemen uygulanamadı: ${reason}` };
+    return { ...base, note: `Soru eklendi ancak son düzenlemeniz uygulanamadı: ${reason}` };
   }
 
   async function submit() {
@@ -415,9 +415,9 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
     if (repeated > 0) toast.info(repeatLabel ? repeatLabel(repeated) : repeated === 1 ? "Bu fotoğraf zaten eklenmişti, tekrar eklenmedi." : `${repeated} fotoğraf zaten eklenmişti, tekrar eklenmedi.`);
     if (created + repeated > 0) await onCreated(created + repeated);
     if (skipped > 0) {
-      setNotice(`${skipped} fotoğraf gönderilmedi. Eksik bilgileri tamamlayıp ya da yüklemesi bitince tekrar gönder.`);
+      setNotice(`${skipped} fotoğraf gönderilmedi. Eksik bilgileri tamamlayıp ya da yüklemesi bitince tekrar gönderin.`);
     } else if (failed > 0) {
-      setNotice(`${failed} fotoğraf gönderilemedi. Kartlardaki uyarıları kontrol edip tekrar gönder.`);
+      setNotice(`${failed} fotoğraf gönderilemedi. Kartlardaki uyarıları kontrol edip tekrar gönderin.`);
     }
   }
 
@@ -426,7 +426,7 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
       {!online ? (
         <div role="status" data-testid="offline-banner" className="flex items-start gap-3 rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground">
           <WifiOff className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          Çevrimdışısın. Bağlantı gelince başarısız olan yüklemeler için Tekrar dene düğmesini kullanabilirsin.
+          Çevrimdışısınız. Bağlantı gelince başarısız olan yüklemeler için Tekrar Dene düğmesini kullanabilirsiniz.
         </div>
       ) : null}
 
@@ -437,8 +437,8 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
           className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong bg-surface px-4 py-6 text-center hover:bg-surface-muted peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
         >
           <ImagePlus className="size-7 text-primary" aria-hidden="true" />
-          <span className="text-base font-semibold">Fotoğraf seç</span>
-          <span className="text-sm text-muted-foreground">Birden fazla fotoğrafı bir seferde seçebilirsin. Her fotoğraf ayrı bir soru olur. En fazla {slots} fotoğraf daha ekleyebilirsin.</span>
+          <span className="text-base font-semibold">Fotoğraf Seç</span>
+          <span className="text-sm text-muted-foreground">Birden fazla fotoğrafı bir seferde seçebilirsiniz. Her fotoğraf ayrı bir soru olur. En fazla {slots} fotoğraf daha ekleyebilirsiniz.</span>
         </label>
       </div>
 
@@ -449,19 +449,19 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
       ) : null}
       {cooldownLeft > 0 ? (
         <p role="status" data-testid="cooldown" className="rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground">
-          Çok hızlı gönderiyorsun. {cooldownLeft} saniye sonra kalan sorular gönderilecek.
+          Çok hızlı gönderiyorsunuz. {cooldownLeft} saniye sonra kalan sorular gönderilecek.
         </p>
       ) : null}
 
       {cards.length === 0 ? (
-        <EmptyState icon={Images} as="h3" title="Henüz fotoğraf seçmedin" description="Yukarıdan bir ya da birkaç fotoğraf seç. Her fotoğraf için doğru şıkkı işaretle." />
+        <EmptyState icon={Images} as="h3" title="Henüz Fotoğraf Seçmediniz" description="Yukarıdan bir ya da birkaç fotoğraf seçin. Her fotoğraf için doğru şıkkı işaretleyin." />
       ) : (
-        <section aria-label="Eklenecek sorular" className="flex flex-col gap-4">
+        <section aria-label="Eklenecek Sorular" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-lg">Eklenecek sorular ({cards.length})</h3>
+            <h3 className="text-lg">Eklenecek Sorular ({cards.length})</h3>
             {createdCount > 0 ? (
               <Button type="button" variant="ghost" onClick={clearCreated}>
-                Eklenenleri temizle
+                Eklenenleri Temizle
               </Button>
             ) : null}
           </div>
@@ -491,12 +491,12 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
               {footerSlot}
               {uploading ? (
                 <p role="status" className="text-sm text-muted-foreground" data-testid="pending-uploads">
-                  {uploadingCount} fotoğraf yükleniyor, bitince gönderebilirsin.
+                  {uploadingCount} fotoğraf yükleniyor, bitince gönderebilirsiniz.
                 </p>
               ) : null}
               <Button type="button" size="lg" onClick={submit} loading={submitting} disabled={uploading || submitting || disabled} data-testid="composer-submit">
                 <Send aria-hidden="true" />
-                {editing.length === 1 ? "Soruyu ekle" : `${editing.length} soruyu ekle`}
+                {editing.length === 1 ? "Soruyu Ekle" : `${editing.length} Soruyu Ekle`}
               </Button>
             </div>
           ) : null}

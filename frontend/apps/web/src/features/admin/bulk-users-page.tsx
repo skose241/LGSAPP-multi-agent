@@ -36,7 +36,7 @@ const MAX_FILE_BYTES = 512 * 1024;
 const FIELD_LABELS: Record<keyof BulkErrors, string> = {
   firstName: "Ad",
   lastName: "Soyad",
-  userName: "Kullanıcı adı",
+  userName: "Kullanıcı Adı",
   className: "Sınıf",
   role: "Rol",
   branchLessonId: "Branş",
@@ -47,7 +47,7 @@ function toProblem(error: unknown): ProblemState {
   return {
     status: 0,
     at: Date.now(),
-    problem: { message: "Bağlantı kurulamadı. Tekrar dene.", fieldErrors: {}, formError: null, retryAfter: null },
+    problem: { message: "Bağlantı kurulamadı. Tekrar deneyin.", fieldErrors: {}, formError: null, retryAfter: null },
   };
 }
 
@@ -87,7 +87,7 @@ function PreviewList({ rows, server }: PreviewProps) {
               <th scope="col" className="px-3 py-3 font-semibold">Satır</th>
               <th scope="col" className="px-3 py-3 font-semibold">Ad</th>
               <th scope="col" className="px-3 py-3 font-semibold">Soyad</th>
-              <th scope="col" className="px-3 py-3 font-semibold">Kullanıcı adı</th>
+              <th scope="col" className="px-3 py-3 font-semibold">Kullanıcı Adı</th>
               <th scope="col" className="px-3 py-3 font-semibold">Sınıf</th>
               <th scope="col" className="px-3 py-3 font-semibold">Rol</th>
               <th scope="col" className="px-3 py-3 font-semibold">Branş</th>
@@ -175,14 +175,14 @@ function ResultPanel({ result, onDone }: { result: BulkCreatedUsers; onDone: () 
       await navigator.clipboard.writeText(passwordsToTsv(rows));
       toast.success("Tablo panoya kopyalandı.");
     } catch {
-      toast.error("Kopyalanamadı. Tabloyu yazdır ya da elle not al.");
+      toast.error("Kopyalanamadı. Tabloyu yazdırın ya da elle not alın.");
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1 print:hidden">
-        <h2 className="text-2xl">{rows.length} hesap oluşturuldu</h2>
+        <h2 className="text-2xl">{rows.length} Hesap Oluşturuldu</h2>
         <p className="text-muted-foreground">Tek seferlik şifreler aşağıda. Kullanıcılar ilk girişte şifrelerini değiştirmek zorunda kalacak.</p>
       </div>
       <div
@@ -191,7 +191,7 @@ function ResultPanel({ result, onDone }: { result: BulkCreatedUsers; onDone: () 
         className="flex items-start gap-3 rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground print:hidden"
       >
         <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-        Bu şifreler bir daha gösterilmeyecek. Sayfadan ayrılmadan önce yazdır ya da kopyalayıp güvenli bir yere kaydet.
+        Bu şifreler bir daha gösterilmeyecek. Sayfadan ayrılmadan önce yazdırın ya da kopyalayıp güvenli bir yere kaydedin.
       </div>
       <div className="flex flex-wrap gap-3 print:hidden">
         <Button type="button" onClick={() => window.print()} data-testid="bulk-print">
@@ -206,11 +206,11 @@ function ResultPanel({ result, onDone }: { result: BulkCreatedUsers; onDone: () 
 
       <div className="overflow-x-auto rounded-lg border border-border bg-surface" tabIndex={0} role="region" aria-label="Tek seferlik şifre tablosu">
         <table id="toplu-sifreler" className="w-full text-left text-sm" data-testid="bulk-result">
-          <caption className="sr-only">Tek seferlik şifreler</caption>
+          <caption className="sr-only">Tek Seferlik Şifreler</caption>
           <thead className="bg-surface-muted text-xs text-muted-foreground">
             <tr>
-              <th scope="col" className="px-3 py-3 font-semibold">Ad soyad</th>
-              <th scope="col" className="px-3 py-3 font-semibold">Kullanıcı adı</th>
+              <th scope="col" className="px-3 py-3 font-semibold">Ad Soyad</th>
+              <th scope="col" className="px-3 py-3 font-semibold">Kullanıcı Adı</th>
               <th scope="col" className="px-3 py-3 font-semibold">Sınıf</th>
               <th scope="col" className="px-3 py-3 font-semibold">Rol</th>
               <th scope="col" className="px-3 py-3 font-semibold">Şifre</th>
@@ -232,10 +232,10 @@ function ResultPanel({ result, onDone }: { result: BulkCreatedUsers; onDone: () 
 
       <div className="flex flex-wrap gap-3 border-t border-border pt-4 print:hidden">
         <Button type="button" variant="secondary" onClick={() => setLeaving(true)} data-testid="bulk-new">
-          Şifreleri not aldım, yeni liste
+          Şifreleri Not Aldım, Yeni Liste
         </Button>
         <Button asChild variant="secondary">
-          <Link href="/yonetim/kullanicilar">Listeye dön</Link>
+          <Link href="/yonetim/kullanicilar">Listeye Dön</Link>
         </Button>
       </div>
 
@@ -243,8 +243,8 @@ function ResultPanel({ result, onDone }: { result: BulkCreatedUsers; onDone: () 
         open={leaving}
         onOpenChange={setLeaving}
         title="Şifreler ekrandan silinsin mi?"
-        description="Şifreler bir daha gösterilmeyecek. Not aldığından emin ol."
-        confirmLabel="Evet, yeni liste"
+        description="Şifreler bir daha gösterilmeyecek. Not aldığınızdan emin olun."
+        confirmLabel="Evet, Yeni Liste"
         tone="danger"
         onConfirm={() => {
           setLeaving(false);
@@ -339,8 +339,8 @@ export function BulkUsersPage() {
         Kullanıcılar
       </Link>
       <div className="print:hidden">
-        <h1 className="text-3xl">Toplu kullanıcı ekle</h1>
-        <p className="text-muted-foreground">Bir listeyi yapıştır ya da CSV dosyası seç. Hepsi birlikte oluşturulur; biri hatalıysa hiçbiri oluşturulmaz.</p>
+        <h1 className="text-3xl">Toplu Kullanıcı Ekle</h1>
+        <p className="text-muted-foreground">Bir listeyi yapıştırın ya da CSV dosyası seçin. Hepsi birlikte oluşturulur; biri hatalıysa hiçbiri oluşturulmaz.</p>
       </div>
 
       {result ? (
@@ -360,8 +360,8 @@ export function BulkUsersPage() {
           <Card>
             <CardContent className="flex flex-col gap-4">
               <TextAreaField
-                label="Kullanıcı listesi"
-                hint="Sütunlar: ad; soyad; kullanıcı adı; sınıf; rol; branş dersi (yalnız öğretmen, isteğe bağlı). Rol: ogrenci, ogretmen veya mudur. Ayırıcı (; , ya da sekme) ve başlık satırı otomatik algılanır. Excel'den kopyalayıp yapıştırabilirsin."
+                label="Kullanıcı Listesi"
+                hint="Sütunlar: ad; soyad; kullanıcı adı; sınıf; rol; branş dersi (yalnız öğretmen, isteğe bağlı). Rol: ogrenci, ogretmen veya mudur. Ayırıcı (; , ya da sekme) ve başlık satırı otomatik algılanır. Excel'den kopyalayıp yapıştırabilirsiniz."
                 value={text}
                 onChange={(event) => changeText(event.target.value)}
                 placeholder={"Ali;Yılmaz;ali.yilmaz;8-A;ogrenci\nAyşe;Demir;ayse.demir;;ogretmen;Matematik"}
@@ -383,7 +383,7 @@ export function BulkUsersPage() {
                 />
                 <Button type="button" variant="secondary" onClick={() => fileInput.current?.click()}>
                   <FileUp aria-hidden="true" />
-                  Dosya seç
+                  Dosya Seç
                 </Button>
                 <p className="text-xs text-muted-foreground">UTF-8 kodlu .csv dosyası, en fazla {BULK_MAX_ROWS} satır.</p>
               </div>
@@ -394,7 +394,7 @@ export function BulkUsersPage() {
 
           {parsed.tooMany ? (
             <div role="status" data-testid="bulk-too-many" className="rounded-md border border-danger bg-danger-soft p-3 text-sm font-medium text-danger-soft-foreground">
-              En fazla {BULK_MAX_ROWS} satır eklenebilir; listede {parsed.totalRows} satır var. Fazlasını ikinci bir listede ekle.
+              En fazla {BULK_MAX_ROWS} satır eklenebilir; listede {parsed.totalRows} satır var. Fazlasını ikinci bir listede ekleyin.
             </div>
           ) : null}
 
@@ -402,14 +402,14 @@ export function BulkUsersPage() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl">Önizleme</h2>
-                <Badge tone="neutral">{parsed.rows.length} satır</Badge>
-                {summaryItems.length > 0 ? <Badge tone="danger">{summaryItems.length} hatalı</Badge> : <Badge tone="success">Hata yok</Badge>}
+                <Badge tone="neutral">{parsed.rows.length} Satır</Badge>
+                {summaryItems.length > 0 ? <Badge tone="danger">{summaryItems.length} Hatalı</Badge> : <Badge tone="success">Hata Yok</Badge>}
               </div>
 
               {summaryItems.length > 0 || generalServer.length > 0 ? (
                 <div role="status" data-testid="bulk-error-summary" className="rounded-md border border-danger bg-danger-soft p-3 text-sm text-danger-soft-foreground [overflow-wrap:anywhere]">
                   <p className="font-semibold">
-                    {summaryItems.length > 0 ? `${summaryItems.length} satırda hata var. Listeyi düzeltip yeniden dene.` : "İstek reddedildi."}
+                    {summaryItems.length > 0 ? `${summaryItems.length} satırda hata var. Listeyi düzeltip yeniden deneyin.` : "İstek reddedildi."}
                   </p>
                   {generalServer.length > 0 ? <p>{generalServer.join(" ")}</p> : null}
                   <ul className="mt-1 list-disc pl-5">
@@ -434,7 +434,7 @@ export function BulkUsersPage() {
 
               <div className="flex flex-wrap items-center gap-3">
                 <Button type="button" size="lg" disabled={blocked} loading={mutation.isPending} onClick={() => mutation.mutate()} data-testid="bulk-submit">
-                  Hesapları oluştur ({parsed.rows.length})
+                  Hesapları Oluştur ({parsed.rows.length})
                 </Button>
                 {countdown > 0 ? <span className="text-sm text-muted-foreground">{countdown} sn sonra tekrar denenebilir.</span> : null}
               </div>

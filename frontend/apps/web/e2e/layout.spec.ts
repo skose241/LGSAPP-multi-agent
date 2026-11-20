@@ -14,10 +14,10 @@ test.describe("alt sekme çubuğu boşluğu", () => {
   test("yeni kullanıcı başarı ekranı", async ({ page }, testInfo) => {
     await mudurSession(page);
     await page.goto("/yonetim/kullanicilar/yeni");
-    await page.getByLabel(/^Kullanıcı adı\*?$/).fill(`alt.${Date.now().toString(36)}`);
+    await page.getByLabel(/^Kullanıcı Adı\*?$/).fill(`alt.${Date.now().toString(36)}`);
     await page.getByLabel(/^Ad\*?$/).fill("Alt");
     await page.getByLabel(/^Soyad\*?$/).fill("Boşluk");
-    await page.getByRole("button", { name: "Hesap oluştur" }).click();
+    await page.getByRole("button", { name: "Hesap Oluştur" }).click();
     await expect(page.getByTestId("one-time-password")).toBeVisible();
     await expectClearOfTabBar(page, "tek-seferlik-sifre", testInfo.project.name);
   });

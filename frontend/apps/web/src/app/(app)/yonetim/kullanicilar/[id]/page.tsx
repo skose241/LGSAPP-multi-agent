@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { UserDetail } from "@/features/admin/user-detail";
 
-export const metadata: Metadata = { title: "Kullanıcı detayı" };
+export const metadata: Metadata = { title: "Kullanıcı Detayı" };
 
 interface PageProps {
   params: Promise<{ id: string }>;

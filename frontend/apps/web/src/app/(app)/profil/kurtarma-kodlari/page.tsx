@@ -66,17 +66,17 @@ export default function RecoveryCodesPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <h1 className="text-3xl">Kurtarma kodları</h1>
+      <h1 className="text-3xl">Kurtarma Kodları</h1>
       {codes ? (
         <Card>
           <CardHeader>
-            <CardTitle as="h2">Yeni kodların</CardTitle>
-            <CardDescription>Eski kodların hepsi iptal edildi.</CardDescription>
+            <CardTitle as="h2">Yeni Kodlarınız</CardTitle>
+            <CardDescription>Eski kodlarınızın hepsi iptal edildi.</CardDescription>
           </CardHeader>
           <CardContent>
             <RecoveryCodesPanel
               codes={codes}
-              confirmLabel="Kaydettim, kapat"
+              confirmLabel="Kaydettim, Kapat"
               onConfirm={async () => {
                 setCodes(null);
                 await queryClient.invalidateQueries({ queryKey: ME_KEY });
@@ -90,26 +90,26 @@ export default function RecoveryCodesPage() {
           <CardHeader>
             <CardTitle as="h2" className="flex items-center gap-2">
               <ShieldCheck className="size-5 text-primary" aria-hidden="true" />
-              Kalan kod sayısı: {status.data ?? "-"}
+              Kalan Kod Sayısı: {status.data ?? "-"}
             </CardTitle>
             <CardDescription>
               {me.data?.recoveryCodesMissing
-                ? "Hiç kurtarma kodun kalmadı. Devam etmeden önce yeni kodlar üretmelisin."
-                : "Yeni kodlar ürettiğinde mevcut kodların hepsi iptal olur. Devam etmek için şifreni gir."}
+                ? "Hiç kurtarma kodunuz kalmadı. Devam etmeden önce yeni kodlar üretmelisiniz."
+                : "Yeni kodlar ürettiğinizde mevcut kodlarınızın hepsi iptal olur. Devam etmek için şifrenizi girin."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
               <ProblemBanner state={problem} countdown={countdown} />
               <PasswordField
-                label="Mevcut şifre"
+                label="Mevcut Şifre"
                 autoComplete="current-password"
                 required
                 error={errors.currentPassword?.message}
                 {...register("currentPassword")}
               />
               <Button type="submit" size="lg" loading={submitting}>
-                Yeni kodlar üret
+                Yeni Kodlar Üret
               </Button>
             </form>
           </CardContent>

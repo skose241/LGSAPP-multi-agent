@@ -33,13 +33,13 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle as="h2">Bilgilerim</CardTitle>
-            <CardDescription>Hesap bilgilerini müdür yönetir.</CardDescription>
+            <CardDescription>Hesap bilgilerinizi müdür yönetir.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             <dl className="grid grid-cols-2 gap-4">
               <Info label="Ad" value={user?.firstName ?? ""} />
               <Info label="Soyad" value={user?.lastName ?? ""} />
-              <Info label="Kullanıcı adı" value={user?.userName ?? ""} />
+              <Info label="Kullanıcı Adı" value={user?.userName ?? ""} />
               <Info label="Rol" value={roleLabel(user?.role)} />
               {user?.className ? <Info label="Sınıf" value={user.className} /> : null}
               {user?.role === "ogretmen" ? <Info label="Branş" value={user.branchLessonName ?? "Atanmamış"} /> : null}
@@ -48,7 +48,7 @@ export default function ProfilePage() {
               <Button asChild variant="secondary" className="self-start">
                 <Link href="/profil/kurtarma-kodlari">
                   <KeyRound aria-hidden="true" />
-                  Kurtarma kodları
+                  Kurtarma Kodları
                 </Link>
               </Button>
             ) : null}
@@ -59,14 +59,14 @@ export default function ProfilePage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle as="h2">Şifre değiştir</CardTitle>
-            <CardDescription>Şifreni değiştirdiğinde diğer cihazlardaki oturumların kapanır.</CardDescription>
+            <CardTitle as="h2">Şifre Değiştir</CardTitle>
+            <CardDescription>Şifrenizi değiştirdiğinizde diğer cihazlardaki oturumlarınız kapanır.</CardDescription>
           </CardHeader>
           <CardContent>
             <ChangePasswordForm
               minLength={minPasswordLength(user?.role)}
               onSuccess={() => {
-                toast.success("Şifren değiştirildi.");
+                toast.success("Şifreniz değiştirildi.");
               }}
             />
           </CardContent>

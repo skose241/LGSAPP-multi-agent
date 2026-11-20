@@ -34,7 +34,7 @@ export function PhotoAttachment({ controller, label, hint, disabled = false }: P
 
       {existing ? (
         <div className="max-w-xs">
-          <QuestionImage image={existing} alt="Çözüm fotoğrafı" variant="thumb" />
+          <QuestionImage image={existing} alt="Çözüm Fotoğrafı" variant="thumb" />
         </div>
       ) : null}
 
@@ -51,12 +51,12 @@ export function PhotoAttachment({ controller, label, hint, disabled = false }: P
           className="inline-flex h-11 min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border-strong bg-surface px-4 text-base font-semibold text-foreground hover:bg-surface-muted peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
         >
           <ImagePlus className="size-5" aria-hidden="true" />
-          {hasPhoto ? "Fotoğrafı değiştir" : "Fotoğraf ekle"}
+          {hasPhoto ? "Fotoğrafı Değiştir" : "Fotoğraf Ekle"}
         </label>
         {hasPhoto ? (
           <Button type="button" variant="secondary" className="h-11" onClick={controller.remove} disabled={disabled}>
             <Trash2 aria-hidden="true" />
-            Fotoğrafı kaldır
+            Fotoğrafı Kaldır
           </Button>
         ) : null}
       </div>

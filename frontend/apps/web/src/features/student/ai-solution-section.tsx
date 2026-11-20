@@ -29,7 +29,7 @@ function toFailure(error: unknown): FailureState {
     return { ...classifyAiRequestFailure(error.status, error.problem.message, error.problem.retryAfter), at: Date.now() };
   }
   return {
-    ...classifyAiRequestFailure(0, "Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar dene.", null),
+    ...classifyAiRequestFailure(0, "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.", null),
     at: Date.now(),
   };
 }
@@ -44,15 +44,15 @@ function FailureNotice({ failure, countdown }: { failure: FailureState; countdow
     tone = "border-warning bg-warning-soft text-warning-soft-foreground";
     text =
       countdown > 0
-        ? `Kısa sürede çok fazla istek gönderdin. ${countdown} saniye sonra tekrar deneyebilirsin.`
-        : "Şimdi tekrar deneyebilirsin.";
+        ? `Kısa sürede çok fazla istek gönderdiniz. ${countdown} saniye sonra tekrar deneyebilirsiniz.`
+        : "Şimdi tekrar deneyebilirsiniz.";
   } else if (failure.kind === "providerDown") {
     Icon = ServerCrash;
     tone = "border-info bg-info-soft text-info-soft-foreground";
     text =
       countdown > 0
-        ? `${failure.message} Bu denemede hakkın düşmedi. ${countdown} saniye sonra tekrar deneyebilirsin.`
-        : `${failure.message} Bu denemede hakkın düşmedi. Şimdi tekrar deneyebilirsin.`;
+        ? `${failure.message} Bu denemede hakkınız düşmedi. ${countdown} saniye sonra tekrar deneyebilirsiniz.`
+        : `${failure.message} Bu denemede hakkınız düşmedi. Şimdi tekrar deneyebilirsiniz.`;
   } else if (failure.kind === "dailyLimit") {
     Icon = Clock;
     tone = "border-warning bg-warning-soft text-warning-soft-foreground";

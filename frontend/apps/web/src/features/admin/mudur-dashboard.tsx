@@ -55,14 +55,14 @@ function SchedulerSummary() {
   return (
     <div className="flex flex-col gap-3" data-testid="dashboard-scheduler">
       <p className="flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">Otomatik zamanlayıcı:</span>
+        <span className="text-muted-foreground">Otomatik Zamanlayıcı:</span>
         <Badge tone={status.data.timerEnabled ? "success" : "warning"}>{status.data.timerEnabled ? "Açık" : "Kapalı"}</Badge>
       </p>
       <ul className="flex flex-col gap-1.5">
         {jobs.map((job) => (
           <li key={job.kind} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span>{kindLabel(job.kind)}</span>
-            {job.lastRun ? <RunStatusBadge status={job.lastRun.status} /> : <span className="text-muted-foreground">Henüz çalışmadı</span>}
+            {job.lastRun ? <RunStatusBadge status={job.lastRun.status} /> : <span className="text-muted-foreground">Henüz Çalışmadı</span>}
           </li>
         ))}
       </ul>
@@ -78,17 +78,17 @@ export function MudurDashboard() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <StatCard title="Kullanıcılar" icon={<Users className="size-5" aria-hidden="true" />} href="/yonetim/kullanicilar" action="Kullanıcılara git">
+      <StatCard title="Kullanıcılar" icon={<Users className="size-5" aria-hidden="true" />} href="/yonetim/kullanicilar" action="Kullanıcılara Git">
         <div className="grid grid-cols-3 gap-3">
           <Stat value={counts.ogrenci} label="Öğrenci" loading={loadingUsers} />
           <Stat value={counts.ogretmen} label="Öğretmen" loading={loadingUsers} />
           <Stat value={counts.mudur} label="Müdür" loading={loadingUsers} />
         </div>
       </StatCard>
-      <StatCard title="Şifre talepleri" icon={<KeyRound className="size-5" aria-hidden="true" />} href="/yonetim/sifre-talepleri" action="Taleplere git">
-        <Stat value={requests.data?.length ?? null} label="Bekleyen talep" loading={requests.isPending} />
+      <StatCard title="Şifre Talepleri" icon={<KeyRound className="size-5" aria-hidden="true" />} href="/yonetim/sifre-talepleri" action="Taleplere Git">
+        <Stat value={requests.data?.length ?? null} label="Bekleyen Talep" loading={requests.isPending} />
       </StatCard>
-      <StatCard title="Zamanlayıcı" icon={<Timer className="size-5" aria-hidden="true" />} href="/yonetim/zamanlayici" action="Zamanlayıcıya git">
+      <StatCard title="Zamanlayıcı" icon={<Timer className="size-5" aria-hidden="true" />} href="/yonetim/zamanlayici" action="Zamanlayıcıya Git">
         <SchedulerSummary />
       </StatCard>
     </div>

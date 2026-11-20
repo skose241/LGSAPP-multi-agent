@@ -42,7 +42,7 @@ test.describe("genel ayarlar ve bakım", () => {
 
   test("gruplu kartlar, varsayılan ve aralık, kritik not görünür", async ({ page }) => {
     await openAsMudur(page, mudur);
-    for (const title of ["Puanlar", "Günlük limitler", "Yorum ve çözüm", "Şikâyet", "Çözüm bekleyenler eşikleri"]) {
+    for (const title of ["Puanlar", "Günlük Limitler", "Yorum ve Çözüm", "Şikâyet", "Çözüm Bekleyenler Eşikleri"]) {
       await expect(page.getByRole("heading", { name: title, level: 2 })).toBeVisible();
     }
     await expect(page.getByRole("heading", { name: "Bakım", level: 2 })).toBeVisible();
@@ -59,7 +59,7 @@ test.describe("genel ayarlar ve bakım", () => {
     const student = await activeUser("ogrenci", "ayarogr");
     const first = await freshQuestion();
     const second = await freshQuestion();
-    const shortText = "Eksik soru";
+    const shortText = "Eksik Soru";
     expect((await report(student, first.question.id, shortText)).status).toBe(201);
 
     await openAsMudur(page, mudur);
@@ -92,7 +92,7 @@ test.describe("genel ayarlar ve bakım", () => {
     await expect(page.getByText("0 ile 100 arasında olmalıdır.")).toBeVisible();
     await expect(page.getByTestId("setting-puanDogruCevap")).toHaveAttribute("aria-invalid", "true");
     expect(writes).toHaveLength(0);
-    await page.getByRole("button", { name: "Değişiklikleri geri al" }).click();
+    await page.getByRole("button", { name: "Değişiklikleri Geri Al" }).click();
     await expect(page.getByTestId("setting-puanDogruCevap")).toHaveValue(String(original.puanDogruCevap));
   });
 
@@ -146,7 +146,7 @@ test.describe("genel ayarlar ve bakım", () => {
     });
     await page.getByTestId("setting-puanDogruCevap").fill(String(original.puanDogruCevap! === 7 ? 8 : 7));
     await page.getByTestId("settings-save").click();
-    await expect(page.getByTestId("problem-banner")).toContainText("saniye sonra tekrar deneyebilirsin");
+    await expect(page.getByTestId("problem-banner")).toContainText("saniye sonra tekrar deneyebilirsiniz");
     await expect(page.getByTestId("settings-save")).toBeDisabled();
     await expect(page.getByTestId("settings-save")).toBeEnabled({ timeout: 10_000 });
   });
@@ -162,7 +162,7 @@ test.describe("genel ayarlar ve bakım", () => {
     await page.locator(`a[href^="/"]:visible`).first().click();
     await expect.poll(() => message).toContain("Kaydedilmemiş değişiklikler");
     await expect(page).toHaveURL(/\/yonetim\/ayarlar$/);
-    await page.getByRole("button", { name: "Değişiklikleri geri al" }).click();
+    await page.getByRole("button", { name: "Değişiklikleri Geri Al" }).click();
   });
 
   test("dosya temizliği sonucu görünür; 429 ve 409 hataları gösterilir", async ({ page }) => {
@@ -200,7 +200,7 @@ test.describe("genel ayarlar ve bakım", () => {
     );
     await page.getByTestId("cleanup-open").click();
     await page.getByRole("dialog").getByRole("button", { name: "Temizle" }).click();
-    await expect(page.getByTestId("maintenance-card").getByTestId("problem-banner")).toContainText("saniye sonra tekrar deneyebilirsin");
+    await expect(page.getByTestId("maintenance-card").getByTestId("problem-banner")).toContainText("saniye sonra tekrar deneyebilirsiniz");
     await expect(page.getByTestId("cleanup-open")).toBeDisabled();
   });
 

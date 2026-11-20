@@ -49,12 +49,12 @@ export function quotaSummary(quota: { enabled: boolean; dailyLimit: number | nul
     return { canRequest: false, text: "Yapay zekâ çözümü şu anda kapalı." };
   }
   if (quota.dailyLimit === null || quota.remainingToday === null) {
-    return { canRequest: true, text: "Kişisel günlük limitin yok; istekler genel günlük limite sayılır." };
+    return { canRequest: true, text: "Kişisel günlük limitiniz yok; istekler genel günlük limite sayılır." };
   }
   if (quota.remainingToday <= 0) {
-    return { canRequest: false, text: "Bugünkü hakkın doldu. Hakların her gün gece yarısı yenilenir." };
+    return { canRequest: false, text: "Bugünkü hakkınız doldu. Haklarınız her gün gece yarısı yenilenir." };
   }
-  return { canRequest: true, text: `Bugün kalan hakkın: ${quota.remainingToday} / ${quota.dailyLimit}` };
+  return { canRequest: true, text: `Bugün Kalan Hakkınız: ${quota.remainingToday} / ${quota.dailyLimit}` };
 }
 
 export const AI_USAGE_MAX_DAYS = 92;
@@ -67,12 +67,12 @@ export function usageRange(days: number, now: Date = new Date()): { from: string
 }
 
 const operationLabels: Record<string, string> = {
-  questionGeneration: "Soru üretimi",
+  questionGeneration: "Soru Üretimi",
   solution: "Çözüm",
-  solutionInvalid: "Geçersiz çözüm",
-  answerMismatch: "Cevap uyuşmazlığı",
-  solutionVerification: "Soru doğrulama",
-  questionDetection: "Soru tespiti",
+  solutionInvalid: "Geçersiz Çözüm",
+  answerMismatch: "Cevap Uyuşmazlığı",
+  solutionVerification: "Soru Doğrulama",
+  questionDetection: "Soru Tespiti",
 };
 
 export function aiOperationLabel(value: string): string {
@@ -80,32 +80,32 @@ export function aiOperationLabel(value: string): string {
 }
 
 const errorKindLabels: Record<string, string> = {
-  none: "Hata yok",
-  rateLimited: "İstek sınırı",
-  quotaExhausted: "Günlük kota doldu",
-  unavailable: "Sağlayıcı ulaşılamıyor",
-  timeout: "Zaman aşımı",
-  authFailed: "Anahtar reddedildi",
-  invalidRequest: "Geçersiz istek",
-  blocked: "İçerik engellendi",
-  truncated: "Yanıt kesildi",
-  invalidOutput: "Geçersiz çıktı",
-  unreadable: "Görsel okunamadı",
+  none: "Hata Yok",
+  rateLimited: "İstek Sınırı",
+  quotaExhausted: "Günlük Kota Doldu",
+  unavailable: "Sağlayıcı Ulaşılamıyor",
+  timeout: "Zaman Aşımı",
+  authFailed: "Anahtar Reddedildi",
+  invalidRequest: "Geçersiz İstek",
+  blocked: "İçerik Engellendi",
+  truncated: "Yanıt Kesildi",
+  invalidOutput: "Geçersiz Çıktı",
+  unreadable: "Görsel Okunamadı",
   notConfigured: "Yapılandırılmadı",
-  canceled: "İptal edildi",
+  canceled: "İptal Edildi",
 };
 
 export function aiErrorKindLabel(value: string): string {
   return errorKindLabels[value] ?? value;
 }
 
-const providerLabels: Record<string, string> = { none: "Yok", gemini: "Gemini", fake: "Sahte (test)" };
+const providerLabels: Record<string, string> = { none: "Yok", gemini: "Gemini", fake: "Sahte (Test)" };
 
 export function aiProviderLabel(value: string): string {
   return providerLabels[value] ?? value;
 }
 
-const gatePurposeLabels: Record<string, string> = { question: "Soru üretimi", solution: "Çözüm" };
+const gatePurposeLabels: Record<string, string> = { question: "Soru Üretimi", solution: "Çözüm" };
 
 export function aiGatePurposeLabel(value: string): string {
   return gatePurposeLabels[value] ?? value;
@@ -166,14 +166,14 @@ export const AI_SETTING_ORDER = [
 ] as const;
 
 const settingLabels: Record<string, { label: string; hint: string; toggle?: boolean }> = {
-  aiCozumAktifMi: { label: "Yapay zekâ çözümü açık", hint: "Kapalıyken öğrenciler çözüm isteyemez.", toggle: true },
-  aiGunlukCozumLimit: { label: "Öğrenci günlük çözüm hakkı", hint: "Her öğrencinin günde isteyebileceği çözüm sayısı." },
-  aiGunlukCozumLimitModerator: { label: "Öğretmen/müdür günlük çözüm hakkı", hint: "0 girilirse kişisel limit uygulanmaz." },
-  aiGunlukCozumGlobalLimit: { label: "Genel günlük çözüm limiti", hint: "Tüm kullanıcıların toplam günlük çözüm sayısı." },
-  aiOkunamadiBeklemeSaat: { label: "Okunamayan soru bekleme süresi (saat)", hint: "Görseli okunamayan soru bu süre boyunca yeniden denenmez." },
-  aiSoruDogrulamaAktifMi: { label: "Üretilen soruları ikinci kez doğrula", hint: "Açıkken üretilen her soru ayrı bir çağrıyla doğrulanır.", toggle: true },
-  soruUretimAktifMi: { label: "Günlük soru üretimi açık", hint: "Kapalıyken zamanlayıcı yeni soru üretmez.", toggle: true },
-  soruCarpani: { label: "Soru çarpanı", hint: "Günlük soru hedefinin çarpanı." },
+  aiCozumAktifMi: { label: "Yapay Zekâ Çözümü Açık", hint: "Kapalıyken öğrenciler çözüm isteyemez.", toggle: true },
+  aiGunlukCozumLimit: { label: "Öğrenci Günlük Çözüm Hakkı", hint: "Her öğrencinin günde isteyebileceği çözüm sayısı." },
+  aiGunlukCozumLimitModerator: { label: "Öğretmen/Müdür Günlük Çözüm Hakkı", hint: "0 girilirse kişisel limit uygulanmaz." },
+  aiGunlukCozumGlobalLimit: { label: "Genel Günlük Çözüm Limiti", hint: "Tüm kullanıcıların toplam günlük çözüm sayısı." },
+  aiOkunamadiBeklemeSaat: { label: "Okunamayan Soru Bekleme Süresi (Saat)", hint: "Görseli okunamayan soru bu süre boyunca yeniden denenmez." },
+  aiSoruDogrulamaAktifMi: { label: "Üretilen Soruları İkinci Kez Doğrula", hint: "Açıkken üretilen her soru ayrı bir çağrıyla doğrulanır.", toggle: true },
+  soruUretimAktifMi: { label: "Günlük Soru Üretimi Açık", hint: "Kapalıyken zamanlayıcı yeni soru üretmez.", toggle: true },
+  soruCarpani: { label: "Soru Çarpanı", hint: "Günlük soru hedefinin çarpanı." },
 };
 
 export function aiSettingInfo(key: string): { label: string; hint: string; toggle: boolean } {

@@ -33,7 +33,7 @@ test.describe("müdür yapay zekâ ekranı", () => {
 
     const status = page.getByTestId("ai-status");
     await expect(status).toBeVisible();
-    await expect(page.getByTestId("ai-provider")).toHaveText("Sahte (test)");
+    await expect(page.getByTestId("ai-provider")).toHaveText("Sahte (Test)");
     await expect(status).toContainText("Yapılandırıldı");
     await expect(page.getByTestId("ai-gates-ok")).toBeVisible();
     await expect(page.getByTestId("ai-gate")).toHaveCount(2);
@@ -49,10 +49,10 @@ test.describe("müdür yapay zekâ ekranı", () => {
     await expect(page.getByTestId("total-cost")).toHaveText(/^\$\d/);
     await expect(page.getByRole("img", { name: /Günlük çağrı grafiği/ })).toBeVisible();
 
-    await page.getByRole("button", { name: "30 gün" }).click();
-    await expect(page.getByRole("button", { name: "30 gün" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "30 Gün" }).click();
+    await expect(page.getByRole("button", { name: "30 Gün" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("usage-range")).toContainText("(30 gün)");
-    await page.getByRole("button", { name: "92 gün" }).click();
+    await page.getByRole("button", { name: "92 Gün" }).click();
     await expect(page.getByTestId("usage-range")).toContainText("(92 gün)");
 
     const widths = testInfo.project.name === "webkit-iphone" ? [null] : [375, 1280];
@@ -125,7 +125,7 @@ test.describe("müdür yapay zekâ ekranı", () => {
 
     await page.getByTestId("setting-aiGunlukCozumLimit").fill("8");
     await page.getByTestId("settings-save").click();
-    await expect(page.getByTestId("problem-banner")).toContainText("saniye sonra tekrar deneyebilirsin");
+    await expect(page.getByTestId("problem-banner")).toContainText("saniye sonra tekrar deneyebilirsiniz");
     await expect(page.getByTestId("settings-save")).toBeDisabled();
     await expect(page.getByTestId("settings-save")).toBeEnabled({ timeout: 10_000 });
     expect((await readSettings()).aiGunlukCozumLimit).toBe(5);

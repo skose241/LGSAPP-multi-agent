@@ -29,7 +29,7 @@ export function LeaderboardPage() {
     <div className="flex max-w-3xl flex-col gap-5">
       <div>
         <h1 className="text-3xl">Liderlik</h1>
-        <p className="text-muted-foreground">Soru çözerek, çözüm anlatarak ve katkı yaparak puan kazan.</p>
+        <p className="text-muted-foreground">Soru çözerek, çözüm anlatarak ve katkı yaparak puan kazanın.</p>
       </div>
 
       <div role="group" aria-label="Dönem" className="flex gap-2">
@@ -56,21 +56,21 @@ export function LeaderboardPage() {
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <Button type="button" variant="secondary" size="icon" aria-label="Önceki dönem" disabled={offset >= MAX_OFFSET} onClick={() => setOffset((value) => Math.min(MAX_OFFSET, value + 1))}>
+        <Button type="button" variant="secondary" size="icon" aria-label="Önceki Dönem" disabled={offset >= MAX_OFFSET} onClick={() => setOffset((value) => Math.min(MAX_OFFSET, value + 1))}>
           <ChevronLeft aria-hidden="true" />
         </Button>
         <p className="text-center text-sm font-semibold" data-testid="period-range">
           {data ? `${formatDateOnly(data.startDate)} – ${formatDateOnly(data.endDate)}` : "Yükleniyor"}
-          {offset === 0 ? " (bu dönem)" : ""}
+          {offset === 0 ? " (Bu Dönem)" : ""}
         </p>
-        <Button type="button" variant="secondary" size="icon" aria-label="Sonraki dönem" disabled={offset === 0} onClick={() => setOffset((value) => Math.max(0, value - 1))}>
+        <Button type="button" variant="secondary" size="icon" aria-label="Sonraki Dönem" disabled={offset === 0} onClick={() => setOffset((value) => Math.max(0, value - 1))}>
           <ChevronRight aria-hidden="true" />
         </Button>
       </div>
 
       {data?.me ? (
         <div role="status" className="flex items-center justify-between rounded-lg border border-primary bg-primary-soft p-4" data-testid="my-rank">
-          <span className="font-semibold text-primary-soft-foreground">Sıran</span>
+          <span className="font-semibold text-primary-soft-foreground">Sıranız</span>
           <span className="font-display text-xl font-bold text-primary-soft-foreground">
             {data.me.rank}. · {data.me.points} puan
           </span>
@@ -87,12 +87,12 @@ export function LeaderboardPage() {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title="Liderlik yüklenemedi"
+          title="Liderlik Yüklenemedi"
           description={board.error.message}
           action={<Button onClick={() => board.refetch()}>Tekrar Dene</Button>}
         />
       ) : data && data.items.length === 0 ? (
-        <EmptyState icon={Trophy} as="h2" title="Bu dönemde puan yok" description="İlk puanı kazanan sen ol." />
+        <EmptyState icon={Trophy} as="h2" title="Bu Dönemde Puan Yok" description="İlk puanı kazanan siz olun." />
       ) : data ? (
         <>
           <ol className="flex flex-col gap-2" aria-label="Sıralama">
@@ -109,7 +109,7 @@ export function LeaderboardPage() {
           </ol>
           {data.me && !inList ? (
             <p className="text-center text-sm text-muted-foreground">
-              İlk {data.items.length} içinde değilsin, sıran {data.me.rank}.
+              İlk {data.items.length} içinde değilsiniz, sıranız {data.me.rank}.
             </p>
           ) : null}
         </>

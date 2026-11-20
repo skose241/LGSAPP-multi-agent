@@ -22,9 +22,9 @@ import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 const RANGES = [
-  { days: AI_USAGE_DEFAULT_DAYS, label: "7 gün" },
-  { days: 30, label: "30 gün" },
-  { days: AI_USAGE_MAX_DAYS, label: "92 gün" },
+  { days: AI_USAGE_DEFAULT_DAYS, label: "7 Gün" },
+  { days: 30, label: "30 Gün" },
+  { days: AI_USAGE_MAX_DAYS, label: "92 Gün" },
 ] as const;
 
 function shortDate(value: string): string {
@@ -46,12 +46,12 @@ function Totals({ totals }: { totals: AiUsageTotals }) {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="ai-totals">
       <Metric label="Çağrı" value={formatTokens(totals.calls)} testId="total-calls" />
-      <Metric label="Başarı oranı" value={formatSuccessRate(totals.successRate)} testId="total-success" />
+      <Metric label="Başarı Oranı" value={formatSuccessRate(totals.successRate)} testId="total-success" />
       <Metric label="Maliyet" value={formatUsd(totals.costUsd)} testId="total-cost" />
-      <Metric label="Hak düşen çağrı" value={formatTokens(totals.limitConsumed)} testId="total-limit" />
-      <Metric label="Girdi token" value={formatTokens(totals.inputTokens)} testId="total-input" />
-      <Metric label="Çıktı token" value={formatTokens(totals.outputTokens)} testId="total-output" />
-      <Metric label="Düşünme token" value={formatTokens(totals.thinkingTokens)} testId="total-thinking" />
+      <Metric label="Hak Düşen Çağrı" value={formatTokens(totals.limitConsumed)} testId="total-limit" />
+      <Metric label="Girdi Token" value={formatTokens(totals.inputTokens)} testId="total-input" />
+      <Metric label="Çıktı Token" value={formatTokens(totals.outputTokens)} testId="total-output" />
+      <Metric label="Düşünme Token" value={formatTokens(totals.thinkingTokens)} testId="total-thinking" />
       <Metric label="Bekleyen" value={formatTokens(totals.pending)} testId="total-pending" />
     </div>
   );
@@ -64,7 +64,7 @@ function CallsChart({ days }: { days: ReturnType<typeof summarizeDays> }) {
 
   return (
     <figure className="flex flex-col gap-2">
-      <figcaption className="text-sm font-semibold">Günlük çağrı sayısı</figcaption>
+      <figcaption className="text-sm font-semibold">Günlük Çağrı Sayısı</figcaption>
       <div className="overflow-x-auto" tabIndex={0} role="group" aria-label="Günlük çağrı grafiği (kaydırılabilir)">
         <svg role="img" aria-label={`Günlük çağrı grafiği, ${days.length} gün, en yüksek ${peak} çağrı`} viewBox={`0 0 ${width} ${height + 18}`} style={{ minWidth: width }} className="h-40 w-full">
           {days.map((day, index) => {
@@ -92,7 +92,7 @@ function CallsChart({ days }: { days: ReturnType<typeof summarizeDays> }) {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="size-3 rounded-sm bg-warning" aria-hidden="true" />
-          Başarısız / reddedilen / bekleyen
+          Başarısız / Reddedilen / Bekleyen
         </span>
       </p>
     </figure>
@@ -108,7 +108,7 @@ export function AiUsageSection() {
   return (
     <Card data-testid="ai-usage">
       <CardHeader>
-        <CardTitle as="h2">Kullanım ve maliyet</CardTitle>
+        <CardTitle as="h2">Kullanım ve Maliyet</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         <div role="group" aria-label="Tarih aralığı" className="flex flex-wrap gap-2">
@@ -134,7 +134,7 @@ export function AiUsageSection() {
           <EmptyState
             icon={CloudOff}
             as="h3"
-            title="Kullanım alınamadı"
+            title="Kullanım Alınamadı"
             description={usage.error.message}
             action={<Button onClick={() => usage.refetch()}>Tekrar Dene</Button>}
           />
@@ -147,7 +147,7 @@ export function AiUsageSection() {
 
             {usage.data.totals.errorKinds.length > 0 ? (
               <div className="flex flex-col gap-2">
-                <h3 className="text-base">Hata türleri</h3>
+                <h3 className="text-base">Hata Türleri</h3>
                 <ul className="flex flex-wrap gap-2" data-testid="ai-error-kinds">
                   {usage.data.totals.errorKinds.map((entry) => (
                     <li key={entry.kind} className="rounded-pill bg-danger-soft px-3 py-1 text-sm font-semibold text-danger-soft-foreground">
@@ -162,10 +162,10 @@ export function AiUsageSection() {
 
             {usage.data.byDay.length > 0 ? (
               <div className="flex flex-col gap-2">
-                <h3 className="text-base">Gün ve operasyon dökümü</h3>
+                <h3 className="text-base">Gün ve Operasyon Dökümü</h3>
                 <div className="overflow-x-auto rounded-md border border-border" tabIndex={0} role="group" aria-label="Kullanım tablosu (kaydırılabilir)">
                   <table className="w-full min-w-[40rem] text-left text-sm" data-testid="ai-usage-table">
-                    <caption className="sr-only">Gün ve operasyon bazında yapay zekâ kullanımı</caption>
+                    <caption className="sr-only">Gün ve Operasyon Bazında Yapay Zekâ Kullanımı</caption>
                     <thead className="bg-surface-muted text-xs">
                       <tr>
                         <th scope="col" className="px-3 py-2">Gün</th>
@@ -199,7 +199,7 @@ export function AiUsageSection() {
 
             {usage.data.byUser.length > 0 ? (
               <div className="flex flex-col gap-2">
-                <h3 className="text-base">Kullanıcı bazında</h3>
+                <h3 className="text-base">Kullanıcı Bazında</h3>
                 <ul className="grid gap-2 sm:grid-cols-2" aria-label="Kullanıcı bazında kullanım">
                   {usage.data.byUser.map((row, index) => (
                     <li key={`${row.userId ?? "sistem"}-${index}`} className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 text-sm">

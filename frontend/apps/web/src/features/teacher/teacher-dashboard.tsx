@@ -52,7 +52,7 @@ function QueryBody<T>({ query, label, children }: { query: UseQueryResult<T>; la
           {label} yüklenemedi.
         </p>
         <Button type="button" variant="ghost" className="h-11 px-0" onClick={() => query.refetch()}>
-          Tekrar dene
+          Tekrar Dene
         </Button>
       </div>
     );
@@ -74,9 +74,9 @@ function Big({ value, label, testId }: { value: number; label: string; testId: s
 function NeedsSolutionCard({ enabled }: { enabled: boolean }) {
   const query = useQuery(needsSolutionQuery(api(), { page: 1, pageSize: 1 }, enabled));
   return (
-    <DashCard title="Çözüm bekleyenler" icon={<BookOpenCheck className="size-5" aria-hidden="true" />} testId="card-needs-solution" href="/ogretmen/cozum-bekleyenler" action="Listeye git">
+    <DashCard title="Çözüm Bekleyenler" icon={<BookOpenCheck className="size-5" aria-hidden="true" />} testId="card-needs-solution" href="/ogretmen/cozum-bekleyenler" action="Listeye Git">
       <QueryBody query={query} label="Çözüm bekleyenler">
-        {(data) => <Big value={data.totalCount} label="Çözüm bekleyen soru" testId="needs-count" />}
+        {(data) => <Big value={data.totalCount} label="Çözüm Bekleyen Soru" testId="needs-count" />}
       </QueryBody>
     </DashCard>
   );
@@ -85,11 +85,11 @@ function NeedsSolutionCard({ enabled }: { enabled: boolean }) {
 function DisputedCard({ enabled }: { enabled: boolean }) {
   const query = useQuery({ ...disputedQuestionsQuery(api(), { page: 1, pageSize: 3 }), enabled });
   return (
-    <DashCard title="Şüpheli anahtarlar" icon={<ShieldQuestion className="size-5" aria-hidden="true" />} testId="card-disputed" href="/ogretmen/supheli-anahtarlar" action="İncele">
+    <DashCard title="Şüpheli Anahtarlar" icon={<ShieldQuestion className="size-5" aria-hidden="true" />} testId="card-disputed" href="/ogretmen/supheli-anahtarlar" action="İncele">
       <QueryBody query={query} label="Şüpheli anahtarlar">
         {(data) => (
           <>
-            <Big value={data.totalCount} label="İncelenmeyi bekleyen anahtar" testId="disputed-count" />
+            <Big value={data.totalCount} label="İncelenmeyi Bekleyen Anahtar" testId="disputed-count" />
             {data.items.length > 0 ? (
               <ul className="flex flex-col gap-1 text-sm" aria-label="İlk şüpheli sorular">
                 {data.items.map((item) => (
@@ -112,7 +112,7 @@ function DisputedCard({ enabled }: { enabled: boolean }) {
 
 function BranchlessCard() {
   return (
-    <DashCard title="Branş tanımlanmamış" icon={<ShieldQuestion className="size-5" aria-hidden="true" />} testId="card-no-branch" href="/profil" action="Profilime git">
+    <DashCard title="Branş Tanımlanmamış" icon={<ShieldQuestion className="size-5" aria-hidden="true" />} testId="card-no-branch" href="/profil" action="Profilime Git">
       <p className="text-sm" data-testid="no-branch-text">
         Hesabınıza branş dersi tanımlanmamış. Çözüm bekleyenler ve şüpheli anahtarlar için müdüre başvurun.
       </p>
@@ -124,7 +124,7 @@ function TopicsCard() {
   const tomorrow = addDaysToDateOnly(todayInIstanbul(), 1);
   const query = useQuery(topicPlansQuery(api(), tomorrow, tomorrow));
   return (
-    <DashCard title="Yarının konuları" icon={<CalendarClock className="size-5" aria-hidden="true" />} testId="card-topics" href="/ogretmen/konu-plani" action="Konu planı">
+    <DashCard title="Yarının Konuları" icon={<CalendarClock className="size-5" aria-hidden="true" />} testId="card-topics" href="/ogretmen/konu-plani" action="Konu Planı">
       <QueryBody query={query} label="Konu planı">
         {(data) => {
           const missing = unplannedLessons(data);
@@ -153,9 +153,9 @@ function TopicsCard() {
 function ReportsCard() {
   const query = useQuery(reportsQuery(api(), { status: "pending", page: 1, pageSize: 1 }));
   return (
-    <DashCard title="Bekleyen şikâyetler" icon={<Flag className="size-5" aria-hidden="true" />} testId="card-reports" href="/ogretmen/sikayetler" action="Şikâyetlere git">
+    <DashCard title="Bekleyen Şikâyetler" icon={<Flag className="size-5" aria-hidden="true" />} testId="card-reports" href="/ogretmen/sikayetler" action="Şikâyetlere Git">
       <QueryBody query={query} label="Şikâyetler">
-        {(data) => <Big value={data.totalCount} label="Bekleyen şikâyet" testId="reports-count" />}
+        {(data) => <Big value={data.totalCount} label="Bekleyen Şikâyet" testId="reports-count" />}
       </QueryBody>
     </DashCard>
   );
@@ -164,11 +164,11 @@ function ReportsCard() {
 function AssignmentsCard() {
   const query = useQuery(manageAssignmentsQuery(api(), { status: "open", page: 1, pageSize: 3 }));
   return (
-    <DashCard title="Aktif ödevler" icon={<ClipboardList className="size-5" aria-hidden="true" />} testId="card-assignments" href="/ogretmen/odevler" action="Ödev yönetimi">
+    <DashCard title="Aktif Ödevler" icon={<ClipboardList className="size-5" aria-hidden="true" />} testId="card-assignments" href="/ogretmen/odevler" action="Ödev Yönetimi">
       <QueryBody query={query} label="Ödevler">
         {(data) => (
           <>
-            <Big value={data.totalCount} label="Açık ödev" testId="assignments-count" />
+            <Big value={data.totalCount} label="Açık Ödev" testId="assignments-count" />
             {data.items.length > 0 ? (
               <ul className="flex flex-col gap-1 text-sm" aria-label="İlk açık ödevler">
                 {data.items.map((item) => (
@@ -218,7 +218,7 @@ function StudentsCard() {
 function RecentStudentQuestionsCard() {
   const query = useQuery(questionsQuery(api(), { answered: "all", source: "student", page: 1, pageSize: 5 }));
   return (
-    <DashCard title="Öğrencilerin son soruları" icon={<GraduationCap className="size-5" aria-hidden="true" />} testId="card-student-questions" href="/sorular?kaynak=student&durum=tumu" action="Hepsini gör">
+    <DashCard title="Öğrencilerin Son Soruları" icon={<GraduationCap className="size-5" aria-hidden="true" />} testId="card-student-questions" href="/sorular?kaynak=student&durum=tumu" action="Hepsini Gör">
       <QueryBody query={query} label="Öğrenci soruları">
         {(data) =>
           data.items.length === 0 ? (
@@ -265,7 +265,7 @@ export function TeacherDashboard() {
         <Button asChild>
           <Link href="/ogretmen/soru-ekle">
             <FilePlus2 aria-hidden="true" />
-            Havuza soru ekle
+            Havuza Soru Ekle
           </Link>
         </Button>
       </div>

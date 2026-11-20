@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DisputeReviewPage } from "@/features/teacher/dispute-review-page";
 
-export const metadata: Metadata = { title: "Cevap anahtarı incelemesi" };
+export const metadata: Metadata = { title: "Cevap Anahtarı İncelemesi" };
 
 interface PageProps {
   params: Promise<{ id: string }>;

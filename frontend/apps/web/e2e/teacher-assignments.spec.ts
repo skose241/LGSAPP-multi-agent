@@ -62,7 +62,7 @@ test.describe("ödev oluşturma ve yönetim zinciri", () => {
     await expect(page.getByLabel(/^Ders\*?$/)).toHaveValue(String(lesson.id));
     await page.getByLabel("Başlık", { exact: true }).fill(title);
     await page.getByLabel("Açıklama", { exact: true }).fill("Zincir ödevi açıklaması");
-    await page.getByLabel(/^Bitiş tarihi/).fill(addDaysToDateOnly(today, LATE_END));
+    await page.getByLabel(/^Bitiş Tarihi/).fill(addDaysToDateOnly(today, LATE_END));
     await page.getByTestId("assignment-create").click();
     await expect(page).toHaveURL(/\/ogretmen\/odevler\/\d+$/);
     const id = Number(page.url().split("/").pop());
@@ -88,7 +88,7 @@ test.describe("ödev oluşturma ve yönetim zinciri", () => {
     expect(detail.questions.map((question) => question.correctOption)).toEqual([1, 2, 3, 4, 1, 2, 3, 4, 1, 2]);
     expect(detail.questions.every((question) => question.imageFileId !== null)).toBe(true);
 
-    await page.getByRole("button", { name: "Havuzdan ekle" }).click();
+    await page.getByRole("button", { name: "Havuzdan Ekle" }).click();
     const poolPanel = page.getByTestId("pool-panel");
     await expect(poolPanel.getByTestId("pool-item").filter({ hasText: `Havuz A ${stamp}` })).toBeVisible();
     await poolPanel.getByTestId("pool-item").filter({ hasText: `Havuz A ${stamp}` }).getByRole("checkbox").check();
@@ -109,15 +109,15 @@ test.describe("ödev oluşturma ve yönetim zinciri", () => {
 
     await page.getByRole("button", { name: "Soru 1'i düzenle" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: "Soruyu düzenle" })).toBeVisible();
+    await expect(dialog.getByRole("heading", { name: "Soruyu Düzenle" })).toBeVisible();
     await dialog.getByRole("radio", { name: "D şıkkı" }).click();
     await dialog.getByTestId("question-save").click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByTestId("assignment-question").first()).toContainText("Doğru cevap: D");
+    await expect(page.getByTestId("assignment-question").first()).toContainText("Doğru Cevap: D");
     await expect(page.getByRole("button", { name: "Soru 1'i düzenle" })).toBeFocused();
 
     await page.getByRole("button", { name: "Soru 3'i çıkar" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Soruyu çıkar" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Soruyu Çıkar" }).click();
     await expect(page.getByTestId("assignment-question")).toHaveCount(11);
     await expect(page.getByTestId("assignment-question").last()).toHaveAttribute("data-order", "11");
 
@@ -145,12 +145,12 @@ test.describe("ödev oluşturma ve yönetim zinciri", () => {
     const rowA = page.getByTestId("assignment-question").filter({ hasText: `Havuz A ${stamp}` });
     await rowA.getByRole("link", { name: /Çöz/ }).click();
     await expect(page).toHaveURL(new RegExp(`/sorular/${poolA.id}\\?odev=${id}`));
-    await expect(page.getByRole("link", { name: "Ödeve dön" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Ödeve Dön" })).toBeVisible();
     await page.getByRole("radio", { name: "B şıkkı" }).click();
-    await page.getByLabel(/^Çözümünü anlat/).fill(validExplanation(w.settings.aciklamaMinKarakter));
+    await page.getByLabel(/^Çözümünüzü Anlatın/).fill(validExplanation(w.settings.aciklamaMinKarakter));
     await page.getByRole("button", { name: "Cevabı Gönder" }).click();
-    await expect(page.getByTestId("answer-result")).toContainText("Doğru cevap!");
-    await page.getByRole("link", { name: "Ödeve dön" }).click();
+    await expect(page.getByTestId("answer-result")).toContainText("Doğru Cevap!");
+    await page.getByRole("link", { name: "Ödeve Dön" }).click();
     await expect(page).toHaveURL(new RegExp(`/odevler/${id}$`));
     await expect(page.getByTestId("assignment-progress")).toContainText("1 / 11 soru çözüldü, 1 doğru");
     await expect(page.getByTestId("assignment-question").filter({ hasText: `Havuz A ${stamp}` })).toHaveAttribute("data-progress", "correct");
@@ -278,7 +278,7 @@ test.describe("ileri tarihli ödev", () => {
     await expect(page.getByTestId("assignment-card").filter({ hasText: openTitle })).toBeVisible();
     await expect(page.getByTestId("assignment-card").filter({ hasText: futureTitle })).toHaveCount(0);
     await page.goto(`/odevler/${futureId}`);
-    await expect(page.getByRole("heading", { name: "Ödev bulunamadı" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ödev Bulunamadı" })).toBeVisible();
     const studentApi = await page.request.get(`/api/assignments/${futureId}`);
     expect(studentApi.status()).toBe(404);
 
@@ -289,7 +289,7 @@ test.describe("ileri tarihli ödev", () => {
     await expect(page.getByTestId("assignment-unpublish")).toBeVisible();
     await expect(page.getByTestId("assignment-delete")).toBeVisible();
     await page.getByTestId("assignment-unpublish").click();
-    await page.getByRole("dialog").getByRole("button", { name: "Yayından kaldır" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Yayından Kaldır" }).click();
     await expect(page.getByTestId("assignment-state")).toHaveText("Taslak");
     expect((await assignmentDetail(teacher, futureId)).state).toBe("draft");
 
@@ -304,7 +304,7 @@ test.describe("ileri tarihli ödev", () => {
     expect((await assignmentDetail(teacher, draftId)).state).toBe("scheduled");
 
     await page.getByTestId("assignment-delete").click();
-    await page.getByRole("dialog").getByRole("button", { name: "Ödevi sil" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Ödevi Sil" }).click();
     await expect(page).toHaveURL(/\/ogretmen\/odevler$/);
     const gone = await backend("GET", `/api/assignments/${draftId}/manage`, { token: teacher.token });
     expect(gone.status).toBe(404);
@@ -317,8 +317,8 @@ test.describe("ileri tarihli ödev", () => {
     const stamp = Date.now().toString(36);
     await loginAs(page, teacher);
     await page.goto("/ogretmen/odevler/yeni");
-    await page.getByLabel(/^Başlangıç tarihi/).fill(addDaysToDateOnly(today, 3));
-    await page.getByLabel(/^Bitiş tarihi/).fill(addDaysToDateOnly(today, 1));
+    await page.getByLabel(/^Başlangıç Tarihi/).fill(addDaysToDateOnly(today, 3));
+    await page.getByLabel(/^Bitiş Tarihi/).fill(addDaysToDateOnly(today, 1));
     await page.getByTestId("assignment-create").click();
     await expect(page.getByText("Bitiş tarihi başlangıç tarihinden önce olamaz.")).toBeVisible();
     await expect(page).toHaveURL(/\/ogretmen\/odevler\/yeni$/);
@@ -326,11 +326,11 @@ test.describe("ileri tarihli ödev", () => {
     const openId = await createOpenAssignment(teacher, lesson.id, `Kilitli ${stamp}`, today, addDaysToDateOnly(today, LATE_END));
     await page.goto(`/ogretmen/odevler/${openId}`);
     await expect(page.getByTestId("assignment-state")).toHaveText("Açık");
-    await expect(page.getByLabel(/^Başlangıç tarihi/)).toBeDisabled();
-    await expect(page.getByLabel(/^Bitiş tarihi/)).toBeEnabled();
-    await page.getByLabel(/^Bitiş tarihi/).fill(addDaysToDateOnly(today, LATE_END + 3));
+    await expect(page.getByLabel(/^Başlangıç Tarihi/)).toBeDisabled();
+    await expect(page.getByLabel(/^Bitiş Tarihi/)).toBeEnabled();
+    await page.getByLabel(/^Bitiş Tarihi/).fill(addDaysToDateOnly(today, LATE_END + 3));
     await page.getByTestId("assignment-save").click();
-    await expect(page.getByLabel(/^Bitiş tarihi/)).toHaveValue(addDaysToDateOnly(today, LATE_END + 3));
+    await expect(page.getByLabel(/^Bitiş Tarihi/)).toHaveValue(addDaysToDateOnly(today, LATE_END + 3));
     expect((await assignmentDetail(teacher, openId)).state).toBe("open");
     await expect(page.getByTestId("add-panels")).toHaveCount(0);
   });
@@ -344,19 +344,19 @@ test.describe("ileri tarihli ödev", () => {
     const student = await activeUser("ogrenci", "pano");
     await login(page, student.userName, student.password);
     await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible();
-    await page.getByRole("link", { name: "Tüm ödevler" }).click();
+    await page.getByRole("link", { name: "Tüm Ödevler" }).click();
     await expect(page).toHaveURL(/\/odevler$/);
     await expect(page.getByRole("heading", { name: "Ödevlerim", level: 1 })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Açık ödevler" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Açık Ödevler" })).toHaveAttribute("aria-pressed", "true");
     await page.goto(`/odevler?ders=${lesson.id}`);
     await expect(page.getByTestId("assignment-card").filter({ hasText: title })).toBeVisible();
-    await page.getByRole("button", { name: "Kapanmış ödevler" }).click();
+    await page.getByRole("button", { name: "Kapanmış Ödevler" }).click();
     await expect(page).toHaveURL(/durum=kapandi/);
     await expect(page.getByTestId("assignment-card").filter({ hasText: title })).toHaveCount(0);
     await page.goto(`/odevler/${id}`);
     await expect(page.getByTestId("assignment-title")).toHaveText(title);
-    await expect(page.getByTestId("assignment-remaining")).toContainText(/gün kaldı|Son gün/);
-    await page.getByRole("link", { name: "Sıradaki soruya geç" }).click();
+    await expect(page.getByTestId("assignment-remaining")).toContainText(/Gün Kaldı|Son Gün/);
+    await page.getByRole("link", { name: "Sıradaki Soruya Geç" }).click();
     await expect(page).toHaveURL(new RegExp(`/sorular/\\d+\\?odev=${id}`));
   });
 });
@@ -375,10 +375,10 @@ test.describe("havuza soru ekle", () => {
     await expect(page.getByLabel(/^Ders\*?$/)).toBeDisabled();
     await expect(page.getByLabel(/^Ders\*?$/)).toHaveValue(String(lesson.id));
     await expect(page.getByTestId("quota")).toHaveCount(0);
-    await expect(page.getByText(/günlük hak|soru yükledin/i)).toHaveCount(0);
+    await expect(page.getByText(/günlük hak|soru yüklediniz/i)).toHaveCount(0);
 
-    await page.getByLabel("Şu tarihte yayınla").check();
-    await page.getByLabel("Yayın tarihi").fill(today);
+    await page.getByLabel("Şu Tarihte Yayınla").check();
+    await page.getByLabel("Yayın Tarihi").fill(today);
     await page.getByTestId("photo-input").setInputFiles(pngFiles(2, "plan"));
     await waitUploaded(page, 2);
     const cards = page.getByTestId("composer-card");
@@ -389,7 +389,7 @@ test.describe("havuza soru ekle", () => {
     const plannedOnDate = page.getByTestId("planned-item").filter({ hasText: formatDateOnly(planDate) });
     await expect(plannedOnDate).toHaveCount(0);
 
-    await page.getByLabel("Yayın tarihi").fill(planDate);
+    await page.getByLabel("Yayın Tarihi").fill(planDate);
     await page.getByTestId("composer-submit").click();
     await expect(page.locator('[data-testid="composer-card"][data-phase="created"]')).toHaveCount(2, { timeout: 60_000 });
     await expect(plannedOnDate).toHaveCount(2);
@@ -399,13 +399,13 @@ test.describe("havuza soru ekle", () => {
     expect(planned.length).toBeGreaterThanOrEqual(2);
     expect(planned.every((item) => item.publishedAt === null)).toBe(true);
 
-    await page.getByRole("button", { name: "Eklenenleri temizle" }).click();
-    await page.getByLabel("Hemen yayınla").check();
+    await page.getByRole("button", { name: "Eklenenleri Temizle" }).click();
+    await page.getByLabel("Hemen Yayınla").check();
     await page.getByTestId("photo-input").setInputFiles(pngFiles(1, "hemen"));
     await waitUploaded(page, 1);
     await page.getByRole("radio", { name: "A şıkkı" }).click();
     await page.getByTestId("composer-submit").click();
-    const link = page.getByTestId("photo-composer").getByRole("link", { name: "Soruyu aç" }).first();
+    const link = page.getByTestId("photo-composer").getByRole("link", { name: "Soruyu Aç" }).first();
     await expect(link).toBeVisible({ timeout: 60_000 });
     const href = await link.getAttribute("href");
     const questionId = Number(href?.split("/").pop());
@@ -450,9 +450,9 @@ test.describe("konu planı", () => {
     await expect(edit).toHaveAccessibleName(/Konu seç/);
     await edit.click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByLabel("Hedef soru sayısı")).toHaveCount(0);
+    await expect(dialog.getByLabel("Hedef Soru Sayısı")).toHaveCount(0);
     await dialog.getByRole("button", { name: "Kaydet" }).click();
-    await expect(dialog.getByText("Konuyu seç.")).toBeVisible();
+    await expect(dialog.getByText("Konuyu seçin.")).toBeVisible();
     await dialog.getByLabel(/^Konu\*?$/).selectOption(String(first.id));
     await dialog.getByRole("button", { name: "Kaydet" }).click();
     await expect(dialog).toHaveCount(0);
@@ -467,8 +467,8 @@ test.describe("konu planı", () => {
     await expect(firstDay).toContainText(second.name);
 
     await page.getByTestId("plan-delete").locator("visible=true").first().click();
-    await page.getByRole("dialog").getByRole("button", { name: "Planı sil" }).click();
-    await expect(firstDay).toContainText("Konu seçilmedi");
+    await page.getByRole("dialog").getByRole("button", { name: "Planı Sil" }).click();
+    await expect(firstDay).toContainText("Konu Seçilmedi");
     await expect(firstDay).not.toContainText(second.name);
   });
 
@@ -505,10 +505,10 @@ test.describe("konu planı", () => {
     await row.getByTestId("plan-edit").click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel(/^Konu\*?$/).selectOption(String(lesson.topics[0]!.id));
-    await dialog.getByLabel("Hedef soru sayısı").fill("abc");
+    await dialog.getByLabel("Hedef Soru Sayısı").fill("abc");
     await dialog.getByRole("button", { name: "Kaydet" }).click();
     await expect(dialog.getByText("Hedef soru sayısı sayı olmalı.")).toBeVisible();
-    await dialog.getByLabel("Hedef soru sayısı").fill("3");
+    await dialog.getByLabel("Hedef Soru Sayısı").fill("3");
     await dialog.getByRole("button", { name: "Kaydet" }).click();
     await expect(dialog).toHaveCount(0);
     await expect(rows.filter({ hasText: lesson.name }).first()).toContainText("3");
@@ -523,12 +523,12 @@ test.describe("branşsız öğretmen", () => {
     for (const path of ["/ogretmen/odevler/yeni", "/ogretmen/soru-ekle", "/ogretmen/konu-plani"]) {
       await page.goto(path);
       await expect(page.getByTestId("no-branch")).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Branş tanımlanmamış" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Branş Tanımlanmamış" })).toBeVisible();
     }
     await page.goto("/ogretmen/odevler");
     await expect(page.getByRole("heading", { name: "Ödev Yönetimi", level: 1 })).toBeVisible();
     await expect(page.getByTestId("no-branch")).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Yeni ödev" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Yeni Ödev" }).first()).toBeVisible();
   });
 });
 
@@ -575,8 +575,8 @@ test.describe("çakışma", () => {
     expect(removed.status).toBe(204);
     await page.getByLabel("Başlık", { exact: true }).fill("Değişti");
     await page.getByTestId("assignment-save").click();
-    await expect(page.getByTestId("problem-banner").or(page.getByRole("heading", { name: "Ödev bulunamadı" }))).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Ödev bulunamadı" })).toBeVisible();
+    await expect(page.getByTestId("problem-banner").or(page.getByRole("heading", { name: "Ödev Bulunamadı" }))).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ödev Bulunamadı" })).toBeVisible();
   });
 });
 
@@ -736,7 +736,7 @@ test.describe("ödeve fotoğraf eklemede belirsiz hata", () => {
     await expect(page.getByTestId("card-error")).toContainText("Bağlantı kurulamadı");
 
     await card.getByRole("radio", { name: "D şıkkı" }).click();
-    await expect(page.getByTestId("card-uncertain")).toContainText("ardından yaptığın değişiklik uygulanır");
+    await expect(page.getByTestId("card-uncertain")).toContainText("ardından yaptığınız değişiklik uygulanır");
     await page.getByTestId("composer-submit").click();
     await expect(page.locator('[data-testid="composer-card"][data-phase="created"]')).toHaveCount(1, { timeout: 20_000 });
     expect(calls).toHaveLength(2);
@@ -771,7 +771,7 @@ test.describe("ödev düzenleme sayfası korumaları", () => {
       messages.push(dialog.message());
       await dialog.dismiss();
     });
-    await page.getByRole("main").getByRole("link", { name: "Ödev yönetimi", exact: true }).click();
+    await page.getByRole("main").getByRole("link", { name: "Ödev Yönetimi", exact: true }).click();
     await expect.poll(() => messages.length).toBe(1);
     expect(messages[0]).toContain("Kaydedilmemiş değişiklikler");
     await expect(page).toHaveURL(new RegExp(`/ogretmen/odevler/${id}$`));
@@ -807,14 +807,14 @@ test.describe("ödev düzenleme sayfası korumaları", () => {
     await loginAs(page, teacher);
     await page.goto(`/ogretmen/odevler/${id}`);
     const poolRow = page.getByTestId("assignment-question").filter({ hasText: `Havuz onay ${stamp}` });
-    await expect(poolRow).toContainText("Doğru cevap: B");
+    await expect(poolRow).toContainText("Doğru Cevap: B");
 
     await poolRow.getByRole("button", { name: /düzenle/ }).click();
-    const edit = page.getByRole("dialog", { name: "Soruyu düzenle" });
+    const edit = page.getByRole("dialog", { name: "Soruyu Düzenle" });
     await expect(edit.getByTestId("pool-answer-note")).toContainText("şık değişimi tüm cevapları etkiler");
     await edit.getByRole("radio", { name: "D şıkkı" }).click();
     await edit.getByTestId("question-save").click();
-    const confirm = page.getByRole("dialog", { name: "Havuz sorusunun cevabı değişecek" });
+    const confirm = page.getByRole("dialog", { name: "Havuz Sorusunun Cevabı Değişecek" });
     await expect(confirm).toContainText("tüm cevapların puanını yeniden hesaplar");
     await expectNoAxeViolations(page, "havuz-cevap-onayi");
     await confirm.getByRole("button", { name: "Vazgeç" }).click();
@@ -825,20 +825,20 @@ test.describe("ödev düzenleme sayfası korumaları", () => {
 
     await edit.getByRole("radio", { name: "D şıkkı" }).click();
     await edit.getByTestId("question-save").click();
-    await page.getByRole("dialog", { name: "Havuz sorusunun cevabı değişecek" }).getByRole("button", { name: "Cevabı değiştir" }).click();
+    await page.getByRole("dialog", { name: "Havuz Sorusunun Cevabı Değişecek" }).getByRole("button", { name: "Cevabı Değiştir" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(poolRow).toContainText("Doğru cevap: D");
+    await expect(poolRow).toContainText("Doğru Cevap: D");
     expect(patches).toHaveLength(1);
     expect((await assignmentDetail(teacher, id)).questions.find((question) => question.id === pool.id)!.correctOption).toBe(4);
 
     const own = page.getByTestId("assignment-question").filter({ hasText: `Ödev ${stamp}` });
     await own.getByRole("button", { name: /düzenle/ }).click();
-    const ownEdit = page.getByRole("dialog", { name: "Soruyu düzenle" });
+    const ownEdit = page.getByRole("dialog", { name: "Soruyu Düzenle" });
     await expect(ownEdit.getByTestId("pool-answer-note")).toHaveCount(0);
     await ownEdit.getByRole("radio", { name: "C şıkkı" }).click();
     await ownEdit.getByTestId("question-save").click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(own).toContainText("Doğru cevap: C");
+    await expect(own).toContainText("Doğru Cevap: C");
     expect(patches).toHaveLength(2);
   });
 
@@ -848,7 +848,7 @@ test.describe("ödev düzenleme sayfası korumaları", () => {
     const today = todayInIstanbul();
     await loginAs(page, teacher);
     await page.goto("/ogretmen/odevler/yeni");
-    await page.getByLabel(/^Bitiş tarihi/).fill(addDaysToDateOnly(today, 70));
+    await page.getByLabel(/^Bitiş Tarihi/).fill(addDaysToDateOnly(today, 70));
     await page.getByTestId("assignment-create").click();
     await expect(page.getByText("Ödev süresi en fazla 60 gün olabilir.")).toBeVisible();
     await expect(page).toHaveURL(/\/ogretmen\/odevler\/yeni$/);

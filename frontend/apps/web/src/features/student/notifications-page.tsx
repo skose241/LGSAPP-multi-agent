@@ -42,7 +42,7 @@ function NotificationRow({ item, role, onRead }: { item: NotificationItem; role:
         <div className="flex min-w-0 flex-1 items-start">{body}</div>
       )}
       {!item.isRead ? (
-        <Button type="button" variant="ghost" size="icon" aria-label="Okundu işaretle" onClick={() => onRead(item.id)}>
+        <Button type="button" variant="ghost" size="icon" aria-label="Okundu İşaretle" onClick={() => onRead(item.id)}>
           <CheckCheck aria-hidden="true" />
         </Button>
       ) : null}
@@ -91,7 +91,7 @@ export function NotificationsPage() {
         </div>
         <Button type="button" variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>
           <CheckCheck aria-hidden="true" />
-          Tümünü okundu işaretle
+          Tümünü Okundu İşaretle
         </Button>
       </div>
 
@@ -128,7 +128,7 @@ export function NotificationsPage() {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title="Bildirimler yüklenemedi"
+          title="Bildirimler Yüklenemedi"
           description={list.error.message}
           action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>}
         />
@@ -136,8 +136,8 @@ export function NotificationsPage() {
         <EmptyState
           icon={BellOff}
           as="h2"
-          title={unreadOnly ? "Okunmamış bildirim yok" : "Henüz bildirimin yok"}
-          description="Yeni bir ödev, yorum ya da çözüm geldiğinde burada göreceksin."
+          title={unreadOnly ? "Okunmamış Bildirim Yok" : "Henüz Bildiriminiz Yok"}
+          description="Yeni bir ödev, yorum ya da çözüm geldiğinde burada göreceksiniz."
         />
       ) : data ? (
         <>

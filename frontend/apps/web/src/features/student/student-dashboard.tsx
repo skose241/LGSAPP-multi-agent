@@ -22,11 +22,11 @@ export function StudentDashboard() {
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-5">
-        <section aria-label="Açık ödevler" className="flex flex-col gap-3">
+        <section aria-label="Açık Ödevler" className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-xl">Açık ödevler</h2>
+            <h2 className="text-xl">Açık Ödevler</h2>
             <Button asChild variant="ghost">
-              <Link href="/odevler">Tüm ödevler</Link>
+              <Link href="/odevler">Tüm Ödevler</Link>
             </Button>
           </div>
           {assignments.isPending ? (
@@ -34,7 +34,7 @@ export function StudentDashboard() {
           ) : assignments.isError ? (
             <p className="text-sm text-danger">Ödevler yüklenemedi.</p>
           ) : assignments.data.items.length === 0 ? (
-            <EmptyState icon={ClipboardList} as="h3" title="Açık ödevin yok" description="Öğretmenin bir ödev verdiğinde burada görünecek." />
+            <EmptyState icon={ClipboardList} as="h3" title="Açık Ödeviniz Yok" description="Öğretmeniniz bir ödev verdiğinde burada görünecek." />
           ) : (
             <ul className="grid gap-3 md:grid-cols-2" aria-label="Açık ödev listesi">
               {assignments.data.items.map((item) => {
@@ -45,7 +45,7 @@ export function StudentDashboard() {
                       <CardHeader>
                         <CardTitle as="h3">{item.title}</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          {item.lesson.name} · Son gün {formatDateOnly(item.endDate)}
+                          {item.lesson.name} · Son Gün {formatDateOnly(item.endDate)}
                         </p>
                       </CardHeader>
                       <CardContent className="flex flex-col gap-3">
@@ -63,7 +63,7 @@ export function StudentDashboard() {
                           {item.myAnsweredCount} / {item.totalQuestions} soru yapıldı, {item.myCorrectCount} doğru
                         </p>
                         <Button asChild variant="secondary" className="self-start">
-                          <Link href={`/odevler/${item.id}`}>Ödevi aç</Link>
+                          <Link href={`/odevler/${item.id}`}>Ödevi Aç</Link>
                         </Button>
                       </CardContent>
                     </Card>
@@ -74,11 +74,11 @@ export function StudentDashboard() {
           )}
         </section>
 
-        <section aria-label="Son sorular" className="flex flex-col gap-3">
+        <section aria-label="Son Sorular" className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-xl">Son 7 günün soruları</h2>
+            <h2 className="text-xl">Son 7 Günün Soruları</h2>
             <Button asChild variant="ghost">
-              <Link href="/sorular">Hepsini gör</Link>
+              <Link href="/sorular">Hepsini Gör</Link>
             </Button>
           </div>
           {recent.isPending ? (
@@ -86,7 +86,7 @@ export function StudentDashboard() {
           ) : recent.isError ? (
             <p className="text-sm text-danger">Sorular yüklenemedi.</p>
           ) : recent.data.items.length === 0 ? (
-            <EmptyState icon={ClipboardList} as="h3" title="Son günlerde yeni soru yok" description="Yeni sorular yayınlandığında burada görünecek." />
+            <EmptyState icon={ClipboardList} as="h3" title="Son Günlerde Yeni Soru Yok" description="Yeni sorular yayınlandığında burada görünecek." />
           ) : (
             <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3" aria-label="Son sorular listesi">
               {recent.data.items.map((item) => (
@@ -104,18 +104,18 @@ export function StudentDashboard() {
           <CardHeader>
             <CardTitle as="h2" className="flex items-center gap-2">
               <ImagePlus className="size-5 text-primary" aria-hidden="true" />
-              Soru yükle
+              Soru Yükle
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             {stats.data ? (
               <p className="w-full text-sm" data-testid="dashboard-upload-quota">
-                Bugün {stats.data.uploadToday.uploaded} / {stats.data.uploadToday.dailyLimit} soru yükledin, {stats.data.uploadToday.remaining} hakkın kaldı.
+                Bugün {stats.data.uploadToday.uploaded} / {stats.data.uploadToday.dailyLimit} soru yüklediniz, {stats.data.uploadToday.remaining} hakkınız kaldı.
                 {scoredSentence(stats.data.uploadToday) ? ` ${scoredSentence(stats.data.uploadToday)}` : ""}
               </p>
             ) : null}
             <Button asChild>
-              <Link href="/soru-yukle">Soru yükle</Link>
+              <Link href="/soru-yukle">Soru Yükle</Link>
             </Button>
             <Button asChild variant="secondary">
               <Link href="/sorularim">Sorularım</Link>
@@ -127,7 +127,7 @@ export function StudentDashboard() {
           <CardHeader>
             <CardTitle as="h2" className="flex items-center gap-2">
               <Trophy className="size-5 text-primary" aria-hidden="true" />
-              Haftalık puan
+              Haftalık Puan
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -146,7 +146,7 @@ export function StudentDashboard() {
               </div>
             </dl>
             <Button asChild variant="secondary" className="self-start">
-              <Link href="/liderlik">Liderliğe bak</Link>
+              <Link href="/liderlik">Liderliğe Bak</Link>
             </Button>
           </CardContent>
         </Card>
@@ -160,10 +160,10 @@ export function StudentDashboard() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm" data-testid="unread-summary">
-              {unread.data ? (unread.data.count > 0 ? `${unread.data.count} okunmamış bildirimin var.` : "Okunmamış bildirimin yok.") : "Yükleniyor"}
+              {unread.data ? (unread.data.count > 0 ? `${unread.data.count} okunmamış bildiriminiz var.` : "Okunmamış bildiriminiz yok.") : "Yükleniyor"}
             </p>
             <Button asChild variant="secondary" className="self-start">
-              <Link href="/bildirimler">Bildirimlere git</Link>
+              <Link href="/bildirimler">Bildirimlere Git</Link>
             </Button>
           </CardContent>
         </Card>

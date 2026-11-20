@@ -20,11 +20,11 @@ export default async function ComingSoonPage({ params }: PageProps) {
       <EmptyState
         as="h2"
         icon={Hammer}
-        title="Çok yakında"
+        title="Çok Yakında"
         description="Bu ekran üzerinde çalışıyoruz. Hazır olduğunda burada görünecek."
         action={
           <Button asChild variant="secondary">
-            <Link href="/">Panoya dön</Link>
+            <Link href="/">Panoya Dön</Link>
           </Button>
         }
       />

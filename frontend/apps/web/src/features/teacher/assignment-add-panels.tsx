@@ -29,9 +29,9 @@ import { cn } from "@/lib/utils";
 type PanelKey = "photo" | "text" | "pool";
 
 const PANELS: { key: PanelKey; label: string; icon: typeof Images }[] = [
-  { key: "photo", label: "Fotoğrafla ekle", icon: Images },
-  { key: "text", label: "Metinle ekle", icon: FileText },
-  { key: "pool", label: "Havuzdan ekle", icon: Library },
+  { key: "photo", label: "Fotoğrafla Ekle", icon: Images },
+  { key: "text", label: "Metinle Ekle", icon: FileText },
+  { key: "pool", label: "Havuzdan Ekle", icon: Library },
 ];
 
 interface PanelProps {
@@ -167,7 +167,7 @@ function TextPanel({ detail, onChanged, onFailure }: PanelProps) {
     onError: async (e: unknown) => {
       const state = toProblemState(e);
       if (state.status === 0 || state.status >= 500) {
-        setError({ ...state, problem: { ...state.problem, message: "Yanıt alınamadı. Soru eklenmiş olabilir, listeyi kontrol edip gerekirse tekrar dene." } });
+        setError({ ...state, problem: { ...state.problem, message: "Yanıt alınamadı. Soru eklenmiş olabilir, listeyi kontrol edip gerekirse tekrar deneyin." } });
         await queryClient.invalidateQueries({ queryKey: assignmentKeys.detail(detail.id) });
         return;
       }
@@ -190,13 +190,13 @@ function TextPanel({ detail, onChanged, onFailure }: PanelProps) {
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4" data-testid="text-panel">
       <ProblemBanner state={error} conflictAsMessage />
-      <TextAreaField label="Soru metni" required value={text} maxLength={QUESTION_TEXT_MAX} error={errors.text} disabled={add.isPending} onChange={(event) => setText(event.target.value)} hint="Matematik için $...$ ve $$...$$ yazabilirsin." />
+      <TextAreaField label="Soru Metni" required value={text} maxLength={QUESTION_TEXT_MAX} error={errors.text} disabled={add.isPending} onChange={(event) => setText(event.target.value)} hint="Matematik için $...$ ve $$...$$ yazabilirsiniz." />
       <fieldset className="grid gap-3 sm:grid-cols-2" disabled={add.isPending}>
-        <legend className="mb-1 text-sm font-semibold">Şıklar (isteğe bağlı, ya hepsi dolu ya hepsi boş)</legend>
+        <legend className="mb-1 text-sm font-semibold">Şıklar (İsteğe Bağlı, ya Hepsi Dolu ya Hepsi Boş)</legend>
         {(["A", "B", "C", "D"] as const).map((letter, index) => (
           <TextField
             key={letter}
-            label={`${letter} şıkkı`}
+            label={`${letter} Şıkkı`}
             value={options[index] ?? ""}
             maxLength={OPTION_TEXT_MAX}
             onChange={(event) =>
@@ -216,7 +216,7 @@ function TextPanel({ detail, onChanged, onFailure }: PanelProps) {
       ) : null}
       <div className="flex flex-col gap-1.5">
         <p className="text-sm font-semibold">
-          Doğru cevap
+          Doğru Cevap
           <span className="ml-1 text-danger" aria-hidden="true">
             *
           </span>
@@ -228,18 +228,18 @@ function TextPanel({ detail, onChanged, onFailure }: PanelProps) {
           </p>
         ) : null}
       </div>
-      <SelectField label="Konu (isteğe bağlı)" value={topicId ?? ""} disabled={add.isPending || topics.isPending} onChange={(event) => setTopicId(event.target.value ? Number(event.target.value) : null)}>
-        <option value="">Konu seç</option>
+      <SelectField label="Konu (İsteğe Bağlı)" value={topicId ?? ""} disabled={add.isPending || topics.isPending} onChange={(event) => setTopicId(event.target.value ? Number(event.target.value) : null)}>
+        <option value="">Konu Seç</option>
         {(topics.data ?? []).map((topic) => (
           <option key={topic.id} value={topic.id}>
             {topic.name}
           </option>
         ))}
       </SelectField>
-      <TextAreaField label="Açıklama (isteğe bağlı)" value={description} maxLength={CARD_DESCRIPTION_MAX} disabled={add.isPending} onChange={(event) => setDescription(event.target.value)} />
+      <TextAreaField label="Açıklama (İsteğe Bağlı)" value={description} maxLength={CARD_DESCRIPTION_MAX} disabled={add.isPending} onChange={(event) => setDescription(event.target.value)} />
       <Button type="submit" loading={add.isPending} className="self-start" data-testid="text-submit">
         <Plus aria-hidden="true" />
-        Soruyu ekle
+        Soruyu Ekle
       </Button>
     </form>
   );
@@ -285,7 +285,7 @@ function PoolPanel({ detail, onChanged, onFailure }: PanelProps) {
 
   return (
     <div className="flex flex-col gap-4" data-testid="pool-panel">
-      <p className="text-sm text-muted-foreground">Henüz yayınlanmamış planlı sorular arasından seçebilirsin. Seçilen sorular ödevin sonuna eklenir ve yayın tarihinde havuza düşmez.</p>
+      <p className="text-sm text-muted-foreground">Henüz yayınlanmamış planlı sorular arasından seçebilirsiniz. Seçilen sorular ödevin sonuna eklenir ve yayın tarihinde havuza düşmez.</p>
       <ProblemBanner state={error} conflictAsMessage />
       <SelectField
         label="Konu"
@@ -297,7 +297,7 @@ function PoolPanel({ detail, onChanged, onFailure }: PanelProps) {
         }}
         className="max-w-sm"
       >
-        <option value="">Tüm konular</option>
+        <option value="">Tüm Konular</option>
         {(topics.data ?? []).map((topic) => (
           <option key={topic.id} value={topic.id}>
             {topic.name}
@@ -308,9 +308,9 @@ function PoolPanel({ detail, onChanged, onFailure }: PanelProps) {
       {list.isPending ? (
         <div role="status" aria-label="Havuz yükleniyor" className="h-32 animate-pulse rounded-lg bg-surface-muted" />
       ) : list.isError ? (
-        <EmptyState icon={Library} as="h3" title="Havuz yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
+        <EmptyState icon={Library} as="h3" title="Havuz Yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
       ) : visibleItems.length === 0 ? (
-        <EmptyState icon={Library} as="h3" title="Eklenebilecek soru yok" description="Bu derste, ödevde olmayan planlı soru bulunmuyor. Havuza soru ekle ekranından ileri tarihli soru ekleyebilirsin." />
+        <EmptyState icon={Library} as="h3" title="Eklenebilecek Soru Yok" description="Bu derste, ödevde olmayan planlı soru bulunmuyor. Havuza Soru Ekle ekranından ileri tarihli soru ekleyebilirsiniz." />
       ) : (
         <>
           <ul className="flex flex-col gap-2" aria-label="Havuzdaki planlı sorular">
@@ -338,7 +338,7 @@ function PoolPanel({ detail, onChanged, onFailure }: PanelProps) {
                       <span className="flex flex-wrap items-center gap-1.5">
                         {item.topic ? <Badge tone="neutral">{item.topic.name}</Badge> : null}
                         {item.scheduledPublishDate ? <Badge tone="info">Yayın: {formatDateOnly(item.scheduledPublishDate)}</Badge> : null}
-                        {!allowed ? <Badge tone="warning">Başka öğretmenin sorusu</Badge> : null}
+                        {!allowed ? <Badge tone="warning">Başka Öğretmenin Sorusu</Badge> : null}
                         <span className="text-xs text-muted-foreground">{item.author?.fullName || item.author?.userName || ""}</span>
                       </span>
                       {item.image ? (
@@ -351,7 +351,7 @@ function PoolPanel({ detail, onChanged, onFailure }: PanelProps) {
                       ) : item.image ? null : (
                         <span className="flex items-center gap-1 text-sm text-muted-foreground">
                           <ImageIcon className="size-4" aria-hidden="true" />
-                          Önizleme yok
+                          Önizleme Yok
                         </span>
                       )}
                     </span>
@@ -367,7 +367,7 @@ function PoolPanel({ detail, onChanged, onFailure }: PanelProps) {
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" onClick={() => attach.mutate()} loading={attach.isPending} disabled={selected.length === 0} data-testid="pool-attach">
           <Plus aria-hidden="true" />
-          Seçilenleri ekle ({selected.length})
+          Seçilenleri Ekle ({selected.length})
         </Button>
         {selected.length >= limit && limit > 0 ? <p className="text-sm text-muted-foreground">Tek seferde en fazla {limit} soru seçilebilir.</p> : null}
       </div>
@@ -386,7 +386,7 @@ export function AssignmentAddPanels(props: PanelProps) {
 
   return (
     <section aria-label="Soru ekle" className="flex flex-col gap-4" data-testid="add-panels">
-      <h2 className="text-xl">Soru ekle</h2>
+      <h2 className="text-xl">Soru Ekle</h2>
       <div role="group" aria-label="Soru ekleme yöntemi" className="flex flex-wrap gap-2">
         {PANELS.map((entry) => (
           <button

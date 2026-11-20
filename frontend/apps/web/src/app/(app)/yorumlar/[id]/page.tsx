@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CommentThreadPage } from "@/features/student/comment-thread-page";
 
-export const metadata: Metadata = { title: "Yorum dizisi" };
+export const metadata: Metadata = { title: "Yorum Dizisi" };
 
 interface PageProps {
   params: Promise<{ id: string }>;

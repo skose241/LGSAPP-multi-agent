@@ -27,7 +27,7 @@ function toProblem(error: unknown): ProblemState {
   return {
     status: 0,
     at: Date.now(),
-    problem: { message: "Bağlantı kurulamadı. Tekrar dene.", fieldErrors: {}, formError: null, retryAfter: null },
+    problem: { message: "Bağlantı kurulamadı. Tekrar deneyin.", fieldErrors: {}, formError: null, retryAfter: null },
   };
 }
 
@@ -167,11 +167,11 @@ export function UserDetail({ id }: { id: number }) {
       <EmptyState
         icon={CloudOff}
         as="h2"
-        title={notFound ? "Kullanıcı bulunamadı" : "Kullanıcı yüklenemedi"}
+        title={notFound ? "Kullanıcı Bulunamadı" : "Kullanıcı Yüklenemedi"}
         description={notFound ? "Bu hesap silinmiş ya da hiç olmamış olabilir." : user.error.message}
         action={
           <Button asChild variant="secondary">
-            <Link href="/yonetim/kullanicilar">Listeye dön</Link>
+            <Link href="/yonetim/kullanicilar">Listeye Dön</Link>
           </Button>
         }
       />
@@ -203,20 +203,20 @@ export function UserDetail({ id }: { id: number }) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle as="h2">Hesap bilgileri</CardTitle>
+            <CardTitle as="h2">Hesap Bilgileri</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <dl className="grid grid-cols-2 gap-4">
-              <Field label="Kullanıcı adı">
+              <Field label="Kullanıcı Adı">
                 <span className="font-mono" data-testid="user-username">
                   {data.userName}
                 </span>
               </Field>
-              <Field label="Ad soyad">{name}</Field>
+              <Field label="Ad Soyad">{name}</Field>
               {data.role === "ogrenci" ? <Field label="Sınıf">{data.className ?? "-"}</Field> : null}
-              {data.role === "ogretmen" ? <Field label="Branş dersi">{data.branchLessonName ?? "Atanmamış"}</Field> : null}
+              {data.role === "ogretmen" ? <Field label="Branş Dersi">{data.branchLessonName ?? "Atanmamış"}</Field> : null}
               <Field label="Oluşturulma">{formatDateTime(data.createdAt)}</Field>
-              <Field label="Son giriş">{data.lastLoginAt ? formatDateTime(data.lastLoginAt) : "Hiç girmedi"}</Field>
+              <Field label="Son Giriş">{data.lastLoginAt ? formatDateTime(data.lastLoginAt) : "Hiç girmedi"}</Field>
             </dl>
             {data.isBanned ? (
               <p className="text-sm" data-testid="ban-info">
@@ -228,19 +228,19 @@ export function UserDetail({ id }: { id: number }) {
             {data.pendingReportCount > 0 ? (
               <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm" data-testid="report-info">
                 <span>
-                  <span className="font-semibold">Bekleyen şikâyet: </span>
+                  <span className="font-semibold">Bekleyen Şikâyet: </span>
                   {data.pendingReportCount}
                 </span>
                 <Link href="/ogretmen/sikayetler" className="inline-flex min-h-touch items-center gap-1.5 font-semibold text-primary underline underline-offset-4">
                   <Flag className="size-4" aria-hidden="true" />
-                  Şikâyetlere git
+                  Şikâyetlere Git
                 </Link>
               </p>
             ) : null}
             <div className="flex flex-wrap gap-1.5">
               <UserStatusBadges user={data} />
               {!data.isBanned && !data.mustChangePassword && !data.isSystemAccount ? (
-                <span className="text-sm text-muted-foreground">Aktif hesap</span>
+                <span className="text-sm text-muted-foreground">Aktif Hesap</span>
               ) : null}
             </div>
           </CardContent>
@@ -256,9 +256,9 @@ export function UserDetail({ id }: { id: number }) {
               {actions.edit.allowed ? (
                 <ActionRow
                   icon={<UserPen className="size-5" aria-hidden="true" />}
-                  title="Bilgileri düzenle"
-                  description={data.role === "ogrenci" ? "Ad, soyad ve sınıfı güncelle." : "Ad ve soyadı güncelle."}
-                  label="Bilgileri düzenle"
+                  title="Bilgileri Düzenle"
+                  description={data.role === "ogrenci" ? "Ad, soyad ve sınıfı güncelleyebilirsiniz." : "Ad ve soyadı güncelleyebilirsiniz."}
+                  label="Bilgileri Düzenle"
                   state={actions.edit}
                   testId="action-edit"
                   onClick={() => setDialog("edit")}
@@ -267,9 +267,9 @@ export function UserDetail({ id }: { id: number }) {
               {data.isBanned ? (
                 <ActionRow
                   icon={<ShieldCheck className="size-5" aria-hidden="true" />}
-                  title="Engeli kaldır"
+                  title="Engeli Kaldır"
                   description="Kullanıcı yeniden giriş yapabilir."
-                  label="Engeli kaldır"
+                  label="Engeli Kaldır"
                   state={actions.unban}
                   testId="action-unban"
                   onClick={() => setDialog("unban")}
@@ -277,7 +277,7 @@ export function UserDetail({ id }: { id: number }) {
               ) : (
                 <ActionRow
                   icon={<Ban className="size-5" aria-hidden="true" />}
-                  title="Hesabı engelle"
+                  title="Hesabı Engelle"
                   description="Kullanıcının oturumları kapanır ve giriş yapamaz."
                   label="Engelle"
                   tone="danger"
@@ -288,9 +288,9 @@ export function UserDetail({ id }: { id: number }) {
               )}
               <ActionRow
                 icon={<KeyRound className="size-5" aria-hidden="true" />}
-                title="Şifreyi yenile"
+                title="Şifreyi Yenile"
                 description="Yeni tek seferlik şifre üretilir, eski şifre ve oturumlar geçersiz olur."
-                label="Şifreyi yenile"
+                label="Şifreyi Yenile"
                 state={actions.regeneratePassword}
                 testId="action-regenerate"
                 onClick={() => setDialog("regenerate")}
@@ -298,9 +298,9 @@ export function UserDetail({ id }: { id: number }) {
               {data.role === "ogretmen" ? (
                 <ActionRow
                   icon={<BookOpen className="size-5" aria-hidden="true" />}
-                  title="Branş dersi"
+                  title="Branş Dersi"
                   description={data.branchLessonName ? `Şu an: ${data.branchLessonName}` : "Şu an branş atanmamış."}
-                  label="Branşı değiştir"
+                  label="Branşı Değiştir"
                   state={actions.branch}
                   testId="action-branch"
                   onClick={() => {
@@ -319,7 +319,7 @@ export function UserDetail({ id }: { id: number }) {
         onOpenChange={(open) => (open ? undefined : close())}
         title="Hesap engellensin mi?"
         description={`${name} giriş yapamayacak ve açık oturumları kapanacak.`}
-        confirmLabel="Evet, engelle"
+        confirmLabel="Evet, Engelle"
         tone="danger"
         pending={ban.isPending}
         error={error}
@@ -333,7 +333,7 @@ export function UserDetail({ id }: { id: number }) {
         onOpenChange={(open) => (open ? undefined : close())}
         title="Engel kaldırılsın mı?"
         description={`${name} yeniden giriş yapabilecek.`}
-        confirmLabel="Evet, kaldır"
+        confirmLabel="Evet, Kaldır"
         pending={unban.isPending}
         error={error}
         onConfirm={() => {
@@ -346,7 +346,7 @@ export function UserDetail({ id }: { id: number }) {
         onOpenChange={(open) => (open ? undefined : close())}
         title="Şifre yenilensin mi?"
         description={`${name} için yeni bir tek seferlik şifre üretilecek. Eski şifre çalışmayacak ve kullanıcı yeniden giriş yapacak.`}
-        confirmLabel="Evet, yenile"
+        confirmLabel="Evet, Yenile"
         tone="danger"
         pending={regenerate.isPending}
         error={error}
@@ -358,8 +358,8 @@ export function UserDetail({ id }: { id: number }) {
       <ConfirmDialog
         open={dialog === "branch"}
         onOpenChange={(open) => (open ? undefined : close())}
-        title="Branş dersini değiştir"
-        description={`${name} için branş dersini seç. Mevcut konu planlarına dokunulmaz.`}
+        title="Branş Dersini Değiştir"
+        description={`${name} için branş dersini seçin. Mevcut konu planlarına dokunulmaz.`}
         confirmLabel="Kaydet"
         pending={setBranchLesson.isPending}
         error={error}
@@ -369,12 +369,12 @@ export function UserDetail({ id }: { id: number }) {
         }}
       >
         <SelectField
-          label="Branş dersi"
+          label="Branş Dersi"
           value={currentBranch}
           onChange={(event) => setBranch(event.target.value)}
           disabled={lessons.isPending}
         >
-          <option value="">Branş yok</option>
+          <option value="">Branş Yok</option>
           {(lessons.data ?? []).map((lesson) => (
             <option key={lesson.id} value={lesson.id}>
               {lesson.name}

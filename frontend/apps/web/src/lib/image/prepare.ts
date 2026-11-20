@@ -73,8 +73,8 @@ function throwIfAborted(signal: AbortSignal | undefined) {
   if (signal?.aborted) throw new DOMException("Hazırlama iptal edildi.", "AbortError");
 }
 
-const HEIC_FAILED = "Bu HEIC fotoğrafı dönüştürülemedi. Fotoğrafı JPEG olarak kaydedip tekrar dene.";
-const DECODE_FAILED = "Fotoğraf okunamadı. Başka bir fotoğraf seçip tekrar dene.";
+const HEIC_FAILED = "Bu HEIC fotoğrafı dönüştürülemedi. Fotoğrafı JPEG olarak kaydedip tekrar deneyin.";
+const DECODE_FAILED = "Fotoğraf okunamadı. Başka bir fotoğraf seçip tekrar deneyin.";
 
 async function decode(file: Blob & { name?: string }, deps: ImageDeps): Promise<Decoded> {
   if (await looksHeic(file)) {
@@ -122,7 +122,7 @@ export async function prepareImage(
         }
         throwIfAborted(options.signal);
       }
-      if (!blob) throw new PrepareError("encode", "Fotoğraf küçültülemedi. Tekrar dene ya da başka bir fotoğraf seç.");
+      if (!blob) throw new PrepareError("encode", "Fotoğraf küçültülemedi. Tekrar deneyin ya da başka bir fotoğraf seçin.");
       throwIfAborted(options.signal);
       if (blob.size <= SAFE_UPLOAD_BYTES) {
         result = { blob, width: size.width, height: size.height };
@@ -130,7 +130,7 @@ export async function prepareImage(
       }
     }
     if (!result) {
-      throw new PrepareError("tooLarge", "Fotoğraf küçültülse de 10 MB'ın altına inmedi. Başka bir fotoğraf dene.");
+      throw new PrepareError("tooLarge", "Fotoğraf küçültülse de 10 MB'ın altına inmedi. Başka bir fotoğraf deneyin.");
     }
 
     let previewBlob: Blob | null = null;

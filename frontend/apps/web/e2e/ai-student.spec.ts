@@ -28,11 +28,11 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
     });
 
     await page.goto(`/sorular/${question.id}`);
-    await expect(page.getByTestId("ai-quota")).toHaveText("Bugün kalan hakkın: 5 / 5");
+    await expect(page.getByTestId("ai-quota")).toHaveText("Bugün Kalan Hakkınız: 5 / 5");
     await expectNoAxeViolations(page, "ai-none");
 
     await page.getByTestId("ai-request").click();
-    await expect(page.getByText("Çözüm hazırlanıyor")).toBeVisible();
+    await expect(page.getByText("Çözüm Hazırlanıyor")).toBeVisible();
     await expect(page.getByTestId("ai-solution")).toContainText("Sahte yapay zekâ çözümü");
     await expect(page.getByTestId("ai-request")).toHaveCount(0);
 
@@ -55,7 +55,7 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
 
     const first = await answeredQuestion(student, creator, lessonId, 2, "Limit birinci");
     await page.goto(`/sorular/${first.id}`);
-    await expect(page.getByTestId("ai-quota")).toHaveText("Bugün kalan hakkın: 5 / 5");
+    await expect(page.getByTestId("ai-quota")).toHaveText("Bugün Kalan Hakkınız: 5 / 5");
     await page.getByTestId("ai-request").click();
     await expect(page.getByTestId("ai-solution")).toBeVisible();
 
@@ -69,7 +69,7 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
     const target = await answeredQuestion(student, creator, lessonId, 2, "Limit hedef");
     const racer = await answeredQuestion(student, creator, lessonId, 2, "Limit yarışçı");
     await page.goto(`/sorular/${target.id}`);
-    await expect(page.getByTestId("ai-quota")).toHaveText("Bugün kalan hakkın: 1 / 5");
+    await expect(page.getByTestId("ai-quota")).toHaveText("Bugün Kalan Hakkınız: 1 / 5");
 
     const last = await requestAi(student, racer.id);
     expect([200, 201]).toContain(last.status);
@@ -84,11 +84,11 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
     await expect(notice).toHaveAttribute("data-kind", "dailyLimit");
     await expect(notice).toContainText("hakkınız doldu");
     await expect(page.getByTestId("ai-request")).toHaveCount(0);
-    await expect(page.getByTestId("ai-quota")).toContainText("Bugünkü hakkın doldu");
+    await expect(page.getByTestId("ai-quota")).toContainText("Bugünkü hakkınız doldu");
     await expectNoAxeViolations(page, "ai-limit");
 
     await page.reload();
-    await expect(page.getByTestId("ai-quota")).toContainText("Bugünkü hakkın doldu");
+    await expect(page.getByTestId("ai-quota")).toContainText("Bugünkü hakkınız doldu");
     await expect(page.getByTestId("ai-request")).toHaveCount(0);
 
     const refused = await requestAi(student, target.id);
@@ -140,15 +140,15 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
     await page.getByTestId("ai-request").click();
     const notice = page.getByTestId("ai-notice");
     await expect(notice).toHaveAttribute("data-kind", "rateLimit");
-    await expect(notice).toContainText("saniye sonra tekrar deneyebilirsin");
+    await expect(notice).toContainText("saniye sonra tekrar deneyebilirsiniz");
     await expect(page.getByTestId("ai-request")).toBeDisabled();
     await expect(page.getByTestId("ai-request")).toBeEnabled({ timeout: 10_000 });
-    await expect(notice).toContainText("Şimdi tekrar deneyebilirsin");
+    await expect(notice).toContainText("Şimdi tekrar deneyebilirsiniz");
 
     mode = "down";
     await page.getByTestId("ai-request").click();
     await expect(notice).toHaveAttribute("data-kind", "providerDown");
-    await expect(notice).toContainText("Bu denemede hakkın düşmedi");
+    await expect(notice).toContainText("Bu denemede hakkınız düşmedi");
     await expect(page.getByTestId("ai-request")).toBeDisabled();
     await expect(page.getByTestId("ai-request")).toBeEnabled({ timeout: 10_000 });
     expect((await quotaOf(student.token)).usedToday).toBe(0);

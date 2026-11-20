@@ -22,11 +22,11 @@ export function LicensesView() {
     <div className="mx-auto flex w-full max-w-screen-md flex-col gap-6 px-safe py-6 pt-safe pb-safe">
       <Link href="/" className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4">
         <ArrowLeft className="size-4" aria-hidden="true" />
-        Uygulamaya dön
+        Uygulamaya Dön
       </Link>
 
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl">Açık kaynak lisansları</h1>
+        <h1 className="text-3xl">Açık Kaynak Lisansları</h1>
         <p className="text-muted-foreground">
           LGS Hazırlık, aşağıdaki açık kaynak kütüphanelerden yararlanır. Bu sayfa herkese açıktır; giriş gerektirmez.
         </p>
@@ -35,7 +35,7 @@ export function LicensesView() {
       <section aria-labelledby="lgpl-baslik" className="flex flex-col gap-4">
         <h2 id="lgpl-baslik" className="flex items-center gap-2 text-2xl">
           <Scale className="size-6 text-primary" aria-hidden="true" />
-          GNU LGPL 3.0 ile lisanslı bileşenler
+          GNU LGPL 3.0 ile Lisanslı Bileşenler
         </h2>
         <Card>
           <CardContent className="flex flex-col gap-3 text-sm" data-testid="lgpl-notice">
@@ -95,7 +95,7 @@ export function LicensesView() {
 
       <section aria-labelledby="diger-baslik" className="flex flex-col gap-4">
         <h2 id="diger-baslik" className="text-2xl">
-          Diğer üretim bağımlılıkları
+          Diğer Üretim Bağımlılıkları
         </h2>
         <p className="text-sm text-muted-foreground">
           Uygulamanın doğrudan kullandığı paketler ve yazı tipleri. Bu liste derleme sırasında paket bilgilerinden üretilir.
@@ -112,7 +112,7 @@ export function LicensesView() {
                   </div>
                   {entry.copyright ? <p className="break-words text-xs text-muted-foreground">{entry.copyright}</p> : null}
                   <div className="flex flex-col">
-                    {entry.repository ? <External href={entry.repository}>{`${entry.name} kaynak kodu`}</External> : null}
+                    {entry.repository ? <External href={entry.repository}>{`${entry.name} Kaynak Kodu`}</External> : null}
                     <External href={entry.npm}>{`${entry.name} (npm)`}</External>
                   </div>
                 </CardContent>

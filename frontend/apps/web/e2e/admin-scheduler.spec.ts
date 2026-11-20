@@ -49,14 +49,14 @@ test.describe("zamanlayıcı", () => {
 
   test("durum ekranı bantları, dört iş kartı ve ders tablosu", async ({ page }) => {
     await openAsMudur(page, mudur);
-    await expect(page.getByTestId("band-timer")).toContainText("Otomatik zamanlayıcı kapalı; görevler yalnız elle çalışır.");
+    await expect(page.getByTestId("band-timer")).toContainText("Otomatik zamanlayıcı kapalı. Görevleri yalnızca elle çalıştırabilirsiniz.");
     await expect(page.getByTestId("band-fake")).toBeVisible();
-    for (const name of ["Soru üretimi", "Soru tamamlama", "Soru yayınlama", "Ödev kapatma"]) {
+    for (const name of ["Soru Üretimi", "Soru Tamamlama", "Soru Yayınlama", "Ödev Kapatma"]) {
       await expect(page.getByRole("heading", { name, level: 3 })).toBeVisible();
     }
     await expect(card(page, "generate")).toContainText("17:30");
-    await expect(page.getByRole("heading", { name: "Bugünkü ders tablosu", level: 2 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Çalıştırma geçmişi", level: 2 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bugünkü Ders Tablosu", level: 2 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Çalıştırma Geçmişi", level: 2 })).toBeVisible();
   });
 
   test("onay pencereleri doğru uyarıyı gösterir", async ({ page }) => {
@@ -94,13 +94,13 @@ test.describe("zamanlayıcı", () => {
     await openAsMudur(page, mudur);
     const dialog = await runNow(page, "assignments");
     await expect(dialog).toContainText("Ödevler şimdi kapatılsın mı?");
-    await dialog.getByRole("button", { name: "Şimdi kapat" }).click();
+    await dialog.getByRole("button", { name: "Şimdi Kapat" }).click();
     await expect(page).toHaveURL(/\/yonetim\/zamanlayici\/\d+$/);
     assignmentsRunId = Number(page.url().match(/(\d+)$/)![1]);
-    await expect(page.getByRole("heading", { name: "Ödev kapatma", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ödev Kapatma", level: 1 })).toBeVisible();
     const finished = await waitRun(mudur.token, assignmentsRunId);
     expect(finished.status).not.toBe("running");
-    await expect(page.getByTestId("run-status")).toContainText(/Başarılı|Kısmen başarılı|Başarısız|Yarıda kesildi/);
+    await expect(page.getByTestId("run-status")).toContainText(/Başarılı|Kısmen Başarılı|Başarısız|Yarıda Kesildi/);
     await expect(page.getByTestId("run-status")).not.toContainText("Çalışıyor");
     await expect(page.getByTestId("run-summary")).toBeVisible();
     await expectNoAxeViolations(page, "zamanlayici-detay");
@@ -112,21 +112,21 @@ test.describe("zamanlayıcı", () => {
     await openAsMudur(page, mudur);
     if (testInfo.project.name !== "webkit-iphone") await page.setViewportSize({ width: 375, height: 900 });
     await page.goto(`${ROUTE}/${assignmentsRunId}`);
-    await expect(page.getByRole("heading", { name: "Ödev kapatma", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ödev Kapatma", level: 1 })).toBeVisible();
     await page.waitForLoadState("networkidle");
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
     await page.goto(`${ROUTE}/99999999`);
-    await expect(page.getByText("Çalıştırma bulunamadı")).toBeVisible();
+    await expect(page.getByText("Çalıştırma Bulunamadı")).toBeVisible();
   });
 
   test("çalışan görev 409 ve runId ile bağlantı gösterir", async ({ page }) => {
     await openAsMudur(page, mudur);
     await mockStart(page, 409, { title: "İşlem çakışması oluştu.", status: 409, detail: "Görev zaten çalışıyor.", runId: 987654 });
     const dialog = await runNow(page, "generate");
-    await dialog.getByRole("button", { name: "Şimdi çalıştır" }).click();
+    await dialog.getByRole("button", { name: "Şimdi Çalıştır" }).click();
     const banner = page.getByTestId("run-conflict");
     await expect(banner).toContainText("Bu görev şu anda çalışıyor.");
-    await expect(banner.getByRole("link", { name: "Çalıştırmayı gör" })).toHaveAttribute("href", "/yonetim/zamanlayici/987654");
+    await expect(banner.getByRole("link", { name: "Çalıştırmayı Gör" })).toHaveAttribute("href", "/yonetim/zamanlayici/987654");
     await expect(page).toHaveURL(/\/yonetim\/zamanlayici$/);
   });
 
@@ -134,7 +134,7 @@ test.describe("zamanlayıcı", () => {
     await openAsMudur(page, mudur);
     await mockStart(page, 429, { title: "Çok fazla istek", status: 429 }, { "retry-after": "30" });
     const dialog = await runNow(page, "publish");
-    await dialog.getByRole("button", { name: "Şimdi yayınla" }).click();
+    await dialog.getByRole("button", { name: "Şimdi Yayınla" }).click();
     await expect(page.getByTestId("problem-banner")).toContainText("saniye sonra");
     for (const button of await page.getByTestId("run-now").all()) await expect(button).toBeDisabled();
   });
@@ -143,7 +143,7 @@ test.describe("zamanlayıcı", () => {
     await openAsMudur(page, mudur);
     await mockStart(page, 409, { title: "İşlem çakışması oluştu.", status: 409, detail: "Soru üretimi ayarlardan kapatılmış." });
     const dialog = await runNow(page, "generate");
-    await dialog.getByRole("button", { name: "Şimdi çalıştır" }).click();
+    await dialog.getByRole("button", { name: "Şimdi Çalıştır" }).click();
     await expect(page.getByTestId("problem-banner")).toContainText("Soru üretimi ayarlardan kapatılmış.");
     await expect(page.getByTestId("run-conflict")).toHaveCount(0);
   });
@@ -152,7 +152,7 @@ test.describe("zamanlayıcı", () => {
     await openAsMudur(page, mudur);
     await mockStart(page, 403, { title: "Yetkisiz", status: 403 });
     const dialog = await runNow(page, "assignments");
-    await dialog.getByRole("button", { name: "Şimdi kapat" }).click();
+    await dialog.getByRole("button", { name: "Şimdi Kapat" }).click();
     await expect(page.getByTestId("run-forbidden")).toBeVisible();
     await expect(page.getByTestId("problem-banner")).toHaveCount(0);
   });
@@ -164,13 +164,13 @@ test.describe("zamanlayıcı", () => {
     await expect(page).toHaveURL(/tur=assignments/);
     await page.getByLabel("Durum", { exact: true }).selectOption("succeeded");
     await expect(page).toHaveURL(/durum=succeeded/);
-    await page.getByLabel("Başlangıç tarihi").fill("2020-01-01");
+    await page.getByLabel("Başlangıç Tarihi").fill("2020-01-01");
     await expect(page).toHaveURL(/baslangic=2020-01-01/);
     await page.reload();
     await expect(page.getByLabel("Görev", { exact: true })).toHaveValue("assignments");
     await expect(page.getByLabel("Durum", { exact: true })).toHaveValue("succeeded");
-    await expect(page.getByLabel("Başlangıç tarihi")).toHaveValue("2020-01-01");
-    await page.getByRole("button", { name: "Filtreleri temizle" }).click();
+    await expect(page.getByLabel("Başlangıç Tarihi")).toHaveValue("2020-01-01");
+    await page.getByRole("button", { name: "Filtreleri Temizle" }).click();
     await expect(page).toHaveURL(/\/yonetim\/zamanlayici$/);
   });
 
@@ -196,8 +196,8 @@ test.describe("zamanlayıcı", () => {
     await login(page, mudur.userName, mudur.password);
     const summary = page.getByTestId("dashboard-scheduler");
     await expect(summary).toContainText("Kapalı");
-    await expect(summary).toContainText("Ödev kapatma");
-    await page.getByRole("link", { name: "Zamanlayıcıya git" }).click();
+    await expect(summary).toContainText("Ödev Kapatma");
+    await page.getByRole("link", { name: "Zamanlayıcıya Git" }).click();
     await expect(page).toHaveURL(/\/yonetim\/zamanlayici$/);
   });
 });

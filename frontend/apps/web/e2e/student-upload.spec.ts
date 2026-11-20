@@ -69,7 +69,7 @@ function problem(status: number, detail: string, headers: Record<string, string>
 async function fill(card: Locator, lessonName: string, option: string, description: string) {
   await card.getByLabel(/^Ders\*?$/).selectOption({ label: lessonName });
   await card.getByRole("radio", { name: `${option} şıkkı` }).click();
-  await card.getByLabel(/^Nerede takıldın/).fill(description);
+  await card.getByLabel(/^Nerede Takıldınız/).fill(description);
 }
 
 async function waitUploaded(page: Page, count: number) {
@@ -193,7 +193,7 @@ test.describe("soru yükleme", () => {
     await waitUploaded(page, 5);
 
     const submit = page.getByTestId("submit-questions");
-    await expect(submit).toContainText("5 soruyu gönder");
+    await expect(submit).toContainText("5 Soruyu Gönder");
     const cards = page.getByTestId("upload-card");
     for (let index = 0; index < 5; index += 1) {
       await fill(cards.nth(index), lesson.name, "ABCDA"[index]!, `${index + 1}. soruda ${validExplanation(w.settings.aciklamaMinKarakter)}`);
@@ -221,8 +221,8 @@ test.describe("soru yükleme", () => {
     await expect(page.getByTestId("upload-notice")).toContainText("1 fotoğraf gönderilmedi");
     const remaining = page.locator('[data-testid="upload-card"][data-phase="editing"]');
     await expect(remaining).toHaveCount(1);
-    await expect(remaining.getByText("Dersi seç.")).toBeVisible();
-    await expect(remaining.getByText("Doğru şıkkı seç.")).toBeVisible();
+    await expect(remaining.getByText("Dersi seçin.")).toBeVisible();
+    await expect(remaining.getByText("Doğru şıkkı seçin.")).toBeVisible();
   });
 
   test("503'te 1 sn ve 3 sn bekleyip aynı clientUploadId ile yeniden dener", async ({ page }) => {
@@ -266,11 +266,11 @@ test.describe("soru yükleme", () => {
     await expect(card.getByTestId("upload-status")).toHaveAttribute("data-status", "failed", { timeout: 30_000 });
     expect(ids).toHaveLength(4);
     await expect(card.getByTestId("upload-message")).toContainText("Sunucuya şu an ulaşılamıyor");
-    await expect(card.getByRole("button", { name: "Tekrar dene" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Tekrar Dene" })).toBeVisible();
     await expect(card.getByRole("button", { name: /kaldır/i })).toBeVisible();
 
     healthy = true;
-    await card.getByRole("button", { name: "Tekrar dene" }).click();
+    await card.getByRole("button", { name: "Tekrar Dene" }).click();
     await waitUploaded(page, 1);
     expect(ids).toHaveLength(5);
     expect(new Set(ids).size).toBe(1);
@@ -307,7 +307,7 @@ test.describe("soru yükleme", () => {
     await expect(card.getByTestId("upload-message")).toHaveText("Fotoğraf okunamadı veya bozuk.");
     await page.waitForTimeout(4500);
     expect(calls).toBe(1);
-    await expect(card.getByRole("button", { name: "Tekrar dene" })).toHaveCount(0);
+    await expect(card.getByRole("button", { name: "Tekrar Dene" })).toHaveCount(0);
     await expect(card.getByRole("button", { name: /kaldır/i })).toBeVisible();
     await card.getByRole("button", { name: /kaldır/i }).click();
     await expect(page.getByTestId("upload-card")).toHaveCount(0);
@@ -415,10 +415,10 @@ test.describe("soru yükleme", () => {
     expect(prevented).toBe(true);
 
     await card.getByRole("button", { name: "İptal" }).click();
-    await expect(card.getByTestId("upload-message")).toHaveText("Yükleme iptal edildi");
+    await expect(card.getByTestId("upload-message")).toHaveText("Yükleme İptal Edildi");
     hold = false;
     for (const release of released) release();
-    await card.getByRole("button", { name: "Tekrar dene" }).click();
+    await card.getByRole("button", { name: "Tekrar Dene" }).click();
     await waitUploaded(page, 1);
 
     const clean = await page.evaluate(() => {
@@ -512,7 +512,7 @@ test.describe("soru yükleme", () => {
     const teacher = await activeUser("ogretmen", "hocayuk");
     await login(page, teacher.userName, teacher.password);
     await page.goto("/soru-yukle");
-    await expect(page.getByRole("heading", { name: "Bu sayfa öğrenciler için" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bu Sayfa Öğrenciler İçin" })).toBeVisible();
   });
 });
 
@@ -524,11 +524,11 @@ test.describe("günlük hak ve idempotent gönderim", () => {
       uploadToday: { dailyLimit: number; scoredLimit: number; scoredRemaining: number; pointsPerQuestion: number };
     };
     const upload = before.uploadToday;
-    await expect(page.getByTestId("dashboard-upload-quota")).toContainText(`0 / ${upload.dailyLimit} soru yükledin`);
+    await expect(page.getByTestId("dashboard-upload-quota")).toContainText(`0 / ${upload.dailyLimit} soru yüklediniz`);
 
     await page.goto("/soru-yukle");
     if (upload.scoredLimit > 0) {
-      await expect(page.getByTestId("quota-scored")).toContainText(`İlk ${upload.scoredLimit} soru puanlı. ${upload.scoredRemaining} puanlı hakkın kaldı.`);
+      await expect(page.getByTestId("quota-scored")).toContainText(`İlk ${upload.scoredLimit} soru puanlı. ${upload.scoredRemaining} puanlı hakkınız kaldı.`);
     } else {
       await expect(page.getByTestId("quota-scored")).toHaveCount(0);
     }
@@ -539,10 +539,10 @@ test.describe("günlük hak ve idempotent gönderim", () => {
     await expect(page.locator('[data-testid="upload-card"][data-phase="created"]')).toHaveCount(1, { timeout: 20_000 });
     await expect(page.getByTestId("quota")).toContainText(`1 / ${upload.dailyLimit}`);
     if (upload.scoredLimit > 0) {
-      await expect(page.getByTestId("quota-scored")).toContainText(`${Math.max(0, upload.scoredRemaining - 1)} puanlı hakkın kaldı`);
+      await expect(page.getByTestId("quota-scored")).toContainText(`${Math.max(0, upload.scoredRemaining - 1)} puanlı hakkınız kaldı`);
     }
     await page.goto("/");
-    await expect(page.getByTestId("dashboard-upload-quota")).toContainText(`1 / ${upload.dailyLimit} soru yükledin`);
+    await expect(page.getByTestId("dashboard-upload-quota")).toContainText(`1 / ${upload.dailyLimit} soru yüklediniz`);
   });
 
   test("ilk istek yanıtı kaybolursa aynı clientRequestId ile tekrar gönderim tek soru oluşturur", async ({ page }) => {
@@ -599,7 +599,7 @@ test.describe("günlük hak ve idempotent gönderim", () => {
     await page.getByTestId("submit-questions").click();
     await expect.poll(() => ids.length).toBe(2);
     expect(ids[1]).toBe(ids[0]);
-    await card.getByLabel(/^Nerede takıldın/).fill(`${validExplanation(w.settings.aciklamaMinKarakter)} ek`);
+    await card.getByLabel(/^Nerede Takıldınız/).fill(`${validExplanation(w.settings.aciklamaMinKarakter)} ek`);
     await page.getByTestId("submit-questions").click();
     await expect.poll(() => ids.length).toBe(3);
     expect(ids[2]).not.toBe(ids[1]);
@@ -612,22 +612,22 @@ test.describe("cevaplamadan şikâyet", () => {
     await studentLogin(page);
     await page.goto(`/sorular/${question.id}`);
 
-    await page.getByRole("button", { name: "Soruyu şikâyet et" }).click();
+    await page.getByRole("button", { name: "Soruyu Şikâyet Et" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText("Yanlış cevap anahtarı şikâyeti için önce soruyu cevaplamalısın.")).toBeVisible();
-    const wrong = dialog.getByRole("option", { name: "Cevap anahtarı yanlış" });
+    await expect(dialog.getByText("Yanlış cevap anahtarı şikâyeti için önce soruyu cevaplamalısınız.")).toBeVisible();
+    const wrong = dialog.getByRole("option", { name: "Cevap Anahtarı Yanlış" });
     await expect(wrong).toBeDisabled();
     await expect(dialog.getByLabel("Neden")).not.toHaveValue("wrongAnswerKey");
 
     await dialog.getByLabel("Neden").selectOption("unreadable");
     await dialog.getByLabel("Açıklama").fill("Fotoğraf okunamıyor, şıklar kesilmiş görünüyor.");
     const reported = page.waitForResponse((response) => response.url().includes(`/api/questions/${question.id}/reports`) && response.request().method() === "POST");
-    await dialog.getByRole("button", { name: "Şikâyet et" }).click();
+    await dialog.getByRole("button", { name: "Şikâyet Et" }).click();
     expect((await reported).status()).toBe(201);
-    await expect(page.getByText("Şikâyetin öğretmenlere iletildi.")).toBeVisible();
+    await expect(page.getByText("Şikâyetiniz öğretmenlere iletildi.")).toBeVisible();
 
     await expect(page.getByTestId("answer-result")).toHaveCount(0);
-    await expect(page.getByText(/Doğru cevap:/)).toHaveCount(0);
+    await expect(page.getByText(/Doğru Cevap:/)).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Cevabı Gönder" })).toBeVisible();
     const detail = (await (await page.request.get(`/api/questions/${question.id}`)).json()) as { correctOption: number | null; myAnswer: unknown };
     expect(detail.correctOption).toBeNull();
@@ -639,10 +639,10 @@ test.describe("cevaplamadan şikâyet", () => {
     const student = await studentLogin(page);
     await answerQuestion(student, question.id, 1, validExplanation(w.settings.aciklamaMinKarakter));
     await page.goto(`/sorular/${question.id}`);
-    await page.getByRole("button", { name: "Soruyu şikâyet et" }).click();
+    await page.getByRole("button", { name: "Soruyu Şikâyet Et" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("option", { name: "Cevap anahtarı yanlış" })).toBeEnabled();
-    await expect(dialog.getByText("önce soruyu cevaplamalısın")).toHaveCount(0);
+    await expect(dialog.getByRole("option", { name: "Cevap Anahtarı Yanlış" })).toBeEnabled();
+    await expect(dialog.getByText("önce soruyu cevaplamalısınız")).toHaveCount(0);
     await expect(dialog.getByLabel("Neden")).toHaveValue("wrongAnswerKey");
   });
 });
@@ -671,9 +671,9 @@ test.describe("gizli soru", () => {
     await expect(banner).toContainText("Bu soru gizlendi (");
     await expect(page.getByRole("heading", { name: "Cevapla" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Çözümler" })).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Tartışma kilitli" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Tartışma Kilitli" })).toHaveCount(0);
     await expect(page.getByTestId("like-button")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Soruyu şikâyet et" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Soruyu Şikâyet Et" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Cevabı Gönder" })).toHaveCount(0);
     await expect(page.locator("img[alt$='sorusu']").first()).toBeVisible();
     await page.waitForTimeout(800);
@@ -736,8 +736,8 @@ test.describe("sorularım", () => {
   test("boş durumda yükleme çağrısı gösterilir", async ({ page }) => {
     await studentLogin(page);
     await page.goto("/sorularim");
-    await expect(page.getByRole("heading", { name: "Henüz soru yüklemedin" })).toBeVisible();
-    await page.getByRole("link", { name: "Soru yükle" }).last().click();
+    await expect(page.getByRole("heading", { name: "Henüz Soru Yüklemediniz" })).toBeVisible();
+    await page.getByRole("link", { name: "Soru Yükle" }).last().click();
     await expect(page).toHaveURL(/\/soru-yukle$/);
   });
 
@@ -745,7 +745,7 @@ test.describe("sorularım", () => {
     await studentLogin(page);
     await page.goto("/");
     await expect(page.getByRole("link", { name: "Sorularım" }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Soru yükle" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Soru Yükle" }).first()).toBeVisible();
   });
 });
 
@@ -764,8 +764,8 @@ test.describe("görselli çözüm", () => {
     await expect(submit).toBeEnabled();
     await submit.click();
 
-    await expect(page.getByTestId("answer-result")).toContainText("Doğru cevap!");
-    const mine = page.getByTestId("solution").filter({ hasText: "(Sen)" });
+    await expect(page.getByTestId("answer-result")).toContainText("Doğru Cevap!");
+    const mine = page.getByTestId("solution").filter({ hasText: "(Siz)" });
     await expect(mine.locator("img[alt='Çözüm görseli']")).toBeVisible();
 
     await mine.getByTestId("solution-edit").click();
@@ -778,11 +778,11 @@ test.describe("görselli çözüm", () => {
     expect(replacedId).not.toBeNull();
 
     await mine.getByTestId("solution-edit").click();
-    await page.getByRole("button", { name: "Fotoğrafı kaldır" }).click();
+    await page.getByRole("button", { name: "Fotoğrafı Kaldır" }).click();
     const save = page.getByRole("button", { name: "Kaydet" });
     await expect(save).toBeDisabled();
     await expect(page.getByTestId("edit-counter")).toContainText(`en az ${w.settings.aciklamaMinKarakter}`);
-    await page.getByLabel("Çözümü düzenle").fill(validExplanation(w.settings.aciklamaMinKarakter));
+    await page.getByLabel("Çözümü Düzenle").fill(validExplanation(w.settings.aciklamaMinKarakter));
     await expect(save).toBeEnabled();
     await save.click();
     await expect(mine.getByTestId("solution-edit")).toBeVisible();
@@ -798,14 +798,14 @@ test.describe("görselli çözüm", () => {
     await page.goto(`/sorular/${question.id}`);
     const submit = page.getByRole("button", { name: "Cevabı Gönder" });
     await page.getByRole("radio", { name: "A şıkkı" }).click();
-    await page.getByLabel(/^Çözümünü anlat/).fill("kısa");
+    await page.getByLabel(/^Çözümünüzü Anlatın/).fill("kısa");
     await expect(submit).toBeDisabled();
     await page.getByTestId("photo-input").setInputFiles(pngFile("cozum.png"));
     await expect(page.getByTestId("upload-status")).toHaveAttribute("data-status", "done", { timeout: 30_000 });
     await expect(submit).toBeEnabled();
-    await page.getByRole("button", { name: "Fotoğrafı kaldır" }).click();
+    await page.getByRole("button", { name: "Fotoğrafı Kaldır" }).click();
     await expect(submit).toBeDisabled();
-    await page.getByLabel(/^Çözümünü anlat/).fill(validExplanation(w.settings.aciklamaMinKarakter));
+    await page.getByLabel(/^Çözümünüzü Anlatın/).fill(validExplanation(w.settings.aciklamaMinKarakter));
     await expect(submit).toBeEnabled();
   });
 
@@ -815,11 +815,11 @@ test.describe("görselli çözüm", () => {
     const imageId = await uploadQuestionImage(student, "solutionImage");
     await answerQuestion(student, question.id, 3, validExplanation(w.settings.aciklamaMinKarakter), imageId);
     await page.goto(`/sorular/${question.id}`);
-    const mine = page.getByTestId("solution").filter({ hasText: "(Sen)" });
+    const mine = page.getByTestId("solution").filter({ hasText: "(Siz)" });
     await mine.getByTestId("solution-edit").click();
-    await expect(mine.getByRole("img", { name: "Çözüm fotoğrafı" })).toBeVisible();
-    await expect(mine.getByRole("button", { name: "Fotoğrafı kaldır" })).toBeVisible();
-    await expect(mine.getByText("Fotoğrafı değiştir")).toBeVisible();
+    await expect(mine.getByRole("img", { name: "Çözüm Fotoğrafı" })).toBeVisible();
+    await expect(mine.getByRole("button", { name: "Fotoğrafı Kaldır" })).toBeVisible();
+    await expect(mine.getByText("Fotoğrafı Değiştir")).toBeVisible();
   });
 });
 
@@ -830,16 +830,16 @@ test.describe("görsel düzenleme davranışı", () => {
     const imageId = await uploadQuestionImage(student, "solutionImage");
     await answerQuestion(student, question.id, 3, validExplanation(w.settings.aciklamaMinKarakter), imageId);
     await page.goto(`/sorular/${question.id}`);
-    const mine = page.getByTestId("solution").filter({ hasText: "(Sen)" });
+    const mine = page.getByTestId("solution").filter({ hasText: "(Siz)" });
 
     await mine.getByTestId("solution-edit").click();
     const uploaded = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/files" && response.request().method() === "POST");
     await page.getByTestId("photo-input").setInputFiles(pngFile("yeni.png", 640, 480));
     const newId = ((await (await uploaded).json()) as { id: number }).id;
     await expect(page.getByTestId("upload-status")).toHaveAttribute("data-status", "done", { timeout: 30_000 });
-    await page.getByRole("button", { name: "Fotoğrafı kaldır" }).click();
+    await page.getByRole("button", { name: "Fotoğrafı Kaldır" }).click();
     await expect(page.getByTestId("photo-attachment").getByRole("img")).toHaveCount(0);
-    await expect(page.getByText("Fotoğraf ekle")).toBeVisible();
+    await expect(page.getByText("Fotoğraf Ekle")).toBeVisible();
     await expect.poll(async () => (await page.request.get(`/api/files/${newId}`)).status()).toBe(404);
 
     await page.getByRole("button", { name: "Vazgeç" }).click();

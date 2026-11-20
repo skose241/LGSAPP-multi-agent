@@ -36,7 +36,7 @@ test.describe("öğrenciler", () => {
     await page.goto("/ogretmen/ogrenciler");
     await expect(page.getByRole("heading", { name: "Öğrenciler", level: 1 })).toBeVisible();
 
-    await page.getByLabel("Öğrenci ara").fill(stamp);
+    await page.getByLabel("Öğrenci Ara").fill(stamp);
     await expect(page).toHaveURL(new RegExp(`ara=${stamp}`));
     await expect(studentEntry(page, first.userName)).toBeVisible();
     await expect(studentEntry(page, second.userName)).toBeVisible();
@@ -56,19 +56,19 @@ test.describe("öğrenciler", () => {
     await expect.poll(visibleNames).toEqual([second.userName, first.userName]);
     await expectNoAxeViolations(page, "ogrenciler-liste");
 
-    await page.getByLabel("Öğrenci ara").fill(`${stamp}-yok`);
-    await expect(page.getByRole("heading", { name: "Eşleşen öğrenci yok" })).toBeVisible();
+    await page.getByLabel("Öğrenci Ara").fill(`${stamp}-yok`);
+    await expect(page.getByRole("heading", { name: "Eşleşen Öğrenci Yok" })).toBeVisible();
 
-    await page.getByLabel("Öğrenci ara").fill(stamp);
+    await page.getByLabel("Öğrenci Ara").fill(stamp);
     await studentEntry(page, second.userName).getByRole("link").first().click();
     await expect(page).toHaveURL(new RegExp(`/ogretmen/ogrenciler/${second.id}$`));
     await expect(page.getByTestId("student-name")).toHaveText(`Zeynep ${stamp}`);
     const stats = page.getByTestId("profile-stats");
-    await expect(stats.getByRole("heading", { name: "Puan ve sıra" })).toBeVisible();
+    await expect(stats.getByRole("heading", { name: "Puan ve Sıra" })).toBeVisible();
     const lessonRows = page.getByTestId("lesson-row");
     await expect(lessonRows.filter({ hasText: w.lessons[0]!.name }).first()).toContainText("%100");
     await expect(lessonRows.filter({ hasText: w.lessons[1]!.name }).first()).toContainText("%0");
-    await expect(stats.getByRole("heading", { name: "Ödev katılımı" })).toBeVisible();
+    await expect(stats.getByRole("heading", { name: "Ödev Katılımı" })).toBeVisible();
     await expect(stats.getByRole("heading", { name: "Katkıları" })).toBeVisible();
     await expectNoAxeViolations(page, "ogrenci-profil");
 
@@ -83,7 +83,7 @@ test.describe("öğrenciler", () => {
     const teacher = await branchTeacher(w.lessons[0]!.id);
     await loginAs(page, teacher);
     await page.goto(`/ogretmen/ogrenciler/${teacher.id}`);
-    await expect(page.getByRole("heading", { name: "Öğrenci bulunamadı" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Öğrenci Bulunamadı" })).toBeVisible();
   });
 });
 
@@ -105,11 +105,11 @@ test.describe("çözüm bekleyenler", () => {
     await expectNoAxeViolations(page, "cozum-bekleyenler");
 
     await item.getByRole("button", { name: /Listeden çıkar/ }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Listeden çıkar" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Listeden Çıkar" }).click();
     await expect(item).toHaveCount(0);
     expect(await needsSolutionIds(teacher.token, lesson.id)).not.toContain(question.id);
 
-    await page.getByRole("button", { name: "Geri al" }).click();
+    await page.getByRole("button", { name: "Geri Al" }).click();
     await expect(item).toBeVisible();
     expect(await needsSolutionIds(teacher.token, lesson.id)).toContain(question.id);
   });
@@ -127,15 +127,15 @@ test.describe("çözüm bekleyenler", () => {
     await expect(page).toHaveURL(new RegExp(`/sorular/${question.id}\\?cozum=ogretmen$`));
     const form = page.getByTestId("teacher-solution-form");
     await expect(form).toBeVisible();
-    await expect(page.getByLabel("Çözüm metni")).toBeFocused();
-    await expect(form.getByRole("button", { name: "Çözümü kaydet" })).toBeDisabled();
+    await expect(page.getByLabel("Çözüm Metni")).toBeFocused();
+    await expect(form.getByRole("button", { name: "Çözümü Kaydet" })).toBeDisabled();
     await expectNoAxeViolations(page, "ogretmen-cozum-formu");
 
-    await page.getByLabel("Çözüm metni").fill("Şıkları eleyerek ikinci seçeneğe ulaşılır: $2+2=4$.");
-    await form.getByRole("button", { name: "Çözümü kaydet" }).click();
+    await page.getByLabel("Çözüm Metni").fill("Şıkları eleyerek ikinci seçeneğe ulaşılır: $2+2=4$.");
+    await form.getByRole("button", { name: "Çözümü Kaydet" }).click();
     await expect(page.getByTestId("teacher-solution-exists")).toBeVisible();
     await expect(page).not.toHaveURL(/cozum=ogretmen/);
-    await expect(page.getByTestId("solution").filter({ hasText: "Öğretmen çözümü" })).toBeVisible();
+    await expect(page.getByTestId("solution").filter({ hasText: "Öğretmen Çözümü" })).toBeVisible();
     expect(await needsSolutionIds(teacher.token, lesson.id)).not.toContain(question.id);
 
     await page.goto("/ogretmen/cozum-bekleyenler");
@@ -178,10 +178,10 @@ test.describe("çözüm bekleyenler", () => {
 
     await loginAs(page, teacher);
     await page.goto(`/sorular/${question.id}?cozum=ogretmen`);
-    await page.getByLabel("Çözüm metni").fill("Benim çözümüm bu.");
+    await page.getByLabel("Çözüm Metni").fill("Benim çözümüm bu.");
     const created = await backend("POST", `/api/questions/${question.id}/solutions/teacher`, { token: other.token, body: { text: "Diğer öğretmenin çözümü", imageFileId: null } });
     expect(created.status).toBe(201);
-    await page.getByRole("button", { name: "Çözümü kaydet" }).click();
+    await page.getByRole("button", { name: "Çözümü Kaydet" }).click();
     await expect(page.getByTestId("problem-banner")).toContainText("zaten bir öğretmen çözümü");
     await expect(page.getByTestId("teacher-solution-exists")).toBeVisible();
   });
@@ -239,7 +239,7 @@ test.describe("liste dayanıklılığı", () => {
     await expect(item).toBeVisible();
 
     await item.getByRole("button", { name: /Listeden çıkar/ }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Listeden çıkar" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Listeden Çıkar" }).click();
     await expect(item).toHaveCount(0);
 
     await page.getByRole("button", { name: "Çıkarılanlar" }).click();
@@ -262,13 +262,13 @@ test.describe("liste dayanıklılığı", () => {
     await expect(page).not.toHaveURL(/sayfa=999/);
 
     await page.goto("/ogretmen/ogrenciler?ara=ogrenci");
-    await expect(page.getByLabel("Öğrenci ara")).toHaveValue("ogrenci");
+    await expect(page.getByLabel("Öğrenci Ara")).toHaveValue("ogrenci");
     await page.getByLabel("Sıralama").selectOption("points");
     await expect(page).toHaveURL(/sirala=puan/);
-    await page.getByLabel("Öğrenci ara").fill("havuz");
+    await page.getByLabel("Öğrenci Ara").fill("havuz");
     await expect(page).toHaveURL(/ara=havuz/);
     await page.goBack();
-    await expect(page.getByLabel("Öğrenci ara")).toHaveValue("ogrenci");
+    await expect(page.getByLabel("Öğrenci Ara")).toHaveValue("ogrenci");
   });
 });
 
@@ -303,13 +303,13 @@ test.describe("şikâyetler", () => {
 
     await item.click();
     await expect(page).toHaveURL(/\/ogretmen\/sikayetler\/\d+$/);
-    await expect(page.getByRole("heading", { name: "Şikâyet incelemesi" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Şikâyet İncelemesi" })).toBeVisible();
     await expect(page.getByTestId("report-description")).toHaveText(description);
     await expect(page.getByTestId("resolve-submit")).toBeDisabled();
     await expectNoAxeViolations(page, "sikayet-detay");
 
-    await page.getByRole("radio", { name: /Şikâyeti reddet/ }).check();
-    await page.getByLabel("Not (isteğe bağlı)").fill("Soru eksiksiz.");
+    await page.getByRole("radio", { name: /Şikâyeti Reddet/ }).check();
+    await page.getByLabel("Not (İsteğe Bağlı)").fill("Soru eksiksiz.");
     await page.getByTestId("resolve-submit").click();
     await page.getByRole("dialog").getByRole("button", { name: "Uygula" }).click();
     await expect(page.getByTestId("report-outcome")).toContainText("Reddedildi");
@@ -336,7 +336,7 @@ test.describe("şikâyetler", () => {
     await page.getByTestId("report-item").filter({ hasText: description }).click();
     await expect(page.getByTestId("dispute-link")).toHaveAttribute("href", `/ogretmen/supheli-anahtarlar/${question.id}`);
 
-    await page.getByRole("radio", { name: /Şikâyeti reddet/ }).check();
+    await page.getByRole("radio", { name: /Şikâyeti Reddet/ }).check();
     await page.getByTestId("resolve-submit").click();
     await page.getByRole("dialog").getByRole("button", { name: "Uygula" }).click();
     await expect(page.getByTestId("problem-banner")).toContainText("branş");
@@ -344,11 +344,11 @@ test.describe("şikâyetler", () => {
 
     await setBranch(outsider.id, lesson.id);
     await page.reload();
-    await page.getByRole("radio", { name: /Cevap anahtarını değiştir/ }).check();
+    await page.getByRole("radio", { name: /Cevap Anahtarını Değiştir/ }).check();
     await page.getByRole("radio", { name: /^D şıkkı/ }).click();
     await page.getByTestId("resolve-submit").click();
     await page.getByRole("dialog").getByRole("button", { name: "Uygula" }).click();
-    await expect(page.getByTestId("report-outcome")).toContainText("Cevap anahtarı değiştirildi");
+    await expect(page.getByTestId("report-outcome")).toContainText("Cevap Anahtarı Değiştirildi");
     const view = await backend<{ correctOption: number | null }>("GET", `/api/questions/${question.id}`, { token: outsider.token });
     expect(view.body.correctOption).toBe(4);
   });
@@ -369,7 +369,7 @@ test.describe("şikâyet çakışması", () => {
     await loginAs(page, teacher);
     await page.goto("/ogretmen/sikayetler");
     await page.getByTestId("report-item").filter({ hasText: description }).click();
-    await page.getByRole("radio", { name: /Şikâyeti reddet/ }).check();
+    await page.getByRole("radio", { name: /Şikâyeti Reddet/ }).check();
 
     const pending = await backend<{ items: { id: number; description: string; rowVersion: string }[] }>("GET", "/api/admin/reports?status=pending&pageSize=50", { token: other.token });
     const target = pending.body.items.find((entry) => entry.description === description)!;
@@ -409,7 +409,7 @@ test.describe("öğretmen panosu", () => {
     await expect(page.getByTestId("card-error")).toHaveCount(0);
     await expectNoAxeViolations(page, "ogretmen-pano");
 
-    await page.getByTestId("card-needs-solution").getByRole("link", { name: "Listeye git" }).click();
+    await page.getByTestId("card-needs-solution").getByRole("link", { name: "Listeye Git" }).click();
     await expect(page).toHaveURL(/\/ogretmen\/cozum-bekleyenler$/);
   });
 });

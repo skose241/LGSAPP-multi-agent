@@ -33,12 +33,12 @@ export function StudentProfilePage({ id }: { id: number }) {
         <EmptyState
           icon={missing ? UserX : CloudOff}
           as="h2"
-          title={missing ? "Öğrenci bulunamadı" : "Öğrenci yüklenemedi"}
+          title={missing ? "Öğrenci Bulunamadı" : "Öğrenci Yüklenemedi"}
           description={missing ? "Bu numarayla kayıtlı bir öğrenci yok." : profile.error.message}
           action={
             missing ? (
               <Button asChild variant="secondary">
-                <Link href="/ogretmen/ogrenciler">Öğrenci listesine dön</Link>
+                <Link href="/ogretmen/ogrenciler">Öğrenci Listesine Dön</Link>
               </Button>
             ) : (
               <Button onClick={() => profile.refetch()}>Tekrar Dene</Button>
@@ -68,7 +68,7 @@ export function StudentProfilePage({ id }: { id: number }) {
           ) : null}
         </div>
         <p className="text-muted-foreground">
-          <span className="font-mono">{student.userName}</span> · Kayıt tarihi {formatDateTimeShort(student.createdAt)}
+          <span className="font-mono">{student.userName}</span> · Kayıt Tarihi {formatDateTimeShort(student.createdAt)}
         </p>
       </header>
       <StatsPanels data={stats} perspective="teacher" />

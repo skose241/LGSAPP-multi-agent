@@ -38,12 +38,12 @@ function ReportSummary({ report, isMudur }: { report: ReportItem; isMudur: boole
         </p>
         <p className="text-sm text-muted-foreground">
           {userLabel(report.reporter)} · {formatDateTimeShort(report.createdAt)}
-          {report.reported ? ` · Şikâyet edilen: ${userLabel(report.reported)}` : ""}
+          {report.reported ? ` · Şikâyet Edilen: ${userLabel(report.reported)}` : ""}
         </p>
         {isMudur && report.reported && report.reported.role !== "ai" ? (
           <Button asChild variant="secondary" className="self-start">
             <Link href={`/yonetim/kullanicilar/${report.reported.id}`} data-testid="reported-user-link">
-              İçerik sahibinin kullanıcı sayfası
+              İçerik Sahibinin Kullanıcı Sayfası
             </Link>
           </Button>
         ) : null}
@@ -61,10 +61,10 @@ function QuestionTarget({ detail, onImageExpired }: { detail: ReportDetail; onIm
   return (
     <Card>
       <CardContent className="flex flex-col gap-4">
-        <h2 className="text-xl">Şikâyet edilen soru</h2>
+        <h2 className="text-xl">Şikâyet Edilen Soru</h2>
         <div className="flex flex-wrap items-center gap-1.5">
           {question.isHidden ? <Badge tone="warning">Gizli</Badge> : null}
-          {question.isAnswerDisputed ? <Badge tone="warning">Şüpheli anahtar</Badge> : null}
+          {question.isAnswerDisputed ? <Badge tone="warning">Şüpheli Anahtar</Badge> : null}
           <span className="text-sm text-muted-foreground">{question.answerCount} cevap</span>
         </div>
         {question.image ? <QuestionImage image={question.image} alt="Şikâyet edilen soru görseli" variant="full" zoomable onExpired={onImageExpired} /> : null}
@@ -79,20 +79,20 @@ function QuestionTarget({ detail, onImageExpired }: { detail: ReportDetail; onIm
                 <span className="font-display font-bold">{letter})</span>
                 {text ? <MathText text={text} className="min-w-0 flex-1" /> : <span className="flex-1 text-sm text-muted-foreground">Şık görselde</span>}
                 <span className="text-xs text-muted-foreground">{counts.get(number) ?? 0} cevap</span>
-                {isKey ? <Badge tone="success">Kayıtlı cevap</Badge> : null}
+                {isKey ? <Badge tone="success">Kayıtlı Cevap</Badge> : null}
               </li>
             );
           })}
         </ol>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="secondary">
-            <Link href={`/sorular/${detail.report.questionId}`}>Soruyu aç</Link>
+            <Link href={`/sorular/${detail.report.questionId}`}>Soruyu Aç</Link>
           </Button>
           {detail.report.reason === "wrongAnswerKey" ? (
             <Button asChild variant="secondary">
               <Link href={`/ogretmen/supheli-anahtarlar/${detail.report.questionId}`} data-testid="dispute-link">
                 <ShieldQuestion aria-hidden="true" />
-                Şüpheli anahtar incelemesi
+                Şüpheli Anahtar İncelemesi
               </Link>
             </Button>
           ) : null}
@@ -108,13 +108,13 @@ function OtherTargets({ detail, onImageExpired }: { detail: ReportDetail; onImag
     return (
       <Card>
         <CardContent className="flex flex-col gap-3">
-          <h2 className="text-xl">Şikâyet edilen yorum</h2>
+          <h2 className="text-xl">Şikâyet Edilen Yorum</h2>
           <p className="text-sm text-muted-foreground">
             {userLabel(comment.author)} · {formatDateTimeShort(comment.createdAt)}
           </p>
           <p className="max-w-prose whitespace-pre-wrap break-words text-base">{comment.body}</p>
           <Button asChild variant="secondary" className="self-start">
-            <Link href={`/sorular/${detail.report.questionId}`}>Soruyu aç</Link>
+            <Link href={`/sorular/${detail.report.questionId}`}>Soruyu Aç</Link>
           </Button>
         </CardContent>
       </Card>
@@ -124,7 +124,7 @@ function OtherTargets({ detail, onImageExpired }: { detail: ReportDetail; onImag
     return (
       <Card>
         <CardContent className="flex flex-col gap-3">
-          <h2 className="text-xl">Şikâyet edilen çözüm</h2>
+          <h2 className="text-xl">Şikâyet Edilen Çözüm</h2>
           <p className="text-sm text-muted-foreground">
             {userLabel(solution.author)} · {formatDateTimeShort(solution.createdAt)}
             {solution.isHidden ? " · Gizli" : ""}
@@ -133,7 +133,7 @@ function OtherTargets({ detail, onImageExpired }: { detail: ReportDetail; onImag
           {solution.text ? <MathText text={solution.text} className="max-w-prose text-base" /> : null}
           {solution.image ? <QuestionImage image={solution.image} alt="Çözüm görseli" variant="full" zoomable onExpired={onImageExpired} /> : null}
           <Button asChild variant="secondary" className="self-start">
-            <Link href={`/sorular/${detail.report.questionId}`}>Soruyu aç</Link>
+            <Link href={`/sorular/${detail.report.questionId}`}>Soruyu Aç</Link>
           </Button>
         </CardContent>
       </Card>
@@ -203,7 +203,7 @@ function ResolveForm({ detail, onResolved, onFailure }: { detail: ReportDetail; 
           </p>
         ) : null}
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-semibold">Ne yapılsın?</legend>
+          <legend className="mb-1 text-sm font-semibold">Ne Yapılsın?</legend>
           {choices.map((entry) => (
             <label
               key={entry.value}
@@ -223,15 +223,15 @@ function ResolveForm({ detail, onResolved, onFailure }: { detail: ReportDetail; 
 
         {action === "changeAnswerKey" ? (
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold">Yeni doğru şık</p>
+            <p className="text-sm font-semibold">Yeni Doğru Şık</p>
             <OptionPicker label="Yeni doğru şık" value={letter} onValueChange={setLetter} />
-            {detail.question ? <p className="text-xs text-muted-foreground">Kayıtlı cevap: {optionToLetter(detail.question.correctOption) ?? "-"}</p> : null}
+            {detail.question ? <p className="text-xs text-muted-foreground">Kayıtlı Cevap: {optionToLetter(detail.question.correctOption) ?? "-"}</p> : null}
           </div>
         ) : null}
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${groupId}-note`} className="text-sm font-semibold">
-            Not (isteğe bağlı)
+            Not (İsteğe Bağlı)
           </label>
           <textarea
             id={`${groupId}-note`}
@@ -246,7 +246,7 @@ function ResolveForm({ detail, onResolved, onFailure }: { detail: ReportDetail; 
         </div>
 
         <Button type="button" className="self-start" disabled={!ready} onClick={() => setConfirming(true)} data-testid="resolve-submit">
-          Kararı uygula
+          Kararı Uygula
         </Button>
       </CardContent>
 
@@ -278,10 +278,10 @@ function ResolvedPanel({ report, outcome }: { report: ReportItem; outcome: Repor
             Bu şikâyet {userLabel(report.resolvedBy)} tarafından {report.resolvedAt ? formatDateTimeShort(report.resolvedAt) : "daha önce"} karara bağlanmış.
           </p>
         ) : null}
-        {outcome ? <p>Kapanan şikâyet sayısı: {outcome.closedReportCount}</p> : null}
+        {outcome ? <p>Kapanan Şikâyet Sayısı: {outcome.closedReportCount}</p> : null}
         {outcome?.answerKeyChange ? (
           <p>
-            Etkilenen cevap: {outcome.answerKeyChange.affectedAnswerCount} · Doğru olan: {outcome.answerKeyChange.becameCorrect} · Yanlış olan: {outcome.answerKeyChange.becameIncorrect}
+            Etkilenen Cevap: {outcome.answerKeyChange.affectedAnswerCount} · Doğru Olan: {outcome.answerKeyChange.becameCorrect} · Yanlış Olan: {outcome.answerKeyChange.becameIncorrect}
           </p>
         ) : null}
         {report.resolvedAt ? (
@@ -321,12 +321,12 @@ export function ReportDetailPage({ id }: { id: number }) {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title={missing ? "Şikâyet bulunamadı" : "Şikâyet yüklenemedi"}
+          title={missing ? "Şikâyet Bulunamadı" : "Şikâyet Yüklenemedi"}
           description={missing ? "Bu şikâyet kaldırılmış olabilir." : detail.error.message}
           action={
             missing ? (
               <Button asChild variant="secondary">
-                <Link href="/ogretmen/sikayetler">Listeye dön</Link>
+                <Link href="/ogretmen/sikayetler">Listeye Dön</Link>
               </Button>
             ) : (
               <Button onClick={() => detail.refetch()}>Tekrar Dene</Button>
@@ -345,7 +345,7 @@ export function ReportDetailPage({ id }: { id: number }) {
     <div className="flex flex-col gap-5">
       {back}
       <div>
-        <h1 className="text-3xl">Şikâyet incelemesi</h1>
+        <h1 className="text-3xl">Şikâyet İncelemesi</h1>
         <p className="text-muted-foreground">
           {reportTargetLabel(report.targetType)} şikâyeti · {reportReasonLabel(report.reason)}
         </p>
@@ -354,7 +354,7 @@ export function ReportDetailPage({ id }: { id: number }) {
       <ProblemBanner state={resolveError} />
       {resolveError?.status === 403 ? (
         <p className="text-sm font-semibold" data-testid="forbidden-hint">
-          Bu işlem için yetkin yok. Cevap anahtarı kararları branş öğretmenine aittir.
+          Bu işlem için yetkiniz yok. Cevap anahtarı kararları branş öğretmenine aittir.
         </p>
       ) : null}
 
@@ -371,7 +371,7 @@ export function ReportDetailPage({ id }: { id: number }) {
           {data.otherReports.length > 0 ? (
             <Card>
               <CardContent className="flex flex-col gap-3">
-                <h2 className="text-xl">Aynı içerikle ilgili diğer şikâyetler</h2>
+                <h2 className="text-xl">Aynı İçerikle İlgili Diğer Şikâyetler</h2>
                 <ul className="flex flex-col gap-2" aria-label="Diğer şikâyetler">
                   {data.otherReports.map((other) => (
                     <li key={other.id} className="rounded-md border border-border p-3 text-sm" data-testid="other-report">

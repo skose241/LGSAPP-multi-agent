@@ -41,7 +41,7 @@ function AssignmentCard({ item, today, meId }: { item: AssignmentManageItem; tod
             <Badge tone={stateTone(item.state)} data-testid="assignment-state">
               {stateLabel(item.state)}
             </Badge>
-            {!item.canModify ? <Badge tone="neutral">Salt okunur</Badge> : null}
+            {!item.canModify ? <Badge tone="neutral">Salt Okunur</Badge> : null}
           </div>
           <div>
             <h2 className="text-lg font-semibold">
@@ -49,7 +49,7 @@ function AssignmentCard({ item, today, meId }: { item: AssignmentManageItem; tod
                 {item.title}
               </Link>
             </h2>
-            <p className="text-sm text-muted-foreground">{mineOwner ? "Senin ödevin" : item.teacher.fullName || item.teacher.userName}</p>
+            <p className="text-sm text-muted-foreground">{mineOwner ? "Sizin ödeviniz" : item.teacher.fullName || item.teacher.userName}</p>
           </div>
           <dl className="grid grid-cols-3 gap-2 text-center text-sm">
             <div className="rounded-md bg-surface-muted px-2 py-2">
@@ -130,12 +130,12 @@ export function AssignmentsListPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl">Ödev Yönetimi</h1>
-          <p className="text-muted-foreground">Ödev oluştur, soru ekle, yayınla ve öğrencilerin katılımını izle.</p>
+          <p className="text-muted-foreground">Ödev oluşturun, soru ekleyin, yayınlayın ve öğrencilerin katılımını izleyin.</p>
         </div>
         <Button asChild>
           <Link href="/ogretmen/odevler/yeni">
             <Plus aria-hidden="true" />
-            Yeni ödev
+            Yeni Ödev
           </Link>
         </Button>
       </div>
@@ -159,7 +159,7 @@ export function AssignmentsListPage() {
         </div>
         {isMudur ? (
           <SelectField label="Ders" value={filters.lessonId ?? ""} onChange={(event) => update({ lessonId: event.target.value ? Number(event.target.value) : undefined })}>
-            <option value="">Tüm dersler</option>
+            <option value="">Tüm Dersler</option>
             {(lessons.data ?? []).map((lesson) => (
               <option key={lesson.id} value={lesson.id}>
                 {lesson.name}
@@ -171,7 +171,7 @@ export function AssignmentsListPage() {
 
       <label htmlFor={mineId} className="inline-flex min-h-touch items-center gap-3 self-start text-sm font-semibold">
         <input id={mineId} type="checkbox" className="size-5 accent-primary" checked={filters.mine} onChange={(event) => update({ mine: event.target.checked })} />
-        Yalnızca benim ödevlerim
+        Yalnızca Benim Ödevlerim
       </label>
 
       {me.isPending || list.isPending ? (
@@ -181,16 +181,16 @@ export function AssignmentsListPage() {
           ))}
         </div>
       ) : list.isError ? (
-        <EmptyState icon={CloudOff} as="h2" title="Ödevler yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
+        <EmptyState icon={CloudOff} as="h2" title="Ödevler Yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
       ) : data && data.items.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
           as="h2"
-          title={`${stateLabel(filters.tab)} ödev yok`}
-          description={filters.tab === "draft" ? "Yeni bir ödev oluşturduğunda taslak olarak burada görünür." : "Bu durumda listelenecek ödev bulunmuyor."}
+          title={`${stateLabel(filters.tab)} Ödev Yok`}
+          description={filters.tab === "draft" ? "Yeni bir ödev oluşturduğunuzda taslak olarak burada görünür." : "Bu durumda listelenecek ödev bulunmuyor."}
           action={
             <Button asChild>
-              <Link href="/ogretmen/odevler/yeni">Yeni ödev</Link>
+              <Link href="/ogretmen/odevler/yeni">Yeni Ödev</Link>
             </Button>
           }
         />

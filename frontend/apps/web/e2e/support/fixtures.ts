@@ -40,7 +40,7 @@ export function baseOrigin(): string {
 
 export async function attemptLogin(page: Page, userName: string, password: string) {
   await page.goto("/giris");
-  await page.getByLabel("Kullanıcı adı").fill(userName);
+  await page.getByLabel("Kullanıcı Adı").fill(userName);
   await page.getByLabel(/^Şifre\*?$/).fill(password);
   await page.getByRole("button", { name: "Giriş Yap" }).click();
 }
@@ -51,10 +51,10 @@ export async function login(page: Page, userName: string, password: string) {
 }
 
 export async function logoutViaUi(page: Page) {
-  const sidebarButton = page.getByRole("button", { name: "Çıkış yap" });
+  const sidebarButton = page.getByRole("button", { name: "Çıkış Yap" });
   if (!(await sidebarButton.first().isVisible())) {
     await page.goto("/profil");
   }
-  await page.getByRole("button", { name: "Çıkış yap" }).locator("visible=true").first().click();
+  await page.getByRole("button", { name: "Çıkış Yap" }).locator("visible=true").first().click();
   await page.waitForURL(/\/giris/);
 }

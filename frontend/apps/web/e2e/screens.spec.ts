@@ -49,7 +49,7 @@ test.describe("ekranlar", () => {
   test("giriş hata ve oturum bandı", async ({ page }, testInfo) => {
     await forEachSize(page, testInfo, "giris-hata", async () => {
       await page.goto("/giris?neden=oturum", { waitUntil: "networkidle" });
-      await page.getByLabel("Kullanıcı adı").fill("yok.kullanici");
+      await page.getByLabel("Kullanıcı Adı").fill("yok.kullanici");
       await page.getByLabel(/^Şifre\*?$/).fill("Yanlis-1");
       await page.getByRole("button", { name: "Giriş Yap" }).click();
       await expect(page.getByTestId("problem-banner")).toBeVisible();
@@ -71,7 +71,7 @@ test.describe("ekranlar", () => {
     await expect(page).toHaveURL(/\/sifre-degistir/);
     await forEachSize(page, testInfo, "sifre-degistir", async () => {
       await page.goto("/sifre-degistir", { waitUntil: "networkidle" });
-      await expect(page.getByLabel("Mevcut şifre")).toBeVisible();
+      await expect(page.getByLabel("Mevcut Şifre")).toBeVisible();
     });
   });
 
@@ -104,10 +104,10 @@ test.describe("ekranlar", () => {
   test("kurtarma kodları ekranı", async ({ page }, testInfo) => {
     const account = await createAccount("mudur");
     await login(page, account.userName, account.oneTimePassword);
-    await page.getByLabel("Mevcut şifre").fill(account.oneTimePassword);
-    await page.getByLabel(/^Yeni şifre\*?$/).fill("Mudur-Uzun-Sifre-2026");
-    await page.getByLabel("Yeni şifre (tekrar)").fill("Mudur-Uzun-Sifre-2026");
-    await page.getByRole("button", { name: "Şifreyi kaydet" }).click();
+    await page.getByLabel("Mevcut Şifre").fill(account.oneTimePassword);
+    await page.getByLabel(/^Yeni Şifre\*?$/).fill("Mudur-Uzun-Sifre-2026");
+    await page.getByLabel("Yeni Şifre (Tekrar)").fill("Mudur-Uzun-Sifre-2026");
+    await page.getByRole("button", { name: "Şifreyi Kaydet" }).click();
     await expect(page.getByTestId("recovery-codes")).toBeVisible();
     await forEachSize(page, testInfo, "kurtarma-kodlari", async () => {
       await expect(page.getByTestId("recovery-codes")).toBeVisible();

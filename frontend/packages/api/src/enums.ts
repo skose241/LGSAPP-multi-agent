@@ -2,11 +2,11 @@ export const REPORT_REASONS = ["wrongAnswerKey", "unreadable", "incomplete", "in
 export type ReportReasonValue = (typeof REPORT_REASONS)[number];
 
 const reportReasonLabels: Record<ReportReasonValue, string> = {
-  wrongAnswerKey: "Cevap anahtarı yanlış",
+  wrongAnswerKey: "Cevap Anahtarı Yanlış",
   unreadable: "Okunaksız",
-  incomplete: "Eksik soru",
-  inappropriate: "Uygunsuz içerik",
-  spam: "Gereksiz içerik",
+  incomplete: "Eksik Soru",
+  inappropriate: "Uygunsuz İçerik",
+  spam: "Gereksiz İçerik",
   other: "Diğer",
 };
 
@@ -23,7 +23,7 @@ export function reportReasonsFor(target: "question" | "solution" | "comment"): R
 const sourceLabels: Record<string, string> = {
   teacher: "Öğretmen",
   student: "Öğrenci",
-  ai: "Yapay zekâ",
+  ai: "Yapay Zekâ",
 };
 
 export function questionSourceLabel(value: string): string {
@@ -31,9 +31,9 @@ export function questionSourceLabel(value: string): string {
 }
 
 const solutionTypeLabels: Record<string, string> = {
-  teacher: "Öğretmen çözümü",
-  student: "Öğrenci çözümü",
-  ai: "Yapay zekâ çözümü",
+  teacher: "Öğretmen Çözümü",
+  student: "Öğrenci Çözümü",
+  ai: "Yapay Zekâ Çözümü",
 };
 
 export function solutionTypeLabel(value: string): string {
@@ -49,12 +49,12 @@ export function normalizeAiState(value: string | null | undefined): AiSolutionSt
 }
 
 const aiStateLabels: Record<AiSolutionStateValue, string> = {
-  none: "Henüz istenmedi",
+  none: "Henüz İstenmedi",
   available: "Hazır",
   underReview: "İnceleniyor",
   removed: "Kaldırıldı",
-  unavailable: "Şu an ulaşılamıyor",
-  unreadable: "Görsel okunamadı",
+  unavailable: "Şu An Ulaşılamıyor",
+  unreadable: "Görsel Okunamadı",
 };
 
 export function aiSolutionStateLabel(value: string | null | undefined): string {
@@ -62,19 +62,19 @@ export function aiSolutionStateLabel(value: string | null | undefined): string {
 }
 
 const notificationLabels: Record<string, string> = {
-  studentSolution: "Yeni öğrenci çözümü",
-  teacherSolution: "Yeni öğretmen çözümü",
-  answerDisputed: "Cevap anahtarı tartışmalı",
-  commentReply: "Yorumuna yanıt geldi",
-  commentOnQuestion: "Sorunda yeni yorum",
-  commentOnSolution: "Çözümünde yeni yorum",
-  questionsPublished: "Yeni sorular yayında",
-  assignmentOpened: "Yeni ödev",
-  assignmentClosed: "Ödev kapandı",
-  generationReport: "Soru üretim raporu",
-  reportResolved: "Şikâyetin incelendi",
-  commentRemoved: "Yorumun kaldırıldı",
-  answerKeyChanged: "Cevap anahtarı değişti",
+  studentSolution: "Yeni Öğrenci Çözümü",
+  teacherSolution: "Yeni Öğretmen Çözümü",
+  answerDisputed: "Cevap Anahtarı Tartışmalı",
+  commentReply: "Yorumunuza Yanıt Geldi",
+  commentOnQuestion: "Sorunuzda Yeni Yorum",
+  commentOnSolution: "Çözümünüzde Yeni Yorum",
+  questionsPublished: "Yeni Sorular Yayında",
+  assignmentOpened: "Yeni Ödev",
+  assignmentClosed: "Ödev Kapandı",
+  generationReport: "Soru Üretim Raporu",
+  reportResolved: "Şikâyetiniz İncelendi",
+  commentRemoved: "Yorumunuz Kaldırıldı",
+  answerKeyChanged: "Cevap Anahtarı Değişti",
 };
 
 export function notificationTypeLabel(value: string): string {

@@ -1,4 +1,4 @@
-export const LEAVE_MESSAGE = "Yükleme sürüyor. Sayfadan ayrılırsan yarım kalan yüklemeler iptal olur. Ayrılmak istiyor musun?";
+export const LEAVE_MESSAGE = "Yükleme sürüyor. Sayfadan ayrılırsanız yarım kalan yüklemeler iptal olur. Ayrılmak istiyor musunuz?";
 
 export function shouldGuardNavigation(
   event: { defaultPrevented: boolean; button: number; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean },
@@ -18,6 +18,6 @@ export function shouldGuardNavigation(
   return url.pathname !== current.pathname || url.search !== current.search;
 }
 
-export const PASSWORDS_LEAVE_MESSAGE = "Tek seferlik şifreler bir daha gösterilmeyecek. Not almadan ayrılırsan bu şifrelere ulaşamazsın. Ayrılmak istiyor musun?";
+export const PASSWORDS_LEAVE_MESSAGE = "Tek seferlik şifreler bir daha gösterilmeyecek. Not almadan ayrılırsanız bu şifrelere ulaşamazsınız. Ayrılmak istiyor musunuz?";
 
-export const DIRTY_LEAVE_MESSAGE = "Kaydedilmemiş değişiklikler var. Sayfadan ayrılırsan kaybolur. Ayrılmak istiyor musun?";
+export const DIRTY_LEAVE_MESSAGE = "Kaydedilmemiş değişiklikler var. Sayfadan ayrılırsanız kaybolur. Ayrılmak istiyor musunuz?";

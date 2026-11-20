@@ -29,7 +29,7 @@ export function Pagination({ slice, onPageChange }: PaginationProps) {
                 className={cn(buttonClasses, "border-border-strong bg-surface hover:bg-surface-muted")}
                 disabled={page === 1}
                 onClick={() => onPageChange(page - 1)}
-                aria-label="Önceki sayfa"
+                aria-label="Önceki Sayfa"
               >
                 <ChevronLeft className="size-5" aria-hidden="true" />
               </button>
@@ -64,7 +64,7 @@ export function Pagination({ slice, onPageChange }: PaginationProps) {
                 className={cn(buttonClasses, "border-border-strong bg-surface hover:bg-surface-muted")}
                 disabled={page === pageCount}
                 onClick={() => onPageChange(page + 1)}
-                aria-label="Sonraki sayfa"
+                aria-label="Sonraki Sayfa"
               >
                 <ChevronRight className="size-5" aria-hidden="true" />
               </button>

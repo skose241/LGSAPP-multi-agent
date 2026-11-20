@@ -115,12 +115,12 @@ function EditQuestionDialog({ assignmentId, lessonId, question, onClose, onSaved
   return (
     <>
       <Dialog open onOpenChange={(open) => (!open && !save.isPending ? onClose() : undefined)}>
-        <DialogContent title="Soruyu düzenle" description={contentEditable ? "Soru içeriğini ve doğru şıkkı değiştirebilirsin." : "Havuzdan eklenen sorunun yalnızca doğru şıkkı değiştirilebilir."} className="md:max-w-2xl" onCloseAutoFocus={onCloseAutoFocus}>
+        <DialogContent title="Soruyu Düzenle" description={contentEditable ? "Soru içeriğini ve doğru şıkkı değiştirebilirsiniz." : "Havuzdan eklenen sorunun yalnızca doğru şıkkı değiştirilebilir."} className="md:max-w-2xl" onCloseAutoFocus={onCloseAutoFocus}>
           <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
             <ProblemBanner state={error} conflictAsMessage />
             <div className="flex flex-col gap-1.5">
-              <p className="text-sm font-semibold">Doğru cevap</p>
-              <OptionPicker value={option} onValueChange={setOption} disabled={save.isPending} label="Doğru cevap" />
+              <p className="text-sm font-semibold">Doğru Cevap</p>
+              <OptionPicker value={option} onValueChange={setOption} disabled={save.isPending} label="Doğru Cevap" />
               {!contentEditable ? (
                 <p className="text-sm text-muted-foreground" data-testid="pool-answer-note">
                   Havuz sorusu: şık değişimi tüm cevapları etkiler.
@@ -129,13 +129,13 @@ function EditQuestionDialog({ assignmentId, lessonId, question, onClose, onSaved
             </div>
             {contentEditable ? (
               <>
-                <TextAreaField label="Soru metni" value={text} maxLength={QUESTION_TEXT_MAX} disabled={save.isPending} onChange={(event) => setText(event.target.value)} />
+                <TextAreaField label="Soru Metni" value={text} maxLength={QUESTION_TEXT_MAX} disabled={save.isPending} onChange={(event) => setText(event.target.value)} />
                 <fieldset className="grid gap-3 sm:grid-cols-2" disabled={save.isPending}>
-                  <legend className="mb-1 text-sm font-semibold">Şıklar (ya hepsi dolu ya hepsi boş)</legend>
+                  <legend className="mb-1 text-sm font-semibold">Şıklar (ya Hepsi Dolu ya Hepsi Boş)</legend>
                   {(["A", "B", "C", "D"] as const).map((letter, index) => (
                     <TextField
                       key={letter}
-                      label={`${letter} şıkkı`}
+                      label={`${letter} Şıkkı`}
                       value={options[index] ?? ""}
                       maxLength={OPTION_TEXT_MAX}
                       onChange={(event) =>
@@ -149,7 +149,7 @@ function EditQuestionDialog({ assignmentId, lessonId, question, onClose, onSaved
                   ))}
                 </fieldset>
                 <SelectField label="Konu" value={topicId ?? ""} disabled={save.isPending || topics.isPending} onChange={(event) => setTopicId(event.target.value ? Number(event.target.value) : null)}>
-                  <option value="">Konu seçilmedi</option>
+                  <option value="">Konu Seçilmedi</option>
                   {(topics.data ?? []).map((topic) => (
                     <option key={topic.id} value={topic.id}>
                       {topic.name}
@@ -177,9 +177,9 @@ function EditQuestionDialog({ assignmentId, lessonId, question, onClose, onSaved
         onOpenChange={(open) => {
           if (!open) cancelPoolChange();
         }}
-        title="Havuz sorusunun cevabı değişecek"
+        title="Havuz Sorusunun Cevabı Değişecek"
         description="Bu soru soru havuzundan eklendi. Doğru şıkkı değiştirmek, soruyu ödev dışında çözmüş öğrenciler dahil tüm cevapların puanını yeniden hesaplar."
-        confirmLabel="Cevabı değiştir"
+        confirmLabel="Cevabı Değiştir"
         onConfirm={confirmPoolChange}
       />
     </>
@@ -212,7 +212,7 @@ function QuestionRow({ question, index, total, editable, busy, onMove, onEdit, o
             <span className="font-display text-lg font-bold" data-testid="question-number">
               Soru {number}
             </span>
-            <Badge tone="success">Doğru cevap: {letter ?? "-"}</Badge>
+            <Badge tone="success">Doğru Cevap: {letter ?? "-"}</Badge>
             {question.topic ? <Badge tone="neutral">{question.topic.name}</Badge> : null}
             {!question.createdForAssignment ? <Badge tone="info">Havuzdan · {questionSourceLabel(question.source)}</Badge> : null}
             {question.isHidden ? (
@@ -223,7 +223,7 @@ function QuestionRow({ question, index, total, editable, busy, onMove, onEdit, o
             ) : null}
             {answered ? (
               <Badge tone="primary">
-                {question.answerCount} cevap · {question.correctCount} doğru
+                {question.answerCount} Cevap · {question.correctCount} Doğru
               </Badge>
             ) : null}
           </div>
@@ -240,7 +240,7 @@ function QuestionRow({ question, index, total, editable, busy, onMove, onEdit, o
               ) : question.image ? null : (
                 <span className="flex items-center gap-1 text-sm text-muted-foreground">
                   <ImageIcon className="size-4" aria-hidden="true" />
-                  Önizleme yok
+                  Önizleme Yok
                 </span>
               )}
               {hasOptions ? (
@@ -377,7 +377,7 @@ export function AssignmentQuestionsSection({ detail, editable, onFailure, onChan
       </p>
       {questions.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border-strong bg-surface p-6 text-center text-sm text-muted-foreground" data-testid="no-questions">
-          {editable ? "Bu ödevde henüz soru yok. Aşağıdan fotoğrafla, metinle ya da havuzdan soru ekle." : "Bu ödevde soru yok."}
+          {editable ? "Bu ödevde henüz soru yok. Aşağıdan fotoğrafla, metinle ya da havuzdan soru ekleyin." : "Bu ödevde soru yok."}
         </p>
       ) : (
         <ol className="flex flex-col gap-3">
@@ -429,7 +429,7 @@ export function AssignmentQuestionsSection({ detail, editable, onFailure, onChan
             ? "Bu soru ödev için oluşturulmuştu, çıkarılırsa kaldırılır. Sonraki sorular bir sıra yukarı kayar."
             : "Soru ödevden çıkar ve havuza geri döner. Sonraki sorular bir sıra yukarı kayar."
         }
-        confirmLabel="Soruyu çıkar"
+        confirmLabel="Soruyu Çıkar"
         tone="danger"
         pending={remove.isPending}
         error={removeError}

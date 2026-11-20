@@ -36,9 +36,9 @@ export interface FailureInput {
   transport?: "network" | "timeout";
 }
 
-const NETWORK_MESSAGE = "Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar dene.";
-const TIMEOUT_MESSAGE = "Yükleme çok uzun sürdü. Bağlantını kontrol edip tekrar dene.";
-const SERVER_MESSAGE = "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar dene.";
+const NETWORK_MESSAGE = "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.";
+const TIMEOUT_MESSAGE = "Yükleme çok uzun sürdü. Bağlantınızı kontrol edip tekrar deneyin.";
+const SERVER_MESSAGE = "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar deneyin.";
 
 function firstFieldMessage(problem: ParsedProblem): string | null {
   for (const messages of Object.values(problem.fieldErrors)) {
@@ -66,7 +66,7 @@ export function classifyFailure(input: FailureInput, maxRetryAfterMs: number = D
 
   if (status === 401) {
     if (input.sessionRefreshed) return failure("auth", status, "Oturum yenilendi, yükleme yeniden denenecek.", true, true);
-    return failure("auth", status, "Oturumun sona erdi. Yeniden giriş yapman gerekiyor.", false, false);
+    return failure("auth", status, "Oturumunuz sona erdi. Yeniden giriş yapmanız gerekiyor.", false, false);
   }
 
   if (status === 413) return failure("tooLarge", status, detailMessage(problem), false, false);
@@ -74,9 +74,9 @@ export function classifyFailure(input: FailureInput, maxRetryAfterMs: number = D
   if (status === 429) {
     if (retryAfter === null) return failure("quota", status, detailMessage(problem), false, false);
     if (retryAfter * 1000 > maxRetryAfterMs) {
-      return failure("rateLimit", status, `Çok fazla istek gönderildi. ${retryAfter} saniye sonra tekrar dene.`, false, true, retryAfter);
+      return failure("rateLimit", status, `Çok fazla istek gönderildi. ${retryAfter} saniye sonra tekrar deneyin.`, false, true, retryAfter);
     }
-    return failure("rateLimit", status, "Çok fazla istek gönderildi. Biraz bekleyip tekrar dene.", true, true, retryAfter);
+    return failure("rateLimit", status, "Çok fazla istek gönderildi. Biraz bekleyip tekrar deneyin.", true, true, retryAfter);
   }
 
   if (status === 408 || status >= 500) {

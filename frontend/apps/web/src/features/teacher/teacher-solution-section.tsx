@@ -94,7 +94,7 @@ function TeacherSolutionForm({ questionId, onDone, onConflict }: { questionId: n
       <ProblemBanner state={error} conflictAsMessage />
       <div className="flex flex-col gap-1.5">
         <label htmlFor={`${fieldId}-text`} className="text-sm font-semibold">
-          Çözüm metni
+          Çözüm Metni
         </label>
         <textarea
           ref={areaRef}
@@ -106,7 +106,7 @@ function TeacherSolutionForm({ questionId, onDone, onConflict }: { questionId: n
           }}
           aria-describedby={`${fieldId}-hint`}
           aria-invalid={Boolean(textError) || tooLong || undefined}
-          placeholder="Çözümü adım adım anlat. Matematik için $x^2$ biçimini kullanabilirsin."
+          placeholder="Çözümü adım adım anlatın. Matematik için $x^2$ biçimini kullanabilirsiniz."
           className="min-h-40 w-full resize-y rounded-md border border-border-strong bg-surface px-4 py-3 text-base hover:border-neutral-600 focus-visible:border-primary aria-invalid:border-danger aria-invalid:bg-danger-soft"
         />
         <p id={`${fieldId}-hint`} data-testid="teacher-solution-counter" className={tooLong ? "text-xs font-semibold text-warning-soft-foreground" : "text-xs text-muted-foreground"}>
@@ -119,11 +119,11 @@ function TeacherSolutionForm({ questionId, onDone, onConflict }: { questionId: n
         ) : null}
       </div>
 
-      <PhotoAttachment controller={photo} label="Çözüm fotoğrafı (isteğe bağlı)" hint="Çözümü kâğıda yazdıysan fotoğrafını ekleyebilirsin." disabled={mutation.isPending} />
+      <PhotoAttachment controller={photo} label="Çözüm Fotoğrafı (İsteğe Bağlı)" hint="Çözümü kâğıda yazdıysanız fotoğrafını ekleyebilirsiniz." disabled={mutation.isPending} />
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button type="submit" disabled={!valid || photo.busy} loading={mutation.isPending}>
-          Çözümü kaydet
+          Çözümü Kaydet
         </Button>
         <Button
           type="button"
@@ -138,8 +138,8 @@ function TeacherSolutionForm({ questionId, onDone, onConflict }: { questionId: n
         open={leaving}
         onOpenChange={setLeaving}
         title="Taslak silinsin mi?"
-        description="Yazdığın çözüm metni kaydedilmeden silinir."
-        confirmLabel="Taslağı sil"
+        description="Yazdığınız çözüm metni kaydedilmeden silinir."
+        confirmLabel="Taslağı Sil"
         tone="danger"
         onConfirm={discard}
       />
@@ -173,12 +173,12 @@ export function TeacherSolutionSection({ question }: { question: QuestionDetail 
       <CardContent className="flex flex-col gap-3">
         <h2 className="flex items-center gap-2 text-xl">
           <GraduationCap className="size-6 text-accent-soft-foreground" aria-hidden="true" />
-          Öğretmen çözümü
+          Öğretmen Çözümü
         </h2>
         <ProblemBanner state={conflict} conflictAsMessage />
         {hasTeacherSolution ? (
           <p className="text-sm text-muted-foreground" data-testid="teacher-solution-exists">
-            Bu soru için zaten bir öğretmen çözümü var. Çözümler listesinde görebilirsin.
+            Bu soru için zaten bir öğretmen çözümü var. Çözümler listesinde görebilirsiniz.
           </p>
         ) : open ? (
           <TeacherSolutionForm
@@ -202,7 +202,7 @@ export function TeacherSolutionSection({ question }: { question: QuestionDetail 
               data-testid="teacher-solution-open"
             >
               <PenLine aria-hidden="true" />
-              Öğretmen çözümü ekle
+              Öğretmen Çözümü Ekle
             </Button>
           </>
         )}

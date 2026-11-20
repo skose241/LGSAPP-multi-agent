@@ -25,7 +25,7 @@ export function GeneralSettingsPage() {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title="Ayarlar alınamadı"
+          title="Ayarlar Alınamadı"
           description={settings.error.message}
           action={<Button onClick={() => settings.refetch()}>Tekrar Dene</Button>}
         />

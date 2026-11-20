@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CreateUserForm } from "@/features/admin/create-user-form";
 
-export const metadata: Metadata = { title: "Yeni kullanıcı" };
+export const metadata: Metadata = { title: "Yeni Kullanıcı" };
 
 export default function NewUserPage() {
   return (
@@ -14,7 +14,7 @@ export default function NewUserPage() {
       >
         Kullanıcılar
       </Link>
-      <h1 className="text-3xl">Yeni kullanıcı</h1>
+      <h1 className="text-3xl">Yeni Kullanıcı</h1>
       <Suspense>
         <CreateUserForm />
       </Suspense>

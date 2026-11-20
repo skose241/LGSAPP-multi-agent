@@ -111,7 +111,7 @@ function DetailsForm({ detail, today, onDirtyChange, onSaved, onFailure }: Detai
     <form onSubmit={onSubmit} noValidate>
       <Card>
         <CardHeader>
-          <CardTitle as="h2">Ödev bilgileri</CardTitle>
+          <CardTitle as="h2">Ödev Bilgileri</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
           <ProblemBanner state={bannerState} conflictAsMessage />
@@ -129,7 +129,7 @@ function DetailsForm({ detail, today, onDirtyChange, onSaved, onFailure }: Detai
           {textEditable ? (
             <div className="flex justify-end">
               <Button type="submit" loading={save.isPending} disabled={!dirty} data-testid="assignment-save">
-                Değişiklikleri kaydet
+                Değişiklikleri Kaydet
               </Button>
             </div>
           ) : null}
@@ -238,7 +238,7 @@ export function AssignmentEditPage({ id }: { id: number }) {
   const back = (
     <Link href="/ogretmen/odevler" className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4">
       <ArrowLeft className="size-4" aria-hidden="true" />
-      Ödev yönetimi
+      Ödev Yönetimi
     </Link>
   );
 
@@ -254,8 +254,8 @@ export function AssignmentEditPage({ id }: { id: number }) {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title={missing ? "Ödev bulunamadı" : "Ödev yüklenemedi"}
-          description={missing ? "Ödev silinmiş olabilir ya da bu ödeve erişimin yok." : detail.error.message}
+          title={missing ? "Ödev Bulunamadı" : "Ödev Yüklenemedi"}
+          description={missing ? "Ödev silinmiş olabilir ya da bu ödeve erişiminiz yok." : detail.error.message}
           action={missing ? undefined : <Button onClick={() => detail.refetch()}>Tekrar Dene</Button>}
         />
       </div>
@@ -280,7 +280,7 @@ export function AssignmentEditPage({ id }: { id: number }) {
             {stateLabel(data.state)}
           </Badge>
           <Badge tone="neutral">{remainingLabel(data.state, data.startDate, data.endDate, today)}</Badge>
-          {!data.canModify ? <Badge tone="warning">Salt okunur</Badge> : null}
+          {!data.canModify ? <Badge tone="warning">Salt Okunur</Badge> : null}
         </div>
         <h1 ref={headingRef} tabIndex={-1} className="text-3xl outline-none" data-testid="assignment-title">
           {data.title}
@@ -319,7 +319,7 @@ export function AssignmentEditPage({ id }: { id: number }) {
               data-testid="assignment-unpublish"
             >
               <EyeOff aria-hidden="true" />
-              Yayından kaldır
+              Yayından Kaldır
             </Button>
           ) : null}
           {hasResults ? (
@@ -341,7 +341,7 @@ export function AssignmentEditPage({ id }: { id: number }) {
               data-testid="assignment-delete"
             >
               <Trash2 aria-hidden="true" />
-              Ödevi sil
+              Ödevi Sil
             </Button>
           ) : null}
         </div>
@@ -349,22 +349,22 @@ export function AssignmentEditPage({ id }: { id: number }) {
         <Button asChild variant="secondary" className="self-start">
           <Link href={`/ogretmen/odevler/${data.id}/sonuclar`}>
             <Eye aria-hidden="true" />
-            Sonuçları gör
+            Sonuçları Gör
           </Link>
         </Button>
       ) : null}
       {data.state === "draft" && data.canModify && (dirty || countable === 0 || startsPast) ? (
         <ul className="flex flex-col gap-1 text-sm text-muted-foreground" data-testid="publish-hint">
-          {dirty ? <li>Yayınlamadan önce ödev bilgilerindeki değişiklikleri kaydet.</li> : null}
+          {dirty ? <li>Yayınlamadan önce ödev bilgilerindeki değişiklikleri kaydedin.</li> : null}
           {startsPast ? (
-            <li data-testid="publish-past-start">Başlangıç tarihi ({formatDateOnly(data.startDate)}) geçmişte kaldı. Yayınlamak için başlangıç tarihini bugün ya da sonraki bir güne güncelle.</li>
+            <li data-testid="publish-past-start">Başlangıç tarihi ({formatDateOnly(data.startDate)}) geçmişte kaldı. Yayınlamak için başlangıç tarihini bugün ya da sonraki bir güne güncelleyin.</li>
           ) : null}
-          {countable === 0 ? <li>Yayınlamak için ödeve en az bir soru ekle.</li> : null}
+          {countable === 0 ? <li>Yayınlamak için ödeve en az bir soru ekleyin.</li> : null}
         </ul>
       ) : null}
       {discarded > 0 && !canQuestions ? (
         <p role="status" data-testid="discarded-cards" className="rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground">
-          Ödevin durumu değiştiği için soru ekleme alanı kapandı. Gönderilmemiş {discarded} fotoğraf kartı kaldırıldı ve yüklenen kullanılmamış fotoğraflar silindi. Gerekirse ödevi taslağa alıp fotoğrafları yeniden ekle.
+          Ödevin durumu değiştiği için soru ekleme alanı kapandı. Gönderilmemiş {discarded} fotoğraf kartı kaldırıldı ve yüklenen kullanılmamış fotoğraflar silindi. Gerekirse ödevi taslağa alıp fotoğrafları yeniden ekleyin.
         </p>
       ) : null}
 
@@ -381,7 +381,7 @@ export function AssignmentEditPage({ id }: { id: number }) {
         description={
           startsToday
             ? "Başlangıç tarihi bugün olduğu için ödev hemen öğrencilere açılır ve bildirim gider."
-            : `Ödev ${formatDateOnly(data.startDate)} tarihinde öğrencilere açılacak. O zamana kadar planlı kalır ve yayından kaldırabilirsin.`
+            : `Ödev ${formatDateOnly(data.startDate)} tarihinde öğrencilere açılacak. O zamana kadar planlı kalır ve yayından kaldırabilirsiniz.`
         }
         confirmLabel="Yayınla"
         pending={publish.isPending}
@@ -394,8 +394,8 @@ export function AssignmentEditPage({ id }: { id: number }) {
         open={unpublishOpen}
         onOpenChange={setUnpublishOpen}
         title="Yayından kaldırılsın mı?"
-        description="Ödev taslağa döner ve öğrenciler göremez. İstediğin zaman yeniden yayınlayabilirsin."
-        confirmLabel="Yayından kaldır"
+        description="Ödev taslağa döner ve öğrenciler göremez. İstediğiniz zaman yeniden yayınlayabilirsiniz."
+        confirmLabel="Yayından Kaldır"
         pending={unpublish.isPending}
         error={dialogError}
         conflictAsMessage
@@ -407,7 +407,7 @@ export function AssignmentEditPage({ id }: { id: number }) {
         onOpenChange={setDeleteOpen}
         title="Ödev silinsin mi?"
         description="Ödev silinir. Ödev için oluşturulan sorular kaldırılır, havuzdan eklenenler havuza geri döner. Bu işlem geri alınamaz."
-        confirmLabel="Ödevi sil"
+        confirmLabel="Ödevi Sil"
         tone="danger"
         pending={remove.isPending}
         error={dialogError}

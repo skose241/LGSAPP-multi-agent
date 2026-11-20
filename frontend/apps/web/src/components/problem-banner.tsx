@@ -54,16 +54,16 @@ export function ProblemBanner({ state, countdown = 0, onRetry, className, confli
     tone = "border-warning bg-warning-soft text-warning-soft-foreground";
     text =
       countdown > 0
-        ? `Çok fazla deneme yapıldı. ${countdown} saniye sonra tekrar deneyebilirsin.`
-        : "Şimdi tekrar deneyebilirsin.";
+        ? `Çok fazla deneme yapıldı. ${countdown} saniye sonra tekrar deneyebilirsiniz.`
+        : "Şimdi tekrar deneyebilirsiniz.";
   } else if (status === 503 || status === 502 || status === 504 || status === 0) {
     Icon = ServerCrash;
     tone = "border-info bg-info-soft text-info-soft-foreground";
-    text = status === 0 ? problem.message : "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar dene.";
+    text = status === 0 ? problem.message : "Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar deneyin.";
   } else if (status === 409 && !conflictAsMessage) {
     Icon = RefreshCw;
     tone = "border-warning bg-warning-soft text-warning-soft-foreground";
-    text = "Kayıt başka biri tarafından değiştirilmiş. Güncel hali yüklendi, kontrol edip tekrar dene.";
+    text = "Kayıt başka biri tarafından değiştirilmiş. Güncel hali yüklendi, kontrol edip tekrar deneyin.";
   }
 
   return (
@@ -77,7 +77,7 @@ export function ProblemBanner({ state, countdown = 0, onRetry, className, confli
         <p>{text}</p>
         {onRetry && status !== 429 && status !== 409 ? (
           <Button type="button" variant="ghost" className="mt-1 h-11 px-0" onClick={onRetry}>
-            Tekrar dene
+            Tekrar Dene
           </Button>
         ) : null}
       </div>

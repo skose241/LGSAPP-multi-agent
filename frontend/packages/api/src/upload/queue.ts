@@ -275,7 +275,7 @@ export class UploadQueue<TMeta = undefined> {
           failure: {
             kind: "prepare",
             status: 0,
-            message: known ? error.message : "Fotoğraf hazırlanamadı. Tekrar dene ya da başka bir fotoğraf seç.",
+            message: known ? error.message : "Fotoğraf hazırlanamadı. Tekrar deneyin ya da başka bir fotoğraf seçin.",
             retryable: false,
             manualRetry: !(known && (error.kind === "tooSmall" || error.kind === "tooLarge")),
             retryAfterSeconds: null,

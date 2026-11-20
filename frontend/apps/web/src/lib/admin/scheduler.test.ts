@@ -3,8 +3,8 @@ import { confirmCopy, kindLabel, parseRunFilters, runFiltersToQuery, runFiltersT
 
 describe("zamanlayıcı yardımcıları", () => {
   it("görev adlarını Türkçe verir", () => {
-    expect(kindLabel("assignments")).toBe("Ödev kapatma");
-    expect(kindLabel("generate")).toBe("Soru üretimi");
+    expect(kindLabel("assignments")).toBe("Ödev Kapatma");
+    expect(kindLabel("generate")).toBe("Soru Üretimi");
   });
 
   it("durum tonlarını eşler", () => {

@@ -41,7 +41,7 @@ export function AiStatusCard() {
       <EmptyState
         icon={CloudOff}
         as="h2"
-        title="Yapay zekâ durumu alınamadı"
+        title="Yapay Zekâ Durumu Alınamadı"
         description={status.error.message}
         action={<Button onClick={() => status.refetch()}>Tekrar Dene</Button>}
       />
@@ -55,7 +55,7 @@ export function AiStatusCard() {
   return (
     <Card data-testid="ai-status">
       <CardHeader>
-        <CardTitle as="h2">Sağlayıcı durumu</CardTitle>
+        <CardTitle as="h2">Sağlayıcı Durumu</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -65,25 +65,25 @@ export function AiStatusCard() {
           <Row label="Yapılandırma">
             <Flag on={data.aiConfigured} onLabel="Yapılandırıldı" offLabel="Yapılandırılmadı" />
           </Row>
-          <Row label="Soru üretimi">
-            <Flag on={data.questionConfigured} onLabel="Hazır" offLabel="Hazır değil" />
+          <Row label="Soru Üretimi">
+            <Flag on={data.questionConfigured} onLabel="Hazır" offLabel="Hazır Değil" />
           </Row>
           <Row label="Çözüm">
-            <Flag on={data.solutionConfigured} onLabel="Hazır" offLabel="Hazır değil" />
+            <Flag on={data.solutionConfigured} onLabel="Hazır" offLabel="Hazır Değil" />
           </Row>
-          <Row label="Soru modeli">{data.questionModel ?? "-"}</Row>
-          <Row label="Çözüm modeli">{data.solutionModel ?? "-"}</Row>
-          <Row label="Öğrenci çözüm isteği">
+          <Row label="Soru Modeli">{data.questionModel ?? "-"}</Row>
+          <Row label="Çözüm Modeli">{data.solutionModel ?? "-"}</Row>
+          <Row label="Öğrenci Çözüm İsteği">
             <Flag on={data.aiCozumAktifMi} onLabel="Açık" offLabel="Kapalı" />
           </Row>
-          <Row label="Soru doğrulama">
+          <Row label="Soru Doğrulama">
             <Flag on={data.verificationEnabled} onLabel="Açık" offLabel="Kapalı" />
           </Row>
         </dl>
 
         <div className="flex flex-col gap-2" data-testid="ai-global-usage">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="text-sm font-semibold">Bugünkü genel kullanım</p>
+            <p className="text-sm font-semibold">Bugünkü Genel Kullanım</p>
             <p className="text-sm">
               <span className="font-display text-xl font-bold">{data.todayGlobalUsed}</span> / {data.globalLimit}
             </p>
@@ -102,7 +102,7 @@ export function AiStatusCard() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <h3 className="text-base">Devre kesiciler</h3>
+          <h3 className="text-base">Devre Kesiciler</h3>
           {tripped.length === 0 ? (
             <p className="flex items-center gap-2 text-sm text-correct-soft-foreground" data-testid="ai-gates-ok">
               <CheckCircle2 className="size-4" aria-hidden="true" />

@@ -25,11 +25,11 @@ export function CommentThreadPage({ id }: { id: number }) {
       <EmptyState
         icon={CloudOff}
         as="h2"
-        title={notFound ? "Yorum bulunamadı" : "Yorum yüklenemedi"}
-        description={notFound ? "Bu yoruma erişemiyorsun ya da silinmiş olabilir." : thread.error.message}
+        title={notFound ? "Yorum Bulunamadı" : "Yorum Yüklenemedi"}
+        description={notFound ? "Bu yoruma erişemiyorsunuz ya da silinmiş olabilir." : thread.error.message}
         action={
           <Button asChild variant="secondary">
-            <Link href="/sorular">Sorulara dön</Link>
+            <Link href="/sorular">Sorulara Dön</Link>
           </Button>
         }
       />
@@ -47,12 +47,12 @@ export function CommentThreadPage({ id }: { id: number }) {
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
-      <h1 className="text-3xl">Yorum dizisi</h1>
+      <h1 className="text-3xl">Yorum Dizisi</h1>
       <nav aria-label="Yorum zinciri">
         <ol className="flex flex-wrap items-center gap-1 text-sm">
           <li>
             <Link href={`/sorular/${data.questionId}`} className="inline-flex min-h-touch items-center font-semibold text-primary underline underline-offset-4">
-              Soruya dön
+              Soruya Dön
             </Link>
           </li>
           {data.ancestors.map((ancestor) => (
@@ -68,7 +68,7 @@ export function CommentThreadPage({ id }: { id: number }) {
           ))}
           <li className="flex items-center gap-1" aria-current="page">
             <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
-            <span className="font-semibold">Bu yorum</span>
+            <span className="font-semibold">Bu Yorum</span>
           </li>
         </ol>
       </nav>

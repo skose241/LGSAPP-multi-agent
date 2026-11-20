@@ -53,7 +53,7 @@ export function QuestionCard({
           className="bg-placeholder flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-md border border-border text-muted-foreground"
         >
           <ImageIcon className="size-10" aria-hidden="true" />
-          <span className="text-sm font-medium">Soru görseli (4:3)</span>
+          <span className="text-sm font-medium">Soru Görseli (4:3)</span>
         </div>
         <p className="max-w-prose text-base">{description}</p>
         <OptionPicker
@@ -79,11 +79,11 @@ export function QuestionCard({
               <XCircle className="mt-0.5 size-6 shrink-0" aria-hidden="true" />
             )}
             <div>
-              <p className="font-display text-lg font-bold">{isCorrect ? "Doğru cevap!" : "Bu sefer olmadı"}</p>
+              <p className="font-display text-lg font-bold">{isCorrect ? "Doğru Cevap!" : "Bu Sefer Olmadı"}</p>
               <p className="text-sm">
                 {isCorrect
-                  ? "Şimdi çözümünü kendi cümlelerinle anlat."
-                  : `Doğru cevap ${correct} şıkkı. Nerede takıldığını çözüm olarak yazabilirsin.`}
+                  ? "Şimdi çözümünüzü kendi cümlelerinizle anlatın."
+                  : `Doğru cevap ${correct} şıkkı. Nerede takıldığınızı çözüm olarak yazabilirsiniz.`}
               </p>
             </div>
           </div>

@@ -89,12 +89,12 @@ export function MyQuestionsPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl">Sorularım</h1>
-          <p className="text-muted-foreground">Yüklediğin soruları ve kaç kişinin çözdüğünü buradan takip edebilirsin.</p>
+          <p className="text-muted-foreground">Yüklediğiniz soruları ve kaç kişinin çözdüğünü buradan takip edebilirsiniz.</p>
         </div>
         <Button asChild>
           <Link href="/soru-yukle">
             <ImagePlus aria-hidden="true" />
-            Soru yükle
+            Soru Yükle
           </Link>
         </Button>
       </div>
@@ -109,7 +109,7 @@ export function MyQuestionsPage() {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title="Sorular yüklenemedi"
+          title="Sorular Yüklenemedi"
           description={questions.error.message}
           action={<Button onClick={() => questions.refetch()}>Tekrar Dene</Button>}
         />
@@ -117,11 +117,11 @@ export function MyQuestionsPage() {
         <EmptyState
           icon={ImagePlus}
           as="h2"
-          title="Henüz soru yüklemedin"
-          description="Çözemediğin bir sorunun fotoğrafını yükle, arkadaşların çözsün."
+          title="Henüz Soru Yüklemediniz"
+          description="Çözemediğiniz bir sorunun fotoğrafını yükleyin, arkadaşlarınız çözsün."
           action={
             <Button asChild>
-              <Link href="/soru-yukle">Soru yükle</Link>
+              <Link href="/soru-yukle">Soru Yükle</Link>
             </Button>
           }
         />

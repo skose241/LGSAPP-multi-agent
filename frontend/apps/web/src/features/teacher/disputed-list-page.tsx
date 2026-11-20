@@ -69,13 +69,13 @@ function DisputedCard({ item }: { item: DisputedQuestionItem }) {
 
           <dl className="grid grid-cols-2 gap-2 text-sm">
             <div className="rounded-md bg-correct-soft px-3 py-2 text-correct-soft-foreground">
-              <dt className="text-xs">Mevcut anahtar</dt>
+              <dt className="text-xs">Mevcut Anahtar</dt>
               <dd className="font-display text-xl font-bold" data-testid="current-key">
                 {key}
               </dd>
             </div>
             <div className="rounded-md bg-info-soft px-3 py-2 text-info-soft-foreground">
-              <dt className="text-xs">Yapay zekâ önerisi</dt>
+              <dt className="text-xs">Yapay Zekâ Önerisi</dt>
               <dd className="font-display text-xl font-bold" data-testid="ai-suggestion">
                 {ai ?? "-"}
               </dd>
@@ -110,7 +110,7 @@ export function DisputedListPage() {
   const me = useMe();
   const isMudur = me.data?.role === "mudur";
   const branchName = me.data?.branchLessonName ?? null;
-  const branchHint = isMudur ? null : branchName ? `Branşın: ${branchName}` : "Branşın atanmamış, müdürüne başvur.";
+  const branchHint = isMudur ? null : branchName ? `Branşınız: ${branchName}` : "Branşınız atanmamış, müdürünüze başvurun.";
   const [lessonId, setLessonId] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
   const lessons = useQuery({ ...lessonsQuery(api()), enabled: isMudur });
@@ -133,7 +133,7 @@ export function DisputedListPage() {
         <h1 className="text-3xl">Şüpheli Cevap Anahtarları</h1>
         <p className="text-muted-foreground">
           Yapay zekânın cevap anahtarından farklı bir şık bulduğu sorular.{" "}
-          {isMudur ? "Tüm derslerin soruları listelenir." : "Yalnızca branşındaki sorular listelenir."}
+          {isMudur ? "Tüm derslerin soruları listelenir." : "Yalnızca branşınızdaki sorular listelenir."}
           {branchHint ? <strong data-testid="branch-hint"> {branchHint}</strong> : null}
         </p>
       </div>
@@ -148,7 +148,7 @@ export function DisputedListPage() {
               setPage(1);
             }}
           >
-            <option value="">Tüm dersler</option>
+            <option value="">Tüm Dersler</option>
             {(lessons.data ?? []).map((lesson) => (
               <option key={lesson.id} value={lesson.id}>
                 {lesson.name}
@@ -168,7 +168,7 @@ export function DisputedListPage() {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title="Liste yüklenemedi"
+          title="Liste Yüklenemedi"
           description={list.error.message}
           action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>}
         />
@@ -176,8 +176,8 @@ export function DisputedListPage() {
         <EmptyState
           icon={ShieldCheck}
           as="h2"
-          title="Şüpheli soru yok"
-          description={isMudur ? "Şu an incelenmeyi bekleyen bir cevap anahtarı yok." : branchName ? `${branchName} branşında incelenmeyi bekleyen bir cevap anahtarı yok.` : "Branşın atanmamış, bu yüzden liste boş. Müdürüne başvur."}
+          title="Şüpheli Soru Yok"
+          description={isMudur ? "Şu an incelenmeyi bekleyen bir cevap anahtarı yok." : branchName ? `${branchName} branşında incelenmeyi bekleyen bir cevap anahtarı yok.` : "Branşınız atanmamış, bu yüzden liste boş. Müdürünüze başvurun."}
         />
       ) : data ? (
         <>

@@ -52,8 +52,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="mx-auto flex min-h-dvh max-w-md items-center px-safe">
         <EmptyState
           icon={CloudOff}
-          title="Bağlantı kurulamadı"
-          description="Bilgilerin yüklenemedi. İnternet bağlantını kontrol edip tekrar dene."
+          title="Bağlantı Kurulamadı"
+          description="Bilgileriniz yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin."
           action={<Button onClick={() => me.refetch()}>Tekrar Dene</Button>}
         />
       </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { StudentProfilePage } from "@/features/teacher/student-profile-page";
 
-export const metadata: Metadata = { title: "Öğrenci profili" };
+export const metadata: Metadata = { title: "Öğrenci Profili" };
 
 interface PageProps {
   params: Promise<{ id: string }>;

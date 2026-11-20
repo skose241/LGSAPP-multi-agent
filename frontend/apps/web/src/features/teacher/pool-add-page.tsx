@@ -36,15 +36,15 @@ function PlannedList({ lessonId }: { lessonId: number }) {
   const slice = data ? pageSlice(data.page, data.pageSize, data.totalCount, data.items.length) : null;
 
   return (
-    <section aria-label="Planlı sorular" className="flex flex-col gap-3" data-testid="planned-list">
-      <h2 className="text-xl">Planlı sorular</h2>
+    <section aria-label="Planlı Sorular" className="flex flex-col gap-3" data-testid="planned-list">
+      <h2 className="text-xl">Planlı Sorular</h2>
       <p className="text-sm text-muted-foreground">Yayın tarihi gelmemiş, sıradaki sorular. Yayın tarihinde otomatik olarak havuza düşer.</p>
       {list.isPending ? (
         <div role="status" aria-label="Planlı sorular yükleniyor" className="h-24 animate-pulse rounded-lg bg-surface-muted" />
       ) : list.isError ? (
-        <EmptyState icon={CalendarClock} as="h3" title="Planlı sorular yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
+        <EmptyState icon={CalendarClock} as="h3" title="Planlı Sorular Yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
       ) : data && data.items.length === 0 ? (
-        <EmptyState icon={CalendarClock} as="h3" title="Planlı soru yok" description="Yukarıdan bir tarih seçerek ileri tarihli soru ekleyebilirsin." />
+        <EmptyState icon={CalendarClock} as="h3" title="Planlı Soru Yok" description="Yukarıdan bir tarih seçerek ileri tarihli soru ekleyebilirsiniz." />
       ) : data ? (
         <>
           <ul className="grid gap-3 md:grid-cols-2" aria-label="Planlı soru listesi">
@@ -59,7 +59,7 @@ function PlannedList({ lessonId }: { lessonId: number }) {
                         </Badge>
                       ) : null}
                       {item.topic ? <Badge tone="neutral">{item.topic.name}</Badge> : null}
-                      {item.isMine ? <Badge tone="primary">Senin sorun</Badge> : <span className="text-xs text-muted-foreground">{item.author?.fullName || item.author?.userName || ""}</span>}
+                      {item.isMine ? <Badge tone="primary">Sizin Sorunuz</Badge> : <span className="text-xs text-muted-foreground">{item.author?.fullName || item.author?.userName || ""}</span>}
                     </div>
                     {item.image ? <QuestionImage image={item.image} alt={`Planlı soru ${item.id} görseli`} variant="thumb" onExpired={() => void list.refetch()} className="max-w-xs" /> : null}
                     {item.previewText ? (
@@ -67,12 +67,12 @@ function PlannedList({ lessonId }: { lessonId: number }) {
                     ) : item.image ? null : (
                       <span className="flex items-center gap-1 text-sm text-muted-foreground">
                         <ImageIcon className="size-4" aria-hidden="true" />
-                        Önizleme yok
+                        Önizleme Yok
                       </span>
                     )}
                     <Button asChild variant="secondary" className="mt-auto self-start">
                       <Link href={`/sorular/${item.id}`} aria-label={`Soruyu aç: ${item.id}`}>
-                        Soruyu aç
+                        Soruyu Aç
                       </Link>
                     </Button>
                   </CardContent>
@@ -151,7 +151,7 @@ export function PoolAddPage() {
     <div className="flex max-w-4xl flex-col gap-5">
       <div>
         <h1 className="text-3xl">Havuza Soru Ekle</h1>
-        <p className="text-muted-foreground">Soru fotoğraflarını seç, doğru şıkkı işaretle. Soruları hemen yayınlayabilir ya da ileri bir tarihe planlayabilirsin.</p>
+        <p className="text-muted-foreground">Soru fotoğraflarını seçin, doğru şıkkı işaretleyin. Soruları hemen yayınlayabilir ya da ileri bir tarihe planlayabilirsiniz.</p>
       </div>
 
       <Card>
@@ -164,7 +164,7 @@ export function PoolAddPage() {
             hint={isMudur ? undefined : "Sorular branş dersine eklenir."}
             onChange={(event) => setLessonChoice(event.target.value ? Number(event.target.value) : null)}
           >
-            <option value="">Ders seç</option>
+            <option value="">Ders Seç</option>
             {lessonOptions.map((lesson) => (
               <option key={lesson.id} value={lesson.id}>
                 {lesson.name}
@@ -173,12 +173,12 @@ export function PoolAddPage() {
           </SelectField>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-semibold">Yayın zamanı</legend>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Yayın zamanı">
+            <legend className="text-sm font-semibold">Yayın Zamanı</legend>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Yayın Zamanı">
               {(
                 [
-                  { value: "now", label: "Hemen yayınla" },
-                  { value: "scheduled", label: "Şu tarihte yayınla" },
+                  { value: "now", label: "Hemen Yayınla" },
+                  { value: "scheduled", label: "Şu Tarihte Yayınla" },
                 ] as const
               ).map((entry) => (
                 <label
@@ -196,12 +196,12 @@ export function PoolAddPage() {
             </div>
             {mode === "scheduled" ? (
               <TextField
-                label="Yayın tarihi"
+                label="Yayın Tarihi"
                 type="date"
                 min={tomorrow}
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
-                hint="Soru seçtiğin gün havuza düşer. En erken yarın seçilebilir."
+                hint="Soru seçtiğiniz gün havuza düşer. En erken yarın seçilebilir."
                 className="max-w-xs"
               />
             ) : null}
@@ -210,10 +210,10 @@ export function PoolAddPage() {
       </Card>
 
       {lessonId === null ? (
-        <EmptyState icon={Send} as="h2" title="Önce dersi seç" description="Ders seçtikten sonra fotoğraf ekleyebilirsin." />
+        <EmptyState icon={Send} as="h2" title="Önce Dersi Seçin" description="Ders seçtikten sonra fotoğraf ekleyebilirsiniz." />
       ) : (
-        <section aria-label="Soru fotoğrafları" className="flex flex-col gap-3">
-          <h2 className="text-xl">Soru fotoğrafları</h2>
+        <section aria-label="Soru Fotoğrafları" className="flex flex-col gap-3">
+          <h2 className="text-xl">Soru Fotoğrafları</h2>
           <PhotoQuestionComposer
             lessonId={lessonId}
             purpose="QuestionImage"
@@ -225,7 +225,7 @@ export function PoolAddPage() {
             createdNote={(id) =>
               id ? (
                 <Link href={`/sorular/${id}`} className="font-semibold underline">
-                  Soruyu aç
+                  Soruyu Aç
                 </Link>
               ) : null
             }

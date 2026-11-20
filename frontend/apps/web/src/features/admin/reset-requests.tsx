@@ -22,7 +22,7 @@ function toProblem(error: unknown): ProblemState {
   return {
     status: 0,
     at: Date.now(),
-    problem: { message: "Bağlantı kurulamadı. Tekrar dene.", fieldErrors: {}, formError: null, retryAfter: null },
+    problem: { message: "Bağlantı kurulamadı. Tekrar deneyin.", fieldErrors: {}, formError: null, retryAfter: null },
   };
 }
 
@@ -74,9 +74,9 @@ export function ResetRequests() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-3xl">Şifre talepleri</h1>
+        <h1 className="text-3xl">Şifre Talepleri</h1>
         <p className="text-muted-foreground">
-          Kullanıcıların "şifremi unuttum" talepleri. Onayladığında tek seferlik yeni şifre üretilir.
+          Kullanıcıların "şifremi unuttum" talepleri. Onayladığınızda tek seferlik yeni şifre üretilir.
         </p>
       </div>
 
@@ -90,7 +90,7 @@ export function ResetRequests() {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title="Talepler yüklenemedi"
+          title="Talepler Yüklenemedi"
           description={requests.error.message}
           action={<Button onClick={() => requests.refetch()}>Tekrar Dene</Button>}
         />
@@ -98,7 +98,7 @@ export function ResetRequests() {
         <EmptyState
           icon={Inbox}
           as="h2"
-          title="Bekleyen talep yok"
+          title="Bekleyen Talep Yok"
           description="Yeni bir şifre talebi geldiğinde burada ve menüde görünecek."
         />
       ) : (
@@ -154,7 +154,7 @@ export function ResetRequests() {
         onOpenChange={(open) => (open ? undefined : close())}
         title="Talep onaylansın mı?"
         description={`${pending ? fullName(pending.request) : ""} için tek seferlik yeni şifre üretilecek. Eski şifre çalışmayacak.`}
-        confirmLabel="Onayla ve şifre üret"
+        confirmLabel="Onayla ve Şifre Üret"
         pending={complete.isPending}
         error={error}
         onConfirm={() => {

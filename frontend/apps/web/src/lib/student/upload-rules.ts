@@ -27,10 +27,10 @@ export interface QuestionCardErrors {
 
 export function validateQuestionCard(input: QuestionCardInput, minDescription: number): QuestionCardErrors {
   const errors: QuestionCardErrors = {};
-  if (input.lessonId === null) errors.lesson = "Dersi seç.";
-  if (!input.option) errors.option = "Doğru şıkkı seç.";
+  if (input.lessonId === null) errors.lesson = "Dersi seçin.";
+  if (!input.option) errors.option = "Doğru şıkkı seçin.";
   const length = input.description.trim().length;
-  if (length === 0) errors.description = "Soruyu çözerken nerede takıldığını anlat.";
+  if (length === 0) errors.description = "Soruyu çözerken nerede takıldığınızı anlatın.";
   else if (length < minDescription) errors.description = `Açıklama en az ${minDescription} karakter olmalı.`;
   else if (length > QUESTION_DESCRIPTION_MAX) errors.description = `Açıklama en fazla ${QUESTION_DESCRIPTION_MAX} karakter olabilir.`;
   return errors;
@@ -43,7 +43,7 @@ export function hasErrors(errors: QuestionCardErrors): boolean {
 export function scoredSentence(upload: { scoredLimit: number; scoredRemaining: number; pointsPerQuestion: number } | undefined): string | null {
   if (!upload || upload.scoredLimit <= 0) return null;
   const points = upload.pointsPerQuestion > 0 ? ` Her biri ${upload.pointsPerQuestion} puan kazandırır.` : "";
-  return `İlk ${upload.scoredLimit} soru puanlı. ${upload.scoredRemaining} puanlı hakkın kaldı.${points}`;
+  return `İlk ${upload.scoredLimit} soru puanlı. ${upload.scoredRemaining} puanlı hakkınız kaldı.${points}`;
 }
 
 export function selectableSlots(remaining: number | null, pendingCards: number, maxCards = 20): number {

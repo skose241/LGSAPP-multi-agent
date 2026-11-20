@@ -115,8 +115,8 @@ export function AssignmentResultsPage({ id }: { id: number }) {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title={missing ? "Ödev bulunamadı" : "Sonuçlar yüklenemedi"}
-          description={missing ? "Ödev silinmiş olabilir ya da bu sonuçlara erişimin yok." : results.error.message}
+          title={missing ? "Ödev Bulunamadı" : "Sonuçlar Yüklenemedi"}
+          description={missing ? "Ödev silinmiş olabilir ya da bu sonuçlara erişiminiz yok." : results.error.message}
           action={missing ? undefined : <Button onClick={() => results.refetch()}>Tekrar Dene</Button>}
         />
       </div>
@@ -140,7 +140,7 @@ export function AssignmentResultsPage({ id }: { id: number }) {
         <p className="text-muted-foreground">Ödevin öğrenci ve soru bazında sonuçları.</p>
       </div>
 
-      <section aria-label="Katılım özeti" className="flex flex-col gap-3" data-testid="results-summary">
+      <section aria-label="Katılım Özeti" className="flex flex-col gap-3" data-testid="results-summary">
         <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="rounded-lg border border-border bg-surface p-3">
             <dt className="text-xs text-muted-foreground">Soru</dt>
@@ -178,7 +178,7 @@ export function AssignmentResultsPage({ id }: { id: number }) {
         </ul>
       </section>
 
-      <section aria-label="Öğrenci sonuçları" className="flex flex-col gap-3">
+      <section aria-label="Öğrenci Sonuçları" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-xl">Öğrenciler</h2>
           <SelectField label="Sıralama" value={view.sort} onChange={(event) => update({ sort: event.target.value as ResultsView["sort"] })} className="w-full sm:w-64">
@@ -191,12 +191,12 @@ export function AssignmentResultsPage({ id }: { id: number }) {
         </div>
 
         {d.students.length === 0 ? (
-          <EmptyState icon={BarChart3} as="h3" title="Öğrenci yok" description="Sisteme kayıtlı öğrenci bulunmuyor." />
+          <EmptyState icon={BarChart3} as="h3" title="Öğrenci Yok" description="Sisteme kayıtlı öğrenci bulunmuyor." />
         ) : (
           <>
             <Card className="hidden overflow-hidden xl:block">
               <table className="w-full table-fixed text-left text-sm" data-testid="results-table">
-                <caption className="sr-only">Öğrenci sonuçları</caption>
+                <caption className="sr-only">Öğrenci Sonuçları</caption>
                 <colgroup>
                   <col className="w-[26%]" />
                   <col className="w-[14%]" />
@@ -227,7 +227,7 @@ export function AssignmentResultsPage({ id }: { id: number }) {
                       Oran
                     </th>
                     <th scope="col" className={headerClasses}>
-                      Son cevap
+                      Son Cevap
                     </th>
                   </tr>
                 </thead>
@@ -284,7 +284,7 @@ export function AssignmentResultsPage({ id }: { id: number }) {
                             <dd className="font-display text-lg font-bold">{row.answeredCount - row.correctCount}</dd>
                           </div>
                         </dl>
-                        <p className="text-xs text-muted-foreground">Son cevap: {lastAnswer(row)}</p>
+                        <p className="text-xs text-muted-foreground">Son Cevap: {lastAnswer(row)}</p>
                       </CardContent>
                     </Card>
                   </li>
@@ -299,7 +299,7 @@ export function AssignmentResultsPage({ id }: { id: number }) {
       <section aria-label="Soru sonuçları" className="flex flex-col gap-3" data-testid="question-results">
         <h2 className="text-xl">Sorular</h2>
         {d.questions.length === 0 ? (
-          <EmptyState icon={BarChart3} as="h3" title="Soru yok" description="Bu ödevde sonuç gösterilecek soru bulunmuyor." />
+          <EmptyState icon={BarChart3} as="h3" title="Soru Yok" description="Bu ödevde sonuç gösterilecek soru bulunmuyor." />
         ) : (
           <ul className="grid gap-3 md:grid-cols-2">
             {d.questions.map((question) => (
@@ -311,7 +311,7 @@ export function AssignmentResultsPage({ id }: { id: number }) {
                         Soru {question.orderNo}
                       </Link>
                       <Badge tone={question.answerCount === 0 ? "neutral" : question.correctRate >= 0.5 ? "success" : "danger"} data-testid="correct-rate">
-                        {question.answerCount === 0 ? "Cevap yok" : `Doğru oranı ${percentOfRate(question.correctRate)}`}
+                        {question.answerCount === 0 ? "Cevap Yok" : `Doğru Oranı ${percentOfRate(question.correctRate)}`}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">

@@ -58,25 +58,25 @@ export function UsersList() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl">Kullanıcılar</h1>
-          <p className="text-muted-foreground">Öğretmen, öğrenci ve müdür hesaplarını yönet.</p>
+          <p className="text-muted-foreground">Öğretmen, öğrenci ve müdür hesaplarını yönetin.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild>
             <Link href="/yonetim/kullanicilar/yeni">
               <Plus aria-hidden="true" />
-              Yeni kullanıcı
+              Yeni Kullanıcı
             </Link>
           </Button>
           <Button asChild variant="secondary">
             <Link href="/yonetim/kullanicilar/toplu">
               <ListPlus aria-hidden="true" />
-              Toplu ekle
+              Toplu Ekle
             </Link>
           </Button>
           <Button asChild variant="secondary">
             <Link href="/yonetim/kullanicilar/yeni?rol=mudur">
               <ShieldPlus aria-hidden="true" />
-              Yeni müdür
+              Yeni Müdür
             </Link>
           </Button>
         </div>
@@ -119,7 +119,7 @@ export function UsersList() {
             )}
           >
             <Flag className="size-4" aria-hidden="true" />
-            Yalnız şikâyetliler
+            Yalnız Şikâyetliler
             <span className="text-xs">{reportedCount}</span>
           </button>
         </div>
@@ -127,8 +127,8 @@ export function UsersList() {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input
             type="search"
-            aria-label="Kullanıcı ara"
-            placeholder="Ad, kullanıcı adı veya sınıf ara"
+            aria-label="Kullanıcı Ara"
+            placeholder="Ad, kullanıcı adı veya sınıf arayın"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -148,7 +148,7 @@ export function UsersList() {
       ) : users.isError ? (
         <EmptyState
           icon={CloudOff}
-          title="Kullanıcılar yüklenemedi"
+          title="Kullanıcılar Yüklenemedi"
           description={users.error.message}
           as="h2"
           action={<Button onClick={() => users.refetch()}>Tekrar Dene</Button>}
@@ -157,18 +157,18 @@ export function UsersList() {
         <EmptyState
           icon={UserX}
           as="h2"
-          title={users.data.length === 0 ? "Henüz kullanıcı yok" : "Eşleşen kullanıcı yok"}
+          title={users.data.length === 0 ? "Henüz Kullanıcı Yok" : "Eşleşen Kullanıcı Yok"}
           description={
             users.data.length === 0
-              ? "İlk öğretmen ya da öğrenci hesabını oluştur."
-              : "Arama, rol ya da şikâyet filtresini değiştirmeyi dene."
+              ? "İlk öğretmen ya da öğrenci hesabını oluşturun."
+              : "Arama, rol ya da şikâyet filtresini değiştirmeyi deneyin."
           }
         />
       ) : (
         <>
           <Card className="hidden overflow-hidden xl:block">
             <table className="w-full table-fixed text-left text-sm">
-              <caption className="sr-only">Kullanıcı listesi</caption>
+              <caption className="sr-only">Kullanıcı Listesi</caption>
               <colgroup>
                 <col className="w-[19%]" />
                 <col className="w-[19%]" />
@@ -179,12 +179,12 @@ export function UsersList() {
               </colgroup>
               <thead className="bg-surface-muted text-xs text-muted-foreground">
                 <tr>
-                  <th scope="col" className={headerClasses}>Ad soyad</th>
-                  <th scope="col" className={headerClasses}>Kullanıcı adı</th>
+                  <th scope="col" className={headerClasses}>Ad Soyad</th>
+                  <th scope="col" className={headerClasses}>Kullanıcı Adı</th>
                   <th scope="col" className={headerClasses}>Rol</th>
-                  <th scope="col" className={headerClasses}>Sınıf / branş</th>
+                  <th scope="col" className={headerClasses}>Sınıf / Branş</th>
                   <th scope="col" className={headerClasses}>Durum</th>
-                  <th scope="col" className={headerClasses}>Son giriş</th>
+                  <th scope="col" className={headerClasses}>Son Giriş</th>
                 </tr>
               </thead>
               <tbody>
@@ -248,7 +248,7 @@ export function UsersList() {
                   </span>
                   <BanInfo user={user} />
                   <span className="text-xs text-muted-foreground">
-                    Son giriş: {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "Hiç girmedi"}
+                    Son Giriş: {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "Hiç girmedi"}
                   </span>
                 </Link>
               </li>

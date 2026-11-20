@@ -68,7 +68,7 @@ function LikeButton({ question }: { question: QuestionDetailData }) {
       data-testid="like-button"
     >
       <ThumbsUp aria-hidden="true" />
-      <span>{question.likedByMe ? "Beğendin" : "Beğen"}</span>
+      <span>{question.likedByMe ? "Beğendiniz" : "Beğen"}</span>
       <span data-testid="like-count">{question.likeCount ?? 0}</span>
     </Button>
   );
@@ -91,14 +91,14 @@ function ResultCard({ question, result }: { question: QuestionDetailData; result
     >
       {mine.isCorrect ? <CheckCircle2 className="mt-0.5 size-6 shrink-0" aria-hidden="true" /> : <XCircle className="mt-0.5 size-6 shrink-0" aria-hidden="true" />}
       <div>
-        <p className="font-display text-lg font-bold">{mine.isCorrect ? "Doğru cevap!" : "Bu sefer olmadı"}</p>
+        <p className="font-display text-lg font-bold">{mine.isCorrect ? "Doğru Cevap!" : "Bu Sefer Olmadı"}</p>
         <p className="text-sm">
-          Cevabın: {optionToLetter(mine.selectedOption) ?? "-"}
-          {letter ? ` · Doğru cevap: ${letter}` : ""}
+          Cevabınız: {optionToLetter(mine.selectedOption) ?? "-"}
+          {letter ? ` · Doğru Cevap: ${letter}` : ""}
         </p>
         {result ? (
           <p className="text-sm font-semibold" data-testid="points-earned">
-            Kazandığın puan: {result.pointsEarned}
+            Kazandığınız Puan: {result.pointsEarned}
           </p>
         ) : null}
       </div>
@@ -125,11 +125,11 @@ export function QuestionDetail({ id }: { id: number }) {
       <EmptyState
         icon={CloudOff}
         as="h2"
-        title={missing ? "Soru bulunamadı" : "Soru yüklenemedi"}
-        description={missing ? "Bu soruya erişemiyorsun ya da henüz yayında değil." : question.error.message}
+        title={missing ? "Soru Bulunamadı" : "Soru Yüklenemedi"}
+        description={missing ? "Bu soruya erişemiyorsunuz ya da henüz yayında değil." : question.error.message}
         action={
           <Button asChild variant="secondary">
-            <Link href="/sorular">Sorulara dön</Link>
+            <Link href="/sorular">Sorulara Dön</Link>
           </Button>
         }
       />
@@ -146,7 +146,7 @@ export function QuestionDetail({ id }: { id: number }) {
       <EyeOff className="mt-0.5 size-6 shrink-0" aria-hidden="true" />
       <p className="font-semibold">
         Bu soru gizlendi{q.hiddenAt ? ` (${formatDateTimeShort(q.hiddenAt)})` : ""}.
-        <span className="block text-sm font-normal">Başkaları göremez, cevaplayamaz ve tartışamaz. Yalnızca sen görüntüleyebilirsin.</span>
+        <span className="block text-sm font-normal">Başkaları göremez, cevaplayamaz ve tartışamaz. Yalnızca siz görüntüleyebilirsiniz.</span>
       </p>
     </div>
   ) : null;
@@ -162,7 +162,7 @@ export function QuestionDetail({ id }: { id: number }) {
         <Card>
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="sr-only">{q.lesson.name} sorusu</h1>
+              <h1 className="sr-only">{q.lesson.name} Sorusu</h1>
               <Badge tone="primary">{q.lesson.name}</Badge>
               {q.topic ? <Badge tone="neutral">{q.topic.name}</Badge> : null}
               <span className="text-xs text-muted-foreground">{formatDateTimeShort(q.createdAt)}</span>
@@ -183,7 +183,7 @@ export function QuestionDetail({ id }: { id: number }) {
         className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        {backAssignment ? "Ödeve dön" : "Sorular"}
+        {backAssignment ? "Ödeve Dön" : "Sorular"}
       </Link>
 
       {hiddenBand}
@@ -207,7 +207,7 @@ export function QuestionDetail({ id }: { id: number }) {
           <Card>
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="sr-only">{q.lesson.name} sorusu</h1>
+                <h1 className="sr-only">{q.lesson.name} Sorusu</h1>
                 <Badge tone="primary">{q.lesson.name}</Badge>
                 {q.topic ? <Badge tone="neutral">{q.topic.name}</Badge> : null}
                 <Badge tone={q.source === "ai" ? "info" : q.source === "teacher" ? "accent" : "neutral"}>{questionSourceLabel(q.source)}</Badge>
@@ -238,7 +238,7 @@ export function QuestionDetail({ id }: { id: number }) {
                 {q.permissions.canReport ? (
                   <Button type="button" variant="ghost" onClick={() => setReporting(true)}>
                     <Flag aria-hidden="true" />
-                    Soruyu şikâyet et
+                    Soruyu Şikâyet Et
                   </Button>
                 ) : null}
               </div>
@@ -247,7 +247,7 @@ export function QuestionDetail({ id }: { id: number }) {
 
           <Card>
             <CardContent className="flex flex-col gap-4">
-              <h2 className="text-xl">{q.myAnswer ? "Cevabın" : "Cevapla"}</h2>
+              <h2 className="text-xl">{q.myAnswer ? "Cevabınız" : "Cevapla"}</h2>
               {q.permissions.canAnswer ? (
                 <AnswerForm question={q} onAnswered={setResult} />
               ) : q.myAnswer ? (
@@ -257,12 +257,12 @@ export function QuestionDetail({ id }: { id: number }) {
                     correct={q.correctOption ? (optionToLetter(q.correctOption) ?? undefined) : undefined}
                     revealed={q.correctOption !== null}
                     disabled
-                    label="Verdiğin cevap"
+                    label="Verdiğiniz Cevap"
                   />
                   <ResultCard question={q} result={result} />
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Bu soruyu şu an cevaplayamazsın.</p>
+                <p className="text-sm text-muted-foreground">Bu soruyu şu an cevaplayamazsınız.</p>
               )}
             </CardContent>
           </Card>
@@ -282,11 +282,11 @@ export function QuestionDetail({ id }: { id: number }) {
             <EmptyState
               icon={Lock}
               as="h2"
-              title="Tartışma kilitli"
+              title="Tartışma Kilitli"
               description={
                 q.myAnswer
                   ? "Yorumlar ve çözümler ödev kapanınca açılacak."
-                  : "Yorumları ve çözümleri görmek için önce soruyu cevapla."
+                  : "Yorumları ve çözümleri görmek için önce soruyu cevaplayın."
               }
             />
           )}

@@ -19,7 +19,7 @@ interface ReportDialogProps {
   submit: (reason: ReportReasonValue, description: string) => Promise<unknown>;
 }
 
-const titles = { question: "Soruyu şikâyet et", solution: "Çözümü şikâyet et", comment: "Yorumu şikâyet et" } as const;
+const titles = { question: "Soruyu Şikâyet Et", solution: "Çözümü Şikâyet Et", comment: "Yorumu Şikâyet Et" } as const;
 
 export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, minLength, answered = true, submit }: ReportDialogProps) {
   const reasons = reportReasonsFor(target);
@@ -33,7 +33,7 @@ export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, min
   const mutation = useMutation({
     mutationFn: () => submit(reason, description.trim()),
     onSuccess: () => {
-      toast.success("Şikâyetin öğretmenlere iletildi.");
+      toast.success("Şikâyetiniz öğretmenlere iletildi.");
       setDescription("");
       onOpenChange(false);
     },
@@ -41,7 +41,7 @@ export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, min
       setError(
         isApiError(e)
           ? { status: e.status, problem: e.problem, at: Date.now() }
-          : { status: 0, at: Date.now(), problem: { message: "Bağlantı kurulamadı. Tekrar dene.", fieldErrors: {}, formError: null, retryAfter: null } },
+          : { status: 0, at: Date.now(), problem: { message: "Bağlantı kurulamadı. Tekrar deneyin.", fieldErrors: {}, formError: null, retryAfter: null } },
       );
     },
   });
@@ -51,11 +51,11 @@ export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, min
 
   return (
     <Dialog open={open} onOpenChange={(next) => (mutation.isPending ? undefined : onOpenChange(next))}>
-      <DialogContent title={titles[target]} description="Şikâyetin inceleme için öğretmenlere gider. Nedenini kısaca açıkla." onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent title={titles[target]} description="Şikâyetiniz inceleme için öğretmenlere gider. Nedenini kısaca açıklayın." onCloseAutoFocus={onCloseAutoFocus}>
         <ProblemBanner state={error} conflictAsMessage />
         <SelectField
           label="Neden"
-          hint={answered ? undefined : "Yanlış cevap anahtarı şikâyeti için önce soruyu cevaplamalısın."}
+          hint={answered ? undefined : "Yanlış cevap anahtarı şikâyeti için önce soruyu cevaplamalısınız."}
           value={reason} onChange={(event) => setReason(event.target.value as ReportReasonValue)}>
           {reasons.map((value) => (
             <option key={value} value={value} disabled={blocked(value)}>
@@ -86,7 +86,7 @@ export function ReportDialog({ open, onOpenChange, onCloseAutoFocus, target, min
             </Button>
           </DialogClose>
           <Button type="button" variant="danger" disabled={!ready} loading={mutation.isPending} onClick={() => mutation.mutate()}>
-            Şikâyet et
+            Şikâyet Et
           </Button>
         </DialogFooter>
       </DialogContent>

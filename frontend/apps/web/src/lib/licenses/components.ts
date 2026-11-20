@@ -18,10 +18,10 @@ export const lgplComponents: LgplComponent[] = [
     copyright: "Hopper Gee ve katkıda bulunanlar",
     role: "iPhone HEIC/HEIF fotoğraflarını tarayıcıda JPEG'e çevirir.",
     sources: [
-      { label: "heic-to kaynak kodu (GitHub)", href: "https://github.com/hoppergee/heic-to" },
+      { label: "heic-to Kaynak Kodu (GitHub)", href: "https://github.com/hoppergee/heic-to" },
       { label: "heic-to 1.6.7 (npm)", href: "https://www.npmjs.com/package/heic-to/v/1.6.7" },
     ],
-    licenseText: [{ label: "heic-to lisans metni (LGPL-3.0)", href: "/licenses/heic-to-LICENSE.txt" }],
+    licenseText: [{ label: "heic-to Lisans Metni (LGPL-3.0)", href: "/licenses/heic-to-LICENSE.txt" }],
   },
   {
     id: "libheif",
@@ -31,10 +31,10 @@ export const lgplComponents: LgplComponent[] = [
     copyright: "struktur AG, Dirk Farin ve katkıda bulunanlar",
     role: "heic-to paketinin içine WebAssembly olarak derlenmiş HEIF çözücü kütüphanesi.",
     sources: [
-      { label: "libheif kaynak kodu (GitHub)", href: "https://github.com/strukturag/libheif" },
-      { label: "libheif v1.23.7 sürümü", href: "https://github.com/strukturag/libheif/releases/tag/v1.23.7" },
+      { label: "libheif Kaynak Kodu (GitHub)", href: "https://github.com/strukturag/libheif" },
+      { label: "libheif v1.23.7 Sürümü", href: "https://github.com/strukturag/libheif/releases/tag/v1.23.7" },
     ],
-    licenseText: [{ label: "libheif lisans metni (LGPL-3.0)", href: "/licenses/libheif-COPYING.txt" }],
+    licenseText: [{ label: "libheif Lisans Metni (LGPL-3.0)", href: "/licenses/libheif-COPYING.txt" }],
   },
   {
     id: "libde265",
@@ -44,11 +44,11 @@ export const lgplComponents: LgplComponent[] = [
     copyright: "struktur AG, Dirk Farin ve katkıda bulunanlar",
     role: "libheif ile birlikte kullanılan H.265/HEVC çözücü kütüphanesi.",
     sources: [
-      { label: "libde265 kaynak kodu (GitHub)", href: "https://github.com/strukturag/libde265" },
-      { label: "libde265 v1.0.16 sürümü", href: "https://github.com/strukturag/libde265/releases/tag/v1.0.16" },
+      { label: "libde265 Kaynak Kodu (GitHub)", href: "https://github.com/strukturag/libde265" },
+      { label: "libde265 v1.0.16 Sürümü", href: "https://github.com/strukturag/libde265/releases/tag/v1.0.16" },
     ],
-    licenseText: [{ label: "libde265 lisans metni (LGPL-3.0)", href: "/licenses/libde265-COPYING.txt" }],
+    licenseText: [{ label: "libde265 Lisans Metni (LGPL-3.0)", href: "/licenses/libde265-COPYING.txt" }],
   },
 ];
 
-export const gplTextLink = { label: "GNU GPL 3.0 lisans metni", href: "/licenses/GPL-3.0.txt" };
+export const gplTextLink = { label: "GNU GPL 3.0 Lisans Metni", href: "/licenses/GPL-3.0.txt" };

@@ -36,8 +36,8 @@ describe("soru kartı doğrulama", () => {
 
 describe("günlük hak", () => {
   it("puanlı hak cümlesini üretir, limit 0 ise üretmez", () => {
-    expect(scoredSentence({ scoredLimit: 5, scoredRemaining: 3, pointsPerQuestion: 2 })).toBe("İlk 5 soru puanlı. 3 puanlı hakkın kaldı. Her biri 2 puan kazandırır.");
-    expect(scoredSentence({ scoredLimit: 5, scoredRemaining: 0, pointsPerQuestion: 0 })).toBe("İlk 5 soru puanlı. 0 puanlı hakkın kaldı.");
+    expect(scoredSentence({ scoredLimit: 5, scoredRemaining: 3, pointsPerQuestion: 2 })).toBe("İlk 5 soru puanlı. 3 puanlı hakkınız kaldı. Her biri 2 puan kazandırır.");
+    expect(scoredSentence({ scoredLimit: 5, scoredRemaining: 0, pointsPerQuestion: 0 })).toBe("İlk 5 soru puanlı. 0 puanlı hakkınız kaldı.");
     expect(scoredSentence({ scoredLimit: 0, scoredRemaining: 0, pointsPerQuestion: 2 })).toBeNull();
     expect(scoredSentence(undefined)).toBeNull();
   });

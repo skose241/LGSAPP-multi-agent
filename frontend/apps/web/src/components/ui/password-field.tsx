@@ -33,7 +33,7 @@ export function PasswordField({ label, hint, error, required, className, ref, ..
           <button
             type="button"
             onClick={() => setVisible((value) => !value)}
-            aria-label={visible ? "Şifreyi gizle" : "Şifreyi göster"}
+            aria-label={visible ? "Şifreyi Gizle" : "Şifreyi Göster"}
             aria-pressed={visible}
             className="absolute right-0 top-0 flex size-12 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
           >

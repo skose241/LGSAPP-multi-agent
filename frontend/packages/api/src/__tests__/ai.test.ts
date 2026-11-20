@@ -49,7 +49,7 @@ describe("AI istek hataları", () => {
 
 describe("kota özeti", () => {
   it("kalan hakkı gösterir", () => {
-    expect(quotaSummary({ enabled: true, dailyLimit: 5, remainingToday: 3, usedToday: 2 })).toEqual({ canRequest: true, text: "Bugün kalan hakkın: 3 / 5" });
+    expect(quotaSummary({ enabled: true, dailyLimit: 5, remainingToday: 3, usedToday: 2 })).toEqual({ canRequest: true, text: "Bugün Kalan Hakkınız: 3 / 5" });
   });
 
   it("hak bitince isteği kapatır", () => {
@@ -60,7 +60,7 @@ describe("kota özeti", () => {
     expect(quotaSummary({ enabled: false, dailyLimit: 5, remainingToday: 5, usedToday: 0 }).canRequest).toBe(false);
     const moderator = quotaSummary({ enabled: true, dailyLimit: null, remainingToday: null, usedToday: 1 });
     expect(moderator.canRequest).toBe(true);
-    expect(moderator.text).toContain("Kişisel günlük limitin yok");
+    expect(moderator.text).toContain("Kişisel günlük limitiniz yok");
   });
 });
 
@@ -83,7 +83,7 @@ describe("kullanım aralığı", () => {
     expect(formatSuccessRate(80)).toBe("%80");
     expect(aiOperationLabel("solution")).toBe("Çözüm");
     expect(aiOperationLabel("yeniBirSey")).toBe("yeniBirSey");
-    expect(aiErrorKindLabel("quotaExhausted")).toBe("Günlük kota doldu");
+    expect(aiErrorKindLabel("quotaExhausted")).toBe("Günlük Kota Doldu");
   });
 });
 

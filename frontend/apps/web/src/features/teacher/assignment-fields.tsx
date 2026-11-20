@@ -43,7 +43,7 @@ export function AssignmentFields({ values, onChange, errors, problem, minDate, s
           error={lessonField.error ?? server("lessonId")}
           onChange={(event) => lessonField.onChange(event.target.value ? Number(event.target.value) : null)}
         >
-          <option value="">Ders seç</option>
+          <option value="">Ders Seç</option>
           {lessonField.options.map((lesson) => (
             <option key={lesson.id} value={lesson.id}>
               {lesson.name}
@@ -54,7 +54,7 @@ export function AssignmentFields({ values, onChange, errors, problem, minDate, s
 
       <TextField
         label="Başlık"
-        hint="Boş bırakırsan ders adı başlık olur."
+        hint="Boş bırakırsanız ders adı başlık olur."
         value={values.title}
         maxLength={TITLE_MAX}
         disabled={textDisabled}
@@ -74,7 +74,7 @@ export function AssignmentFields({ values, onChange, errors, problem, minDate, s
 
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
-          label="Başlangıç tarihi"
+          label="Başlangıç Tarihi"
           type="date"
           required
           min={minDate}
@@ -85,7 +85,7 @@ export function AssignmentFields({ values, onChange, errors, problem, minDate, s
           onChange={(event) => onChange({ startDate: event.target.value })}
         />
         <TextField
-          label="Bitiş tarihi"
+          label="Bitiş Tarihi"
           type="date"
           required
           min={values.startDate || minDate}

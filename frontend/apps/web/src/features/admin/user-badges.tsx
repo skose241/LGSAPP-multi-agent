@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { roleLabel } from "@/lib/nav";
 
 export function RoleBadge({ role }: { role: string | null }) {
-  if (role === "ai") return <Badge tone="neutral">Yapay zekâ</Badge>;
-  return <Badge tone={role === "mudur" ? "accent" : "primary"}>{roleLabel(role ?? undefined) || "Rol yok"}</Badge>;
+  if (role === "ai") return <Badge tone="neutral">Yapay Zekâ</Badge>;
+  return <Badge tone={role === "mudur" ? "accent" : "primary"}>{roleLabel(role ?? undefined) || "Rol Yok"}</Badge>;
 }
 
 export function UserStatusBadges({ user }: { user: AdminUser }) {
@@ -20,19 +20,19 @@ export function UserStatusBadges({ user }: { user: AdminUser }) {
       {user.pendingReportCount > 0 ? (
         <Badge tone="warning">
           <Flag aria-hidden="true" />
-          Şikâyet var ({user.pendingReportCount})
+          Şikâyet Var ({user.pendingReportCount})
         </Badge>
       ) : null}
       {user.mustChangePassword ? (
         <Badge tone="warning">
           <KeyRound aria-hidden="true" />
-          Şifre değiştirmeli
+          Şifre Değiştirmeli
         </Badge>
       ) : null}
       {user.isSystemAccount ? (
         <Badge tone="info">
           <Bot aria-hidden="true" />
-          Sistem hesabı
+          Sistem Hesabı
         </Badge>
       ) : null}
     </>

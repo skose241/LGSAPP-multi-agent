@@ -52,7 +52,7 @@ export function CommentSection({ questionId, solutionId, label }: CommentSection
                 sort === value ? "border-primary bg-primary-soft text-primary-soft-foreground" : "border-border-strong bg-surface",
               )}
             >
-              {value === "oldest" ? "Eskiden yeniye" : "Yeniden eskiye"}
+              {value === "oldest" ? "Eskiden Yeniye" : "Yeniden Eskiye"}
             </button>
           ))}
         </div>
@@ -68,12 +68,12 @@ export function CommentSection({ questionId, solutionId, label }: CommentSection
         <EmptyState
           icon={CloudOff}
           as="h3"
-          title="Yorumlar yüklenemedi"
+          title="Yorumlar Yüklenemedi"
           description={query.error.message}
           action={<Button onClick={() => query.refetch()}>Tekrar Dene</Button>}
         />
       ) : roots.length === 0 ? (
-        <EmptyState icon={MessageSquareDashed} as="h3" title="Henüz yorum yok" description="İlk yorumu sen yaz." />
+        <EmptyState icon={MessageSquareDashed} as="h3" title="Henüz Yorum Yok" description="İlk yorumu siz yazın." />
       ) : (
         <ul className="flex flex-col gap-3" aria-label={`${label} listesi`}>
           {roots.map((comment) => (
@@ -84,7 +84,7 @@ export function CommentSection({ questionId, solutionId, label }: CommentSection
 
       {query.hasNextPage ? (
         <Button type="button" variant="secondary" className="self-center" loading={query.isFetchingNextPage} onClick={() => query.fetchNextPage()}>
-          Daha fazla yorum
+          Daha Fazla Yorum
         </Button>
       ) : null}
     </section>

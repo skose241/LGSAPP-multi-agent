@@ -9,11 +9,11 @@ export default function NotFound() {
       <EmptyState
         as="h2"
         icon={SearchX}
-        title="Sayfa bulunamadı"
-        description="Aradığın sayfa taşınmış ya da hiç olmamış olabilir."
+        title="Sayfa Bulunamadı"
+        description="Aradığınız sayfa taşınmış ya da hiç olmamış olabilir."
         action={
           <Button asChild>
-            <Link href="/">Ana sayfaya dön</Link>
+            <Link href="/">Ana Sayfaya Dön</Link>
           </Button>
         }
       />

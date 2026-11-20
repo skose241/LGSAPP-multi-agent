@@ -14,7 +14,7 @@ async function capture(page: Page, testInfo: TestInfo, name: string, width: numb
   await page.evaluate(() => document.fonts.ready);
   const label = width === null ? `${name}-${testInfo.project.name}` : `${name}-${width}`;
   const style = await page.addStyleTag({
-    content: "nextjs-portal{display:none!important} nav[aria-label=\"Alt menü\"]{position:static!important}",
+    content: "nextjs-portal{display:none!important} nav[aria-label=\"Alt Menü\"]{position:static!important}",
   });
   const size = await page.evaluate(() => ({ width: window.innerWidth, height: document.documentElement.scrollHeight }));
   await page.screenshot({
@@ -63,7 +63,7 @@ test.describe("müdür ekranları", () => {
 
     await forEachSize(page, testInfo, "mudur-pano", async () => {
       await page.goto("/", { waitUntil: "networkidle" });
-      await expect(page.getByText("Bekleyen talep", { exact: true })).toBeVisible();
+      await expect(page.getByText("Bekleyen Talep", { exact: true })).toBeVisible();
     });
     await forEachSize(page, testInfo, "kullanici-listesi", async () => {
       await page.goto("/yonetim/kullanicilar", { waitUntil: "networkidle" });
@@ -76,15 +76,15 @@ test.describe("müdür ekranları", () => {
     await mudurSession(page);
     await forEachSize(page, testInfo, "yeni-kullanici", async () => {
       await page.goto("/yonetim/kullanicilar/yeni", { waitUntil: "networkidle" });
-      await expect(page.getByRole("heading", { name: "Yeni kullanıcı" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Yeni Kullanıcı" })).toBeVisible();
     });
 
     await page.goto("/yonetim/kullanicilar/yeni", { waitUntil: "networkidle" });
     await page.getByLabel(/^Rol\*?$/).selectOption("ogretmen");
-    await page.getByLabel(/^Kullanıcı adı\*?$/).fill(`ayse.${Date.now().toString(36)}`);
+    await page.getByLabel(/^Kullanıcı Adı\*?$/).fill(`ayse.${Date.now().toString(36)}`);
     await page.getByLabel(/^Ad\*?$/).fill("Ayşe");
     await page.getByLabel(/^Soyad\*?$/).fill("Demir");
-    await page.getByRole("button", { name: "Hesap oluştur" }).click();
+    await page.getByRole("button", { name: "Hesap Oluştur" }).click();
     await expect(page.getByTestId("one-time-password")).toBeVisible();
     await forEachSize(page, testInfo, "tek-seferlik-sifre", async () => {
       await expect(page.getByTestId("one-time-password")).toBeVisible();

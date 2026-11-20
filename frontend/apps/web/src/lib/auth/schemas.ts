@@ -37,7 +37,7 @@ export function changePasswordSchema(minLength: number) {
     .object({
       currentPassword: z.string().min(1, "Mevcut şifre zorunlu.").max(128),
       newPassword: newPasswordSchema(minLength),
-      confirmPassword: z.string().min(1, "Yeni şifreyi tekrar yaz."),
+      confirmPassword: z.string().min(1, "Yeni şifreyi tekrar yazın."),
     })
     .refine((v) => v.newPassword === v.confirmPassword, {
       path: ["confirmPassword"],

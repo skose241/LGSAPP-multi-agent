@@ -43,7 +43,7 @@ export const createUserSchema = z
   })
   .superRefine((value, ctx) => {
     if (value.role === "mudur" && !value.confirmMudur) {
-      ctx.addIssue({ code: "custom", path: ["confirmMudur"], message: "Devam etmek için onay vermelisin." });
+      ctx.addIssue({ code: "custom", path: ["confirmMudur"], message: "Devam etmek için onay vermelisiniz." });
     }
   });
 

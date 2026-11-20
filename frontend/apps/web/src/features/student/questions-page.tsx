@@ -64,7 +64,7 @@ export function QuestionsPage() {
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-3xl">Soru Çöz</h1>
-        <p className="text-muted-foreground">Dersini seç, soruyu çöz, çözümünü kendi cümlelerinle anlat.</p>
+        <p className="text-muted-foreground">Dersinizi seçin, soruyu çözün, çözümünüzü kendi cümlelerinizle anlatın.</p>
       </div>
 
       <div role="group" aria-label="Çözüm durumu" className="flex flex-wrap gap-2">
@@ -92,7 +92,7 @@ export function QuestionsPage() {
           value={filters.lessonId ?? ""}
           onChange={(event) => update({ lessonId: event.target.value ? Number(event.target.value) : undefined, topicId: undefined })}
         >
-          <option value="">Tüm dersler</option>
+          <option value="">Tüm Dersler</option>
           {(lessons.data ?? []).map((lesson) => (
             <option key={lesson.id} value={lesson.id}>
               {lesson.name}
@@ -105,7 +105,7 @@ export function QuestionsPage() {
           disabled={!filters.lessonId || topics.isPending}
           onChange={(event) => update({ topicId: event.target.value ? Number(event.target.value) : undefined })}
         >
-          <option value="">Tüm konular</option>
+          <option value="">Tüm Konular</option>
           {(topics.data ?? []).map((topic) => (
             <option key={topic.id} value={topic.id}>
               {topic.name}
@@ -117,7 +117,7 @@ export function QuestionsPage() {
           value={filters.source ?? ""}
           onChange={(event) => update({ source: (event.target.value || undefined) as QuestionFilters["source"] })}
         >
-          <option value="">Tüm kaynaklar</option>
+          <option value="">Tüm Kaynaklar</option>
           {(["teacher", "student", "ai"] as const).map((source) => (
             <option key={source} value={source}>
               {questionSourceLabel(source)}
@@ -136,7 +136,7 @@ export function QuestionsPage() {
         <EmptyState
           icon={CloudOff}
           as="h2"
-          title="Sorular yüklenemedi"
+          title="Sorular Yüklenemedi"
           description={questions.error.message}
           action={<Button onClick={() => questions.refetch()}>Tekrar Dene</Button>}
         />
@@ -144,8 +144,8 @@ export function QuestionsPage() {
         <EmptyState
           icon={SearchX}
           as="h2"
-          title="Bu filtrelerle soru yok"
-          description="Başka bir ders, konu ya da durum seçmeyi dene."
+          title="Bu Filtrelerle Soru Yok"
+          description="Başka bir ders, konu ya da durum seçmeyi deneyin."
         />
       ) : data ? (
         <>

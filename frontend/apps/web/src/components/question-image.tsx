@@ -47,7 +47,7 @@ export function QuestionImage({ image, alt, variant, onExpired, zoomable = false
         aria-busy="true"
         className={cn("bg-placeholder flex aspect-[4/3] w-full items-center justify-center rounded-md border border-border text-sm text-muted-foreground", className)}
       >
-        Görsel yenileniyor
+        Görsel Yenileniyor
       </div>
     );
   }
@@ -59,7 +59,7 @@ export function QuestionImage({ image, alt, variant, onExpired, zoomable = false
         aria-label={alt}
         className={cn("bg-placeholder flex aspect-[4/3] w-full items-center justify-center rounded-md border border-border text-sm text-muted-foreground", className)}
       >
-        Görsel yüklenemedi
+        Görsel Yüklenemedi
       </div>
     );
   }

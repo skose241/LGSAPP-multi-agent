@@ -89,7 +89,7 @@ export function AppShell({
           </span>
           <span className="font-display text-lg font-bold">LGS Hazırlık</span>
         </div>
-        <nav aria-label="Ana menü" className="flex flex-1 flex-col gap-1">
+        <nav aria-label="Ana Menü" className="flex flex-1 flex-col gap-1">
           {items.map((item) => (
             <NavLink key={item.id} item={item} active={item.id === active} layout="side" />
           ))}
@@ -123,7 +123,7 @@ export function AppShell({
       </div>
 
       <nav
-        aria-label="Alt menü"
+        aria-label="Alt Menü"
         className={cn(
           position,
           "inset-x-0 bottom-0 z-20 border-t border-border bg-surface pb-safe shadow-nav lg:hidden",

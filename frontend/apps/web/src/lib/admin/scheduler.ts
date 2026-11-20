@@ -5,18 +5,18 @@ export const RUN_PAGE_SIZE = 20;
 export const SCHEDULER_KINDS: SchedulerKind[] = ["generate", "complete", "publish", "assignments"];
 
 const KIND_LABELS: Record<string, string> = {
-  generate: "Soru üretimi",
-  complete: "Soru tamamlama",
-  publish: "Soru yayınlama",
-  assignments: "Ödev kapatma",
+  generate: "Soru Üretimi",
+  complete: "Soru Tamamlama",
+  publish: "Soru Yayınlama",
+  assignments: "Ödev Kapatma",
 };
 
 const STATUS_LABELS: Record<string, string> = {
   running: "Çalışıyor",
   succeeded: "Başarılı",
-  partiallySucceeded: "Kısmen başarılı",
+  partiallySucceeded: "Kısmen Başarılı",
   failed: "Başarısız",
-  interrupted: "Yarıda kesildi",
+  interrupted: "Yarıda Kesildi",
 };
 
 const TRIGGER_LABELS: Record<string, string> = {
@@ -74,22 +74,22 @@ export function confirmCopy(kind: SchedulerKind): { title: string; description: 
   const name = kindLabel(kind);
   if (kind === "generate" || kind === "complete") {
     return {
-      title: `${name} şimdi çalıştırılsın mı?`,
+      title: `${name.charAt(0)}${name.slice(1).toLocaleLowerCase("tr-TR")} şimdi çalıştırılsın mı?`,
       description: "Bu görev Gemini kotası tüketir. Bugünkü ders programına göre yapay zekâdan soru istenir.",
-      confirmLabel: "Şimdi çalıştır",
+      confirmLabel: "Şimdi Çalıştır",
     };
   }
   if (kind === "publish") {
     return {
       title: "Sorular şimdi yayınlansın mı?",
       description: "Bugünün planlı soruları hemen yayına alınır ve öğrencilere görünür olur.",
-      confirmLabel: "Şimdi yayınla",
+      confirmLabel: "Şimdi Yayınla",
     };
   }
   return {
     title: "Ödevler şimdi kapatılsın mı?",
     description: "Süresi dolan ödevler kapatılır.",
-    confirmLabel: "Şimdi kapat",
+    confirmLabel: "Şimdi Kapat",
   };
 }
 
@@ -102,12 +102,12 @@ export interface RunFilters {
 }
 
 export const RUN_STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "all", label: "Tüm durumlar" },
+  { value: "all", label: "Tüm Durumlar" },
   { value: "running", label: "Çalışıyor" },
   { value: "succeeded", label: "Başarılı" },
-  { value: "partiallySucceeded", label: "Kısmen başarılı" },
+  { value: "partiallySucceeded", label: "Kısmen Başarılı" },
   { value: "failed", label: "Başarısız" },
-  { value: "interrupted", label: "Yarıda kesildi" },
+  { value: "interrupted", label: "Yarıda Kesildi" },
 ];
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

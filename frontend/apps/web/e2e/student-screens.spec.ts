@@ -15,7 +15,7 @@ async function capture(page: Page, testInfo: TestInfo, name: string, width: numb
   await page.evaluate(() => document.fonts.ready);
   const label = width === null ? `${name}-${testInfo.project.name}` : `${name}-${width}`;
   const style = await page.addStyleTag({
-    content: 'nextjs-portal{display:none!important} nav[aria-label="Alt menü"]{position:static!important}',
+    content: 'nextjs-portal{display:none!important} nav[aria-label="Alt Menü"]{position:static!important}',
   });
   const size = await page.evaluate(() => ({ width: window.innerWidth, height: document.documentElement.scrollHeight }));
   await page.screenshot({
@@ -64,7 +64,7 @@ test.describe("öğrenci ekranları", () => {
 
     await forEachSize(page, testInfo, "pano", async () => {
       await page.goto("/", { waitUntil: "networkidle" });
-      await expect(page.getByRole("heading", { name: "Son 7 günün soruları" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Son 7 Günün Soruları" })).toBeVisible();
       await expect(page.getByTestId("pool-question").first()).toBeVisible();
     });
     await forEachSize(page, testInfo, "sorular", async () => {

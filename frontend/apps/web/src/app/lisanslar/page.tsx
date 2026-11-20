@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LicensesView } from "@/features/licenses/licenses-view";
 
-export const metadata: Metadata = { title: "Açık kaynak lisansları" };
+export const metadata: Metadata = { title: "Açık Kaynak Lisansları" };
 
 export default function LicensesPage() {
   return (

@@ -32,7 +32,7 @@ async function readOneTimeCredentials(page: Page) {
 }
 
 async function fillCreateForm(page: Page, values: { userName: string; firstName: string; lastName: string; className?: string }) {
-  await page.getByLabel(/^Kullanıcı adı\*?$/).fill(values.userName);
+  await page.getByLabel(/^Kullanıcı Adı\*?$/).fill(values.userName);
   await page.getByLabel(/^Ad\*?$/).fill(values.firstName);
   await page.getByLabel(/^Soyad\*?$/).fill(values.lastName);
   if (values.className) await page.getByLabel(/^Sınıf/).fill(values.className);
@@ -53,13 +53,13 @@ test.describe("kullanıcı oluşturma", () => {
     await page.getByLabel(/^Rol\*?$/).selectOption("ogretmen");
     const userName = `ogretmen.${Date.now().toString(36)}`;
     await fillCreateForm(page, { userName, firstName: "Ayşe", lastName: "Öğretmen" });
-    const branch = page.getByLabel(/^Branş dersi/);
+    const branch = page.getByLabel(/^Branş Dersi/);
     await expect(branch.locator("option")).not.toHaveCount(1);
     const branchName = (await branch.locator("option").nth(1).textContent()) ?? "";
     await branch.selectOption({ index: 1 });
-    await page.getByRole("button", { name: "Hesap oluştur" }).click();
+    await page.getByRole("button", { name: "Hesap Oluştur" }).click();
 
-    await expect(page.getByRole("heading", { name: "Hesap oluşturuldu" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Hesap Oluşturuldu" })).toBeVisible();
     const credentials = await readOneTimeCredentials(page);
     expect(credentials.userName).toBe(userName);
     expect(credentials.password.length).toBeGreaterThanOrEqual(8);
@@ -75,17 +75,17 @@ test.describe("kullanıcı oluşturma", () => {
     try {
       await login(other.page, credentials.userName, credentials.password);
       await expect(other.page).toHaveURL(/\/sifre-degistir/);
-      await other.page.getByLabel(/^Mevcut şifre/).fill(credentials.password);
-      await other.page.getByLabel(/^Yeni şifre\*?$/).fill(NEW_PASSWORD);
-      await other.page.getByLabel(/^Yeni şifre \(tekrar\)/).fill(NEW_PASSWORD);
-      await other.page.getByRole("button", { name: "Şifreyi kaydet" }).click();
+      await other.page.getByLabel(/^Mevcut Şifre/).fill(credentials.password);
+      await other.page.getByLabel(/^Yeni Şifre\*?$/).fill(NEW_PASSWORD);
+      await other.page.getByLabel(/^Yeni Şifre \(Tekrar\)/).fill(NEW_PASSWORD);
+      await other.page.getByRole("button", { name: "Şifreyi Kaydet" }).click();
       await expect(other.page.getByRole("heading", { name: /Merhaba Ayşe/ })).toBeVisible();
     } finally {
       await other.context.close();
     }
 
     await page.goto("/yonetim/kullanicilar");
-    await page.getByLabel("Kullanıcı ara").fill(userName);
+    await page.getByLabel("Kullanıcı Ara").fill(userName);
     await page.getByRole("link", { name: "Ayşe Öğretmen" }).locator("visible=true").first().click();
     await expect(page.getByTestId("user-username")).toHaveText(userName);
     await expect(page.getByText(branchName.trim()).first()).toBeVisible();
@@ -96,10 +96,10 @@ test.describe("kullanıcı oluşturma", () => {
     await page.goto("/yonetim/kullanicilar/yeni");
     const userName = `ogrenci.${Date.now().toString(36)}`;
     await fillCreateForm(page, { userName, firstName: "Mert", lastName: "Kaya", className: "8-C" });
-    await page.getByRole("button", { name: "Hesap oluştur" }).click();
-    await expect(page.getByRole("heading", { name: "Hesap oluşturuldu" })).toBeVisible();
-    await page.getByRole("link", { name: "Listeye dön" }).click();
-    await page.getByLabel("Kullanıcı ara").fill("8-c");
+    await page.getByRole("button", { name: "Hesap Oluştur" }).click();
+    await expect(page.getByRole("heading", { name: "Hesap Oluşturuldu" })).toBeVisible();
+    await page.getByRole("link", { name: "Listeye Dön" }).click();
+    await page.getByLabel("Kullanıcı Ara").fill("8-c");
     await expect(page.getByText(userName).locator("visible=true").first()).toBeVisible();
   });
 
@@ -108,32 +108,32 @@ test.describe("kullanıcı oluşturma", () => {
     const existing = await createAccount("ogrenci");
     await page.goto("/yonetim/kullanicilar/yeni");
     await fillCreateForm(page, { userName: existing.userName, firstName: "Aynı", lastName: "Ad" });
-    await page.getByRole("button", { name: "Hesap oluştur" }).click();
+    await page.getByRole("button", { name: "Hesap Oluştur" }).click();
     await expect(page.getByText("Bu kullanıcı adı zaten kayıtlı.").first()).toBeVisible();
-    await expect(page.getByLabel(/^Kullanıcı adı\*?$/)).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByLabel(/^Kullanıcı Adı\*?$/)).toHaveAttribute("aria-invalid", "true");
   });
 
   test("rezerve ad alan hatası verir", async ({ page }) => {
     await mudurSession(page);
     await page.goto("/yonetim/kullanicilar/yeni");
     await fillCreateForm(page, { userName: "sistem", firstName: "Rezerve", lastName: "Ad" });
-    await page.getByRole("button", { name: "Hesap oluştur" }).click();
-    await expect(page.getByLabel(/^Kullanıcı adı\*?$/)).toHaveAttribute("aria-invalid", "true");
+    await page.getByRole("button", { name: "Hesap Oluştur" }).click();
+    await expect(page.getByLabel(/^Kullanıcı Adı\*?$/)).toHaveAttribute("aria-invalid", "true");
     await expect(page.getByText(/ayrılmıştır/).first()).toBeVisible();
   });
 
   test("yeni müdür oluşturma onay ister ve ağır işlem olarak ayrıdır", async ({ page }) => {
     await mudurSession(page);
     await page.goto("/yonetim/kullanicilar");
-    await page.getByRole("link", { name: "Yeni müdür" }).click();
-    await expect(page.getByText("Yeni müdür hesabı")).toBeVisible();
+    await page.getByRole("link", { name: "Yeni Müdür" }).click();
+    await expect(page.getByText("Yeni Müdür Hesabı")).toBeVisible();
     const userName = `mudur.${Date.now().toString(36)}`;
     await fillCreateForm(page, { userName, firstName: "Yeni", lastName: "Müdür" });
-    await page.getByRole("button", { name: "Müdür hesabı oluştur" }).click();
-    await expect(page.getByText("Devam etmek için onay vermelisin.")).toBeVisible();
+    await page.getByRole("button", { name: "Müdür Hesabı Oluştur" }).click();
+    await expect(page.getByText("Devam etmek için onay vermelisiniz.")).toBeVisible();
     await page.getByLabel("Müdür hesabı oluşturmak istediğimi onaylıyorum").check();
-    await page.getByRole("button", { name: "Müdür hesabı oluştur" }).click();
-    await expect(page.getByRole("heading", { name: "Hesap oluşturuldu" })).toBeVisible();
+    await page.getByRole("button", { name: "Müdür Hesabı Oluştur" }).click();
+    await expect(page.getByRole("heading", { name: "Hesap Oluşturuldu" })).toBeVisible();
     await expect(page.getByTestId("otp-username")).toHaveText(userName);
   });
 });
@@ -153,7 +153,7 @@ test.describe("kullanıcı işlemleri", () => {
       await page.getByTestId("action-ban").click();
       const dialog = page.getByRole("dialog");
       await expect(dialog).toContainText("Hesap engellensin mi?");
-      await dialog.getByRole("button", { name: "Evet, engelle" }).click();
+      await dialog.getByRole("button", { name: "Evet, Engelle" }).click();
       await expect(page.getByRole("dialog")).toHaveCount(0);
       await expect(page.getByText("Banlı").first()).toBeVisible();
       await expect(page.getByTestId("action-unban")).toBeVisible();
@@ -164,7 +164,7 @@ test.describe("kullanıcı işlemleri", () => {
       await expect(other.page.getByTestId("problem-banner")).toContainText("Hesap engellenmiş.");
 
       await page.getByTestId("action-unban").click();
-      await page.getByRole("dialog").getByRole("button", { name: "Evet, kaldır" }).click();
+      await page.getByRole("dialog").getByRole("button", { name: "Evet, Kaldır" }).click();
       await expect(page.getByTestId("action-ban")).toBeVisible();
 
       await login(other.page, account.userName, VALID_PASSWORD);
@@ -181,15 +181,15 @@ test.describe("kullanıcı işlemleri", () => {
 
     await page.goto(`/yonetim/kullanicilar/${account.id}`);
     await page.getByTestId("action-regenerate").click();
-    await page.getByRole("dialog").getByRole("button", { name: "Evet, yenile" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Evet, Yenile" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toContainText("Yeni tek seferlik şifre");
+    await expect(dialog).toContainText("Yeni Tek Seferlik Şifre");
     const credentials = await readOneTimeCredentials(page);
     expect(credentials.userName).toBe(account.userName);
 
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toBeVisible();
-    await page.getByRole("button", { name: "Şifreyi not aldım" }).click();
+    await page.getByRole("button", { name: "Şifreyi Not Aldım" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByText(credentials.password)).toHaveCount(0);
 
@@ -213,7 +213,7 @@ test.describe("kullanıcı işlemleri", () => {
 
     await page.getByTestId("action-branch").click();
     const dialog = page.getByRole("dialog");
-    const select = dialog.getByLabel(/^Branş dersi/);
+    const select = dialog.getByLabel(/^Branş Dersi/);
     const name = ((await select.locator("option").nth(1).textContent()) ?? "").trim();
     await select.selectOption({ index: 1 });
     await dialog.getByRole("button", { name: "Kaydet" }).click();
@@ -221,7 +221,7 @@ test.describe("kullanıcı işlemleri", () => {
     await expect(page.getByText(`Şu an: ${name}`)).toBeVisible();
 
     await page.getByTestId("action-branch").click();
-    await page.getByRole("dialog").getByLabel(/^Branş dersi/).selectOption("");
+    await page.getByRole("dialog").getByLabel(/^Branş Dersi/).selectOption("");
     await page.getByRole("dialog").getByRole("button", { name: "Kaydet" }).click();
     await expect(page.getByText("Şu an branş atanmamış.")).toBeVisible();
   });
@@ -254,7 +254,7 @@ test.describe("kullanıcı işlemleri", () => {
   test("olmayan kullanıcı için bulunamadı gösterilir", async ({ page }) => {
     await mudurSession(page);
     await page.goto("/yonetim/kullanicilar/99999999");
-    await expect(page.getByRole("heading", { name: "Kullanıcı bulunamadı" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Kullanıcı Bulunamadı" })).toBeVisible();
   });
 });
 
@@ -266,8 +266,8 @@ test.describe("şifre talepleri", () => {
     await requestPasswordReset(account.userName);
 
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Şifre talepleri" })).toBeVisible();
-    await expect(page.getByText("Bekleyen talep", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Şifre Talepleri" })).toBeVisible();
+    await expect(page.getByText("Bekleyen Talep", { exact: true })).toBeVisible();
 
     if (!isMobile(page)) {
       await expect(page.getByRole("link", { name: /Şifre Talepleri/ }).first()).toContainText(/\d+ yeni/);
@@ -276,10 +276,10 @@ test.describe("şifre talepleri", () => {
     await page.goto("/yonetim/sifre-talepleri");
     await expect(page.getByText(account.userName)).toBeVisible();
     await page.getByRole("button", { name: `${account.userName} talebini onayla` }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Onayla ve şifre üret" }).click();
-    await expect(page.getByRole("dialog")).toContainText("Yeni tek seferlik şifre");
+    await page.getByRole("dialog").getByRole("button", { name: "Onayla ve Şifre Üret" }).click();
+    await expect(page.getByRole("dialog")).toContainText("Yeni Tek Seferlik Şifre");
     const credentials = await readOneTimeCredentials(page);
-    await page.getByRole("button", { name: "Şifreyi not aldım" }).click();
+    await page.getByRole("button", { name: "Şifreyi Not Aldım" }).click();
     await expect(page.getByText(account.userName)).toHaveCount(0);
 
     const other = await otherPage(browser, baseURL);
@@ -345,7 +345,7 @@ test.describe("erişim ve güvenlik", () => {
     await requestPasswordReset(account.userName);
 
     await page.goto("/yonetim/kullanicilar");
-    await page.getByLabel("Kullanıcı ara").fill(account.userName);
+    await page.getByLabel("Kullanıcı Ara").fill(account.userName);
     await expect(page.getByText(payloadFirst).locator("visible=true").first()).toBeVisible();
     await expect(page.locator("img[src='x']")).toHaveCount(0);
     await expect(page.getByText("<b>8-X</b>").locator("visible=true").first()).toBeVisible();
@@ -375,21 +375,21 @@ test.describe("liste görünümü", () => {
       await expect(page.getByRole("list", { name: "Kullanıcı kartları" })).toBeVisible();
       await expect(page.getByRole("table")).toHaveCount(0);
     } else {
-      await expect(page.getByRole("table", { name: "Kullanıcı listesi" })).toBeVisible();
+      await expect(page.getByRole("table", { name: "Kullanıcı Listesi" })).toBeVisible();
       await expect(page.getByRole("list", { name: "Kullanıcı kartları" })).toHaveCount(0);
     }
 
-    await page.getByLabel("Kullanıcı ara").fill("ışık çalışkan");
+    await page.getByLabel("Kullanıcı Ara").fill("ışık çalışkan");
     await expect(page.getByText(student.userName).locator("visible=true").first()).toBeVisible();
     await expect(page.getByText("Banlı").locator("visible=true").first()).toBeVisible();
 
-    await page.getByLabel("Kullanıcı ara").fill("isik caliskan");
+    await page.getByLabel("Kullanıcı Ara").fill("isik caliskan");
     await expect(page.getByText(student.userName).locator("visible=true").first()).toBeVisible();
 
-    await page.getByLabel("Kullanıcı ara").fill("kesinlikle-yok-boyle-biri");
-    await expect(page.getByRole("heading", { name: "Eşleşen kullanıcı yok" })).toBeVisible();
+    await page.getByLabel("Kullanıcı Ara").fill("kesinlikle-yok-boyle-biri");
+    await expect(page.getByRole("heading", { name: "Eşleşen Kullanıcı Yok" })).toBeVisible();
 
-    await page.getByLabel("Kullanıcı ara").fill("");
+    await page.getByLabel("Kullanıcı Ara").fill("");
     await page.getByRole("button", { name: /^Müdür/ }).click();
     await expect(page.getByRole("button", { name: /^Müdür/ })).toHaveAttribute("aria-pressed", "true");
   });
@@ -400,7 +400,7 @@ test.describe("liste görünümü", () => {
       await createAccount("ogrenci", `sayfa${stamp}x${index}`);
     }
     await page.goto("/yonetim/kullanicilar");
-    const search = page.getByLabel("Kullanıcı ara");
+    const search = page.getByLabel("Kullanıcı Ara");
     await search.fill(`sayfa${stamp}x`);
 
     const info = page.getByTestId("page-info");
@@ -409,13 +409,13 @@ test.describe("liste görünümü", () => {
       ? page.getByRole("list", { name: "Kullanıcı kartları" }).getByRole("listitem")
       : page.getByRole("table").locator("tbody tr");
     await expect(rows).toHaveCount(25);
-    await expect(page.getByRole("button", { name: "Önceki sayfa" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Önceki Sayfa" })).toBeDisabled();
 
     await page.getByRole("button", { name: "Sayfa 2" }).click();
     await expect(info).toHaveText("26–26 / 26");
     await expect(rows).toHaveCount(1);
     await expect(page.getByRole("button", { name: "Sayfa 2" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("button", { name: "Sonraki sayfa" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Sonraki Sayfa" })).toBeDisabled();
 
     await search.fill(`sayfa${stamp}x1`);
     await expect(info).toHaveText(/^1–/);
@@ -424,7 +424,7 @@ test.describe("liste görünümü", () => {
     await page.getByRole("button", { name: "Sayfa 2" }).click();
     await expect(info).toHaveText("26–26 / 26");
     await page.getByRole("button", { name: /^Öğretmen/ }).click();
-    await expect(page.getByRole("heading", { name: "Eşleşen kullanıcı yok" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Eşleşen Kullanıcı Yok" })).toBeVisible();
     await page.getByRole("button", { name: /^Öğrenci/ }).click();
     await expect(info).toHaveText("1–25 / 26");
   });

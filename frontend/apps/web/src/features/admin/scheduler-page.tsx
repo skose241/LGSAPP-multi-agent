@@ -40,7 +40,7 @@ function Band({ children, testId }: { children: ReactNode; testId: string }) {
 function StatusBands({ status }: { status: SchedulerStatus }) {
   return (
     <>
-      {!status.timerEnabled ? <Band testId="band-timer">Otomatik zamanlayıcı kapalı; görevler yalnız elle çalışır.</Band> : null}
+      {!status.timerEnabled ? <Band testId="band-timer">Otomatik zamanlayıcı kapalı. Görevleri yalnızca elle çalıştırabilirsiniz.</Band> : null}
       {!status.aiConfigured ? <Band testId="band-ai">Yapay zekâ anahtarı tanımlı değil; soru üretimi çalışmaz.</Band> : null}
       {!status.generationEnabled ? <Band testId="band-generation">Soru üretimi ayarlardan kapatılmış.</Band> : null}
       {status.fakeGenerator ? <Band testId="band-fake">Sahte üretici etkin; üretilen sorular gerçek yapay zekâdan gelmez.</Band> : null}
@@ -61,7 +61,7 @@ function StartError({ state, countdown }: { state: ProblemState | null; countdow
         <Loader2 className="size-5 shrink-0" aria-hidden="true" />
         <p>Bu görev şu anda çalışıyor.</p>
         <Link href={`/yonetim/zamanlayici/${runId}`} className="inline-flex min-h-touch items-center font-semibold underline underline-offset-4">
-          Çalıştırmayı gör
+          Çalıştırmayı Gör
         </Link>
       </div>
     );
@@ -69,14 +69,14 @@ function StartError({ state, countdown }: { state: ProblemState | null; countdow
   if (state.status === 401) {
     return (
       <div role="alert" data-testid="run-unauthorized" className="rounded-md border border-danger bg-danger-soft p-3 text-sm font-medium text-danger-soft-foreground">
-        Oturumun sona erdi. Yeniden giriş yapıp tekrar dene.
+        Oturumunuz sona erdi. Yeniden giriş yapıp tekrar deneyin.
       </div>
     );
   }
   if (state.status === 403) {
     return (
       <div role="alert" data-testid="run-forbidden" className="rounded-md border border-danger bg-danger-soft p-3 text-sm font-medium text-danger-soft-foreground">
-        Görevleri çalıştırma yetkin yok.
+        Görevleri çalıştırma yetkiniz yok.
       </div>
     );
   }
@@ -105,7 +105,7 @@ function JobCard({ job, blocked, onRun }: JobCardProps) {
         {job.due ? <Badge tone="warning">Zamanı geldi</Badge> : <Badge tone="neutral">Bekliyor</Badge>}
       </div>
       <p className="text-sm text-muted-foreground">
-        Planlanan saat: <span className="font-semibold text-foreground">{job.scheduledAt}</span>
+        Planlanan Saat: <span className="font-semibold text-foreground">{job.scheduledAt}</span>
       </p>
       {last ? (
         <div className="flex flex-col gap-1.5" data-testid="job-last-run">
@@ -127,12 +127,12 @@ function JobCard({ job, blocked, onRun }: JobCardProps) {
           {last.status === "failed" && aiKeyInvalid(last.summary) ? (
             <p className="text-sm">
               <Link href="/yonetim/yapay-zeka" className="inline-flex min-h-touch items-center font-semibold underline underline-offset-4">
-                Yapay zekâ ayarlarını kontrol et
+                Yapay Zekâ Ayarlarını Kontrol Et
               </Link>
             </p>
           ) : null}
           <Link href={`/yonetim/zamanlayici/${last.id}`} className="inline-flex min-h-touch items-center text-sm font-semibold text-primary underline underline-offset-4">
-            Ayrıntıyı gör
+            Ayrıntıyı Gör
             <span className="sr-only"> : {kindLabel(job.kind)}</span>
           </Link>
         </div>
@@ -144,13 +144,13 @@ function JobCard({ job, blocked, onRun }: JobCardProps) {
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           Şu anda çalışıyor.
           <Link href={`/yonetim/zamanlayici/${job.runningRunId}`} className="inline-flex min-h-touch items-center text-primary underline underline-offset-4">
-            Çalıştırmayı gör
+            Çalıştırmayı Gör
           </Link>
         </p>
       ) : null}
       <Button type="button" variant="secondary" className="mt-auto self-start" disabled={blocked || running} data-testid="run-now" data-kind={job.kind} onClick={() => onRun(kind)}>
         <Play aria-hidden="true" />
-        Şimdi çalıştır
+        Şimdi Çalıştır
         <span className="sr-only"> : {kindLabel(job.kind)}</span>
       </Button>
     </li>
@@ -165,7 +165,7 @@ function LessonsTable({ lessons }: { lessons: TodayLesson[] }) {
     <>
       <div className="hidden md:block" data-testid="lessons-table">
         <table className="w-full border-collapse text-sm">
-          <caption className="sr-only">Bugünkü ders programı ve üretim durumu</caption>
+          <caption className="sr-only">Bugünkü Ders Programı ve Üretim Durumu</caption>
           <thead>
             <tr className="text-left">
               <th scope="col" className="px-2 py-2 font-semibold">Ders</th>
@@ -252,7 +252,7 @@ function StatusSection({ status }: { status: SchedulerStatus }) {
       <StartError state={error} countdown={countdown} />
       <section aria-labelledby="jobs-heading" className="flex flex-col gap-3">
         <h2 id="jobs-heading" className="text-xl">
-          Günlük görevler
+          Günlük Görevler
         </h2>
         <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Görev listesi">
           {jobs.map((job) => (
@@ -272,7 +272,7 @@ function StatusSection({ status }: { status: SchedulerStatus }) {
       </section>
       <Card data-testid="lessons-card">
         <CardHeader>
-          <CardTitle as="h2">Bugünkü ders tablosu</CardTitle>
+          <CardTitle as="h2">Bugünkü Ders Tablosu</CardTitle>
         </CardHeader>
         <CardContent>
           <LessonsTable lessons={status.todayLessons} />
@@ -313,7 +313,7 @@ export function SchedulerPage() {
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-3xl">Zamanlayıcı</h1>
-        <p className="text-muted-foreground">Günlük görevlerin durumunu izle, gerekirse elle çalıştır.</p>
+        <p className="text-muted-foreground">Günlük görevlerin durumunu izleyin, gerekirse elle çalıştırın.</p>
       </div>
       {status.isPending ? (
         <div role="status" aria-label="Zamanlayıcı yükleniyor" className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -325,7 +325,7 @@ export function SchedulerPage() {
         <EmptyState
           icon={code === 401 || code === 403 ? Lock : CloudOff}
           as="h2"
-          title={code === 403 ? "Bu sayfaya erişimin yok" : code === 401 ? "Oturumun sona erdi" : "Zamanlayıcı durumu alınamadı"}
+          title={code === 403 ? "Bu Sayfaya Erişiminiz Yok" : code === 401 ? "Oturumunuz Sona Erdi" : "Zamanlayıcı Durumu Alınamadı"}
           description={status.error.message}
           action={<Button onClick={() => status.refetch()}>Tekrar Dene</Button>}
         />

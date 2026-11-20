@@ -6,7 +6,7 @@ test.describe("açık kaynak lisansları", () => {
   test("giriş yapmadan açılır, LGPL bildirimini ve bağımlılıkları gösterir", async ({ page }, testInfo) => {
     await page.goto("/lisanslar");
     await expect(page).toHaveURL(/\/lisanslar$/);
-    await expect(page.getByRole("heading", { name: "Açık kaynak lisansları", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Açık Kaynak Lisansları", level: 1 })).toBeVisible();
 
     const notice = page.getByTestId("lgpl-notice");
     await expect(notice).toContainText("LGPL-3.0");
@@ -23,7 +23,7 @@ test.describe("açık kaynak lisansları", () => {
       await expect(card).toContainText(version);
       await expect(card).toContainText("LGPL-3.0");
       await expect(card).toContainText("Telif:");
-      await expect(card.getByRole("link", { name: /kaynak kodu/ }).first()).toHaveAttribute("href", /^https:\/\//);
+      await expect(card.getByRole("link", { name: /Kaynak Kodu/ }).first()).toHaveAttribute("href", /^https:\/\//);
     }
 
     const list = page.getByTestId("third-party-list");
@@ -67,22 +67,22 @@ test.describe("açık kaynak lisansları", () => {
 
   test("giriş ekranından, profil ve menü sayfalarından bağlantı verilir", async ({ page }) => {
     await page.goto("/giris");
-    await page.getByRole("link", { name: "Açık kaynak lisansları" }).click();
+    await page.getByRole("link", { name: "Açık Kaynak Lisansları" }).click();
     await expect(page).toHaveURL(/\/lisanslar$/);
 
     const student = await activeUser("ogrenci", "ogrenci");
     await login(page, student.userName, student.password);
     await page.goto("/profil");
-    await page.getByRole("link", { name: "Açık kaynak lisansları" }).click();
+    await page.getByRole("link", { name: "Açık Kaynak Lisansları" }).click();
     await expect(page).toHaveURL(/\/lisanslar$/);
-    await page.getByRole("link", { name: "Uygulamaya dön" }).click();
+    await page.getByRole("link", { name: "Uygulamaya Dön" }).click();
     await expect(page).toHaveURL(/localhost:\d+\/$/);
 
     const teacher = await activeUser("ogretmen", "hoca");
     await page.context().clearCookies();
     await login(page, teacher.userName, teacher.password);
     await page.goto("/menu");
-    await page.getByRole("link", { name: "Açık kaynak lisansları" }).click();
+    await page.getByRole("link", { name: "Açık Kaynak Lisansları" }).click();
     await expect(page).toHaveURL(/\/lisanslar$/);
   });
 });

@@ -188,7 +188,7 @@ export function parseBulkUsers(text: string, lessons: BulkLesson[]): BulkParseRe
     if (userNameIssue) errors.userName = userNameIssue;
 
     if (roleText.trim() === "") errors.role = "Rol zorunlu (ogrenci, ogretmen veya mudur).";
-    else if (!role) errors.role = `Rol anlaşılamadı: "${roleText}". ogrenci, ogretmen veya mudur yaz.`;
+    else if (!role) errors.role = `Rol anlaşılamadı: "${roleText}". ogrenci, ogretmen veya mudur yazın.`;
 
     const keptClass = role === "ogrenci" ? className : "";
     if (role === "ogrenci") {
@@ -313,7 +313,7 @@ function safeCell(value: string): string {
 }
 
 export function passwordsToTsv(rows: PasswordRow[]): string {
-  const header = ["Ad soyad", "Kullanıcı adı", "Sınıf", "Rol", "Şifre"].join("\t");
+  const header = ["Ad Soyad", "Kullanıcı Adı", "Sınıf", "Rol", "Şifre"].join("\t");
   const lines = rows.map((row) =>
     [safeCell(row.fullName), safeCell(row.userName), safeCell(row.className), cleanCell(row.role), cleanCell(row.password)].join("\t"),
   );

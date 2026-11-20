@@ -46,7 +46,7 @@ export function NoBranchNotice() {
       <EmptyState
         icon={ShieldQuestion}
         as="h2"
-        title="Branş tanımlanmamış"
+        title="Branş Tanımlanmamış"
         description="Hesabınıza branş dersi tanımlanmamış. Branşa bağlı ekranlar için müdüre başvurun."
       />
     </div>
@@ -66,7 +66,7 @@ function NeedsCard({ item, dismissed, onRemove, onRestore, onImageExpired }: { i
             {item.isAnswerDisputed ? (
               <Badge tone="warning">
                 <ShieldQuestion aria-hidden="true" />
-                Şüpheli anahtar
+                Şüpheli Anahtar
               </Badge>
             ) : null}
           </div>
@@ -77,25 +77,25 @@ function NeedsCard({ item, dismissed, onRemove, onRestore, onImageExpired }: { i
           ) : item.image ? null : (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <ImageIcon className="size-4" aria-hidden="true" />
-              Önizleme yok
+              Önizleme Yok
             </p>
           )}
 
           <dl className="grid grid-cols-3 gap-2 text-center text-sm">
             <div className="rounded-md bg-wrong-soft px-2 py-2 text-wrong-soft-foreground">
-              <dt className="text-xs">Yanlış oranı</dt>
+              <dt className="text-xs">Yanlış Oranı</dt>
               <dd className="font-display text-xl font-bold" data-testid="wrong-rate">
                 {wrongRateLabel(item.wrongRate)}
               </dd>
             </div>
             <div className="rounded-md bg-surface-muted px-2 py-2">
-              <dt className="text-xs text-muted-foreground">Çözen / yanlış</dt>
+              <dt className="text-xs text-muted-foreground">Çözen / Yanlış</dt>
               <dd className="font-display text-xl font-bold" data-testid="answer-counts">
                 {item.totalAnswers} / {item.wrongAnswers}
               </dd>
             </div>
             <div className="rounded-md bg-correct-soft px-2 py-2 text-correct-soft-foreground">
-              <dt className="text-xs">Kayıtlı cevap</dt>
+              <dt className="text-xs">Kayıtlı Cevap</dt>
               <dd className="font-display text-xl font-bold">{key ?? "-"}</dd>
             </div>
           </dl>
@@ -104,16 +104,16 @@ function NeedsCard({ item, dismissed, onRemove, onRestore, onImageExpired }: { i
             <Button asChild>
               <Link href={solutionHref(item.id)} aria-label={`Çözüm ekle: ${item.lesson.name} sorusu ${item.id}`}>
                 <PenLine aria-hidden="true" />
-                Çözüm ekle
+                Çözüm Ekle
               </Link>
             </Button>
             {dismissed ? (
               <Button type="button" variant="secondary" onClick={() => onRestore(item)} aria-label={`Listeye geri al: ${item.lesson.name} sorusu ${item.id}`}>
-                Listeye geri al
+                Listeye Geri Al
               </Button>
             ) : (
               <Button type="button" variant="secondary" onClick={() => onRemove(item)} aria-label={`Listeden çıkar: ${item.lesson.name} sorusu ${item.id}`}>
-                Listeden çıkar
+                Listeden Çıkar
               </Button>
             )}
           </div>
@@ -176,7 +176,7 @@ export function NeedsSolutionPage() {
       setTarget(null);
       setError(null);
       toast.success("Soru listeden çıkarıldı.", {
-        action: { label: "Geri al", onClick: () => void restore(item.id, "Soru listeye geri alındı.") },
+        action: { label: "Geri Al", onClick: () => void restore(item.id, "Soru listeye geri alındı.") },
         duration: 10_000,
       });
       await refresh();
@@ -197,7 +197,7 @@ export function NeedsSolutionPage() {
         <h1 className="text-3xl">Çözüm Bekleyenler</h1>
         <p className="text-muted-foreground" data-testid="threshold-sentence">
           {dismissedView
-            ? "Listeden çıkardığın sorular. İstediğini listeye geri alabilirsin."
+            ? "Listeden çıkardığınız sorular. İstediğinizi listeye geri alabilirsiniz."
             : data
               ? `${thresholdSentence(data.thresholdAnswers, data.thresholdWrongRate)}.`
               : "Çok öğrencinin yanlış yaptığı ve öğretmen çözümü olmayan sorular."}
@@ -227,7 +227,7 @@ export function NeedsSolutionPage() {
       {isMudur ? (
         <div className="max-w-sm">
           <SelectField label="Ders" value={lessonId ?? ""} onChange={(event) => go({ lessonId: event.target.value ? Number(event.target.value) : undefined, page: 1 })}>
-            <option value="">Tüm dersler</option>
+            <option value="">Tüm Dersler</option>
             {(lessons.data ?? []).map((lesson) => (
               <option key={lesson.id} value={lesson.id}>
                 {lesson.name}
@@ -249,7 +249,7 @@ export function NeedsSolutionPage() {
         <EmptyState
           icon={forbidden ? ShieldQuestion : CloudOff}
           as="h2"
-          title={forbidden ? "Bu listeye erişimin yok" : "Liste yüklenemedi"}
+          title={forbidden ? "Bu Listeye Erişiminiz Yok" : "Liste Yüklenemedi"}
           description={list.error.message}
           action={forbidden ? undefined : <Button onClick={() => list.refetch()}>Tekrar Dene</Button>}
         />
@@ -257,8 +257,8 @@ export function NeedsSolutionPage() {
         <EmptyState
           icon={BookOpenCheck}
           as="h2"
-          title={dismissedView ? "Çıkarılan soru yok" : "Çözüm bekleyen soru yok"}
-          description={dismissedView ? "Listeden çıkardığın bir soru yok." : "Eşiği geçen ve öğretmen çözümü olmayan soru şu an yok."}
+          title={dismissedView ? "Çıkarılan Soru Yok" : "Çözüm Bekleyen Soru Yok"}
+          description={dismissedView ? "Listeden çıkardığınız bir soru yok." : "Eşiği geçen ve öğretmen çözümü olmayan soru şu an yok."}
         />
       ) : data ? (
         <>
@@ -291,8 +291,8 @@ export function NeedsSolutionPage() {
           if (!open) setTarget(null);
         }}
         title="Soru listeden çıkarılsın mı?"
-        description="Bu soru artık çözüm bekleyenler listesinde görünmez. İstersen hemen geri alabilirsin."
-        confirmLabel="Listeden çıkar"
+        description="Bu soru artık çözüm bekleyenler listesinde görünmez. İsterseniz hemen geri alabilirsiniz."
+        confirmLabel="Listeden Çıkar"
         pending={remove.isPending}
         error={error}
         conflictAsMessage

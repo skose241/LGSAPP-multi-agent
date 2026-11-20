@@ -70,15 +70,15 @@ export function dayDiff(from: string, to: string): number {
 
 export function remainingLabel(state: string, startDate: string, endDate: string, today: string): string {
   if (state === "closed") return "Kapandı";
-  if (state === "draft") return "Henüz yayınlanmadı";
+  if (state === "draft") return "Henüz Yayınlanmadı";
   if (state === "scheduled") {
     const until = dayDiff(today, startDate);
-    return until <= 1 ? "Yarın başlar" : `${until} gün sonra başlar`;
+    return until <= 1 ? "Yarın Başlar" : `${until} Gün Sonra Başlar`;
   }
   const left = dayDiff(today, endDate);
-  if (left <= 0) return "Son gün bugün";
-  if (left === 1) return "Son gün yarın";
-  return `${left} gün kaldı`;
+  if (left <= 0) return "Son Gün Bugün";
+  if (left === 1) return "Son Gün Yarın";
+  return `${left} Gün Kaldı`;
 }
 
 export function progressPercent(answered: number, total: number): number {
@@ -123,8 +123,8 @@ export interface DateValidationOptions {
 
 export function validateAssignmentDates(values: Pick<AssignmentFormValues, "startDate" | "endDate">, options: DateValidationOptions = {}): AssignmentFormErrors {
   const errors: AssignmentFormErrors = {};
-  if (!isDateOnly(values.startDate)) errors.startDate = "Başlangıç tarihini seç.";
-  if (!isDateOnly(values.endDate)) errors.endDate = "Bitiş tarihini seç.";
+  if (!isDateOnly(values.startDate)) errors.startDate = "Başlangıç tarihini seçin.";
+  if (!isDateOnly(values.endDate)) errors.endDate = "Bitiş tarihini seçin.";
   if (errors.startDate || errors.endDate) return errors;
 
   const today = options.today && isDateOnly(options.today) ? options.today : null;
@@ -207,7 +207,7 @@ const participationLabels: Record<Participation, string> = {
   partial: "Kısmi",
   missed: "Kaçırdı",
   notStarted: "Başlamadı",
-  empty: "Soru yok",
+  empty: "Soru Yok",
 };
 
 export function participationLabel(value: Participation): string {
@@ -222,10 +222,10 @@ export function participationTone(value: Participation): "success" | "info" | "d
 }
 
 export const RESULT_SORTS: { value: ResultsSort; param: string; label: string; dir: SortDirection }[] = [
-  { value: "completion", param: "katilim", label: "Katılıma göre", dir: "desc" },
-  { value: "name", param: "ad", label: "Ada göre", dir: "asc" },
-  { value: "correct", param: "dogru", label: "Doğru sayısına göre", dir: "desc" },
-  { value: "lastAnswered", param: "son", label: "Son cevaba göre", dir: "desc" },
+  { value: "completion", param: "katilim", label: "Katılıma Göre", dir: "desc" },
+  { value: "name", param: "ad", label: "Ada Göre", dir: "asc" },
+  { value: "correct", param: "dogru", label: "Doğru Sayısına Göre", dir: "desc" },
+  { value: "lastAnswered", param: "son", label: "Son Cevaba Göre", dir: "desc" },
 ];
 
 export interface ResultsView {

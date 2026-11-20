@@ -89,7 +89,7 @@ export function StudentsListPage() {
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-3xl">Öğrenciler</h1>
-        <p className="text-muted-foreground">Öğrencilerin çözdüğü soruları, başarılarını ve son etkinliklerini incele.</p>
+        <p className="text-muted-foreground">Öğrencilerin çözdüğü soruları, başarılarını ve son etkinliklerini inceleyin.</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_16rem] md:items-end">
@@ -97,8 +97,8 @@ export function StudentsListPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input
             type="search"
-            aria-label="Öğrenci ara"
-            placeholder="Ad veya kullanıcı adı ara"
+            aria-label="Öğrenci Ara"
+            placeholder="Ad veya kullanıcı adı arayın"
             value={input}
             maxLength={SEARCH_MAX}
             onChange={(event) => setInput(event.target.value)}
@@ -121,19 +121,19 @@ export function StudentsListPage() {
           ))}
         </div>
       ) : list.isError ? (
-        <EmptyState icon={CloudOff} as="h2" title="Öğrenciler yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
+        <EmptyState icon={CloudOff} as="h2" title="Öğrenciler Yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
       ) : data && data.items.length === 0 ? (
         <EmptyState
           icon={UserX}
           as="h2"
-          title={filters.search.trim() ? "Eşleşen öğrenci yok" : "Henüz öğrenci yok"}
-          description={filters.search.trim() ? "Aramayı değiştirmeyi dene." : "Müdür öğrenci hesabı oluşturduğunda burada görünecek."}
+          title={filters.search.trim() ? "Eşleşen Öğrenci Yok" : "Henüz Öğrenci Yok"}
+          description={filters.search.trim() ? "Aramayı değiştirmeyi deneyin." : "Müdür öğrenci hesabı oluşturduğunda burada görünecek."}
         />
       ) : data ? (
         <>
           <Card className="hidden overflow-hidden xl:block">
             <table className="w-full table-fixed text-left text-sm" data-testid="students-table">
-              <caption className="sr-only">Öğrenci listesi</caption>
+              <caption className="sr-only">Öğrenci Listesi</caption>
               <colgroup>
                 <col className="w-[24%]" />
                 <col className="w-[9%]" />
@@ -164,7 +164,7 @@ export function StudentsListPage() {
                     Başarı
                   </th>
                   <th scope="col" className={headerClasses}>
-                    Son etkinlik
+                    Son Etkinlik
                   </th>
                 </tr>
               </thead>

@@ -34,7 +34,7 @@ function Logs({ logs }: { logs: SchedulerRunLog[] }) {
     <>
       <div className="hidden md:block" data-testid="log-table">
         <table className="w-full border-collapse text-sm">
-          <caption className="sr-only">Ders, slot ve deneme kayıtları</caption>
+          <caption className="sr-only">Ders, Slot ve Deneme Kayıtları</caption>
           <thead>
             <tr className="text-left">
               <th scope="col" className="px-2 py-2 font-semibold">Ders</th>
@@ -94,16 +94,16 @@ export function RunDetail({ id }: { id: number }) {
       <Button asChild variant="ghost" className="self-start">
         <Link href="/yonetim/zamanlayici">
           <ArrowLeft aria-hidden="true" />
-          Zamanlayıcıya dön
+          Zamanlayıcıya Dön
         </Link>
       </Button>
       {run.isPending ? (
         <div role="status" aria-label="Çalıştırma yükleniyor" className="h-48 animate-pulse rounded-lg bg-surface-muted" />
       ) : run.isError ? (
         code === 404 ? (
-          <EmptyState icon={SearchX} as="h2" title="Çalıştırma bulunamadı" description="Bu numaraya ait bir çalıştırma yok." />
+          <EmptyState icon={SearchX} as="h2" title="Çalıştırma Bulunamadı" description="Bu numaraya ait bir çalıştırma yok." />
         ) : (
-          <EmptyState icon={CloudOff} as="h2" title="Çalıştırma alınamadı" description={run.error.message} action={<Button onClick={() => run.refetch()}>Tekrar Dene</Button>} />
+          <EmptyState icon={CloudOff} as="h2" title="Çalıştırma Alınamadı" description={run.error.message} action={<Button onClick={() => run.refetch()}>Tekrar Dene</Button>} />
         )
       ) : data ? (
         <>
@@ -159,7 +159,7 @@ export function RunDetail({ id }: { id: number }) {
           </Card>
           <Card data-testid="run-logs">
             <CardHeader>
-              <CardTitle as="h2">Ders, slot ve deneme kayıtları</CardTitle>
+              <CardTitle as="h2">Ders, Slot ve Deneme Kayıtları</CardTitle>
             </CardHeader>
             <CardContent>
               <Logs logs={data.logs} />

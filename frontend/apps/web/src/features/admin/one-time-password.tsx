@@ -20,7 +20,7 @@ export function OneTimePasswordPanel({ userName, displayName, password, children
       await navigator.clipboard.writeText(password);
       toast.success("Şifre panoya kopyalandı.");
     } catch {
-      toast.error("Kopyalanamadı. Şifreyi elle not al.");
+      toast.error("Kopyalanamadı. Şifreyi elle not alın.");
     }
   }
 
@@ -32,7 +32,7 @@ export function OneTimePasswordPanel({ userName, displayName, password, children
         className="flex items-start gap-3 rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground"
       >
         <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-        Bu şifre bir daha gösterilmeyecek. Kullanıcıya ilet ya da giriş kartını yazdır. Kullanıcı ilk girişte şifresini
+        Bu şifre bir daha gösterilmeyecek. Kullanıcıya iletin ya da giriş kartını yazdırın. Kullanıcı ilk girişte şifresini
         değiştirmek zorunda kalacak.
       </div>
 
@@ -40,17 +40,17 @@ export function OneTimePasswordPanel({ userName, displayName, password, children
         <p className="text-sm text-muted-foreground">{displayName}</p>
         <dl className="grid gap-3">
           <div className="flex flex-col gap-1">
-            <dt className="text-xs font-semibold text-muted-foreground">Kullanıcı adı</dt>
+            <dt className="text-xs font-semibold text-muted-foreground">Kullanıcı Adı</dt>
             <dd className="break-all font-mono text-lg font-semibold" data-testid="otp-username">
               {userName}
             </dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-xs font-semibold text-muted-foreground">Tek seferlik şifre</dt>
+            <dt className="text-xs font-semibold text-muted-foreground">Tek Seferlik Şifre</dt>
             <dd>
               <input
                 readOnly
-                aria-label="Tek seferlik şifre"
+                aria-label="Tek Seferlik Şifre"
                 aria-describedby={warningId}
                 value={password}
                 data-testid="one-time-password"
@@ -65,11 +65,11 @@ export function OneTimePasswordPanel({ userName, displayName, password, children
       <div className="flex flex-wrap gap-3">
         <Button type="button" variant="secondary" onClick={copy}>
           <Copy aria-hidden="true" />
-          Şifreyi kopyala
+          Şifreyi Kopyala
         </Button>
         <Button type="button" variant="secondary" onClick={() => window.print()}>
           <Printer aria-hidden="true" />
-          Giriş kartını yazdır
+          Giriş Kartını Yazdır
         </Button>
       </div>
       {children}

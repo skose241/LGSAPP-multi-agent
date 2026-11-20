@@ -19,7 +19,7 @@ async function answered(student: ActiveUser, questionId: number, option = 2, tex
 }
 
 async function chooseMenuAction(page: Page, node: Locator, name: string | RegExp) {
-  await node.getByRole("button", { name: "Diğer işlemler" }).first().click();
+  await node.getByRole("button", { name: "Diğer İşlemler" }).first().click();
   await page.getByRole("menuitem", { name }).click();
 }
 
@@ -37,7 +37,7 @@ test.describe("yorumlar", () => {
     const section = questionComments(page);
     await section.getByLabel("Yorum metni").fill("İlk yorumum");
     await expect(section.getByTestId("comment-counter")).toContainText("11 /");
-    await section.getByRole("button", { name: "Yorum yap" }).click();
+    await section.getByRole("button", { name: "Yorum Yap" }).click();
     const root = section.getByTestId("comment").filter({ hasText: "İlk yorumum" }).first();
     await expect(root).toBeVisible();
 
@@ -48,19 +48,19 @@ test.describe("yorumlar", () => {
     await expect(replyNode).toContainText("Kendi yanıtım");
 
     await chooseMenuAction(page, replyNode, /^Düzenle/);
-    await replyNode.getByLabel("Yorumu düzenle").fill("Kendi yanıtım düzeltildi");
+    await replyNode.getByLabel("Yorumu Düzenle").fill("Kendi yanıtım düzeltildi");
     await replyNode.getByRole("button", { name: "Kaydet" }).click();
     await expect(replyNode).toContainText("(düzenlendi)");
     await expect(replyNode).toContainText("Kendi yanıtım düzeltildi");
 
     await chooseMenuAction(page, root, "Sil");
-    await page.getByRole("dialog").getByRole("button", { name: "Evet, sil" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Evet, Sil" }).click();
     await expect(section.getByText("[silindi]").first()).toBeVisible();
     await expect(section.getByText("İlk yorumum")).toHaveCount(0);
     await expect(section.getByText("Kendi yanıtım düzeltildi")).toBeVisible();
 
     await chooseMenuAction(page, section.getByTestId("comment").filter({ hasText: "Kendi yanıtım düzeltildi" }).last(), "Sil");
-    await page.getByRole("dialog").getByRole("button", { name: "Evet, sil" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Evet, Sil" }).click();
     await expect(section.getByText("Kendi yanıtım düzeltildi")).toHaveCount(0);
   });
 
@@ -81,7 +81,7 @@ test.describe("yorumlar", () => {
 
     const deepest = questionComments(page).getByTestId("comment").filter({ hasText: "Derin yanıt 2" }).last();
     const reply = deepest.getByRole("button", { name: "Yanıtla" }).first();
-    const trigger = deepest.getByRole("button", { name: "Diğer işlemler" }).first();
+    const trigger = deepest.getByRole("button", { name: "Diğer İşlemler" }).first();
     await expect(reply).toBeVisible();
     await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -91,7 +91,7 @@ test.describe("yorumlar", () => {
 
     await trigger.click();
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    const item = page.getByRole("menuitem", { name: "Şikâyet et" });
+    const item = page.getByRole("menuitem", { name: "Şikâyet Et" });
     await expect(item).toBeFocused();
     const axe = await new AxeBuilder({ page }).include('[role="menu"]').analyze();
     expect(axe.violations).toEqual([]);
@@ -111,13 +111,13 @@ test.describe("yorumlar", () => {
     await page.goto(`/sorular/${question.id}`);
     const section = questionComments(page);
     await section.getByLabel("Yorum metni").fill("Odak yorumu");
-    await section.getByRole("button", { name: "Yorum yap" }).click();
+    await section.getByRole("button", { name: "Yorum Yap" }).click();
     const node = section.getByTestId("comment").filter({ hasText: "Odak yorumu" }).first();
     await expect(node).toBeVisible();
 
-    const trigger = node.getByRole("button", { name: "Diğer işlemler" }).first();
+    const trigger = node.getByRole("button", { name: "Diğer İşlemler" }).first();
     await chooseMenuAction(page, node, /^Düzenle/);
-    await expect(node.getByLabel("Yorumu düzenle")).toBeFocused();
+    await expect(node.getByLabel("Yorumu Düzenle")).toBeFocused();
     await node.getByRole("button", { name: "Vazgeç" }).click();
     await expect(trigger).toBeFocused();
 
@@ -136,7 +136,7 @@ test.describe("yorumlar", () => {
     await answered(student, question.id, 1);
     await page.goto(`/sorular/${question.id}`);
     const node = questionComments(page).getByTestId("comment").filter({ hasText: "Taşma yorumu" }).first();
-    await node.getByRole("button", { name: "Diğer işlemler" }).first().click();
+    await node.getByRole("button", { name: "Diğer İşlemler" }).first().click();
     const box = await page.getByRole("menu").boundingBox();
     const viewport = page.viewportSize()!;
     expect(box!.x).toBeGreaterThanOrEqual(0);
@@ -166,7 +166,7 @@ test.describe("yorumlar", () => {
     const section = questionComments(page);
     const node = section.locator(`[data-comment-id="${created.id}"]`);
     await chooseMenuAction(page, node, /^Düzenle/);
-    await node.getByLabel("Yorumu düzenle").fill("Arayüzden düzenleme");
+    await node.getByLabel("Yorumu Düzenle").fill("Arayüzden düzenleme");
 
     const current = (await getComments(student, question.id)).find((item) => item.id === created.id);
     const result = await editCommentApi(student, created.id, "API ile düzenleme", current?.rowVersion ?? "");
@@ -199,12 +199,12 @@ test.describe("yorumlar", () => {
     expect(chain.length).toBeGreaterThan(w.settings.yorumGorunurDerinlik);
 
     await page.goto(`/sorular/${question.id}`);
-    const more = page.getByRole("link", { name: /Devamını göster \(\d+ yanıt\)/ }).first();
+    const more = page.getByRole("link", { name: /Devamını Göster \(\d+ yanıt\)/ }).first();
     await expect(more).toBeVisible();
     await more.click();
     await expect(page).toHaveURL(/\/yorumlar\/\d+/);
     await expect(page.getByRole("navigation", { name: "Yorum zinciri" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Soruya dön" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Soruya Dön" })).toBeVisible();
     await expect(page.getByTestId("comment").first()).toBeVisible();
     await expect(page.getByRole("list", { name: "Yanıtlar" }).first()).toBeVisible();
   });
@@ -233,12 +233,12 @@ test.describe("yorumlar", () => {
 
     await page.goto(`/sorular/${question.id}`);
     const node = questionComments(page).getByTestId("comment").filter({ hasText: "Şikâyet edilecek yorum" });
-    await chooseMenuAction(page, node, "Şikâyet et");
+    await chooseMenuAction(page, node, "Şikâyet Et");
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("Neden")).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "Şikâyet et" })).toBeDisabled();
+    await expect(dialog.getByRole("button", { name: "Şikâyet Et" })).toBeDisabled();
     await dialog.getByLabel("Açıklama").fill("Bu yorum uygunsuz ifadeler içeriyor.");
-    await dialog.getByRole("button", { name: "Şikâyet et" }).click();
+    await dialog.getByRole("button", { name: "Şikâyet Et" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 });
@@ -258,7 +258,7 @@ test.describe("bildirimler", () => {
     await expect(bell).toBeVisible();
 
     await page.goto("/bildirimler");
-    const item = page.getByTestId("notification").filter({ hasText: "Yorumuna yanıt geldi" }).first();
+    const item = page.getByTestId("notification").filter({ hasText: "Yorumunuza Yanıt Geldi" }).first();
     await expect(item).toBeVisible();
     await expect(item).toHaveAttribute("data-read", "false");
 
@@ -270,9 +270,9 @@ test.describe("bildirimler", () => {
     await expect(page.getByTestId("comment").first()).toBeVisible();
 
     await page.goto("/bildirimler");
-    await page.getByRole("button", { name: "Tümünü okundu işaretle" }).click();
+    await page.getByRole("button", { name: "Tümünü Okundu İşaretle" }).click();
     await expect(page.getByRole("link", { name: /^Bildirimler$/ })).toBeVisible();
     await page.getByRole("button", { name: "Okunmamış" }).click();
-    await expect(page.getByRole("heading", { name: "Okunmamış bildirim yok" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Okunmamış Bildirim Yok" })).toBeVisible();
   });
 });

@@ -63,7 +63,7 @@ export function CreateUserForm() {
     },
     onError: (error: unknown) => {
       if (!isApiError(error)) {
-        setProblem({ status: 0, at: Date.now(), problem: emptyProblem("Bağlantı kurulamadı. Tekrar dene.") });
+        setProblem({ status: 0, at: Date.now(), problem: emptyProblem("Bağlantı kurulamadı. Tekrar deneyin.") });
         return;
       }
       applyServerErrors(error.status, error.problem, setError);
@@ -81,7 +81,7 @@ export function CreateUserForm() {
       <Card>
         <CardContent className="flex flex-col gap-4">
           <div>
-            <h2 className="text-2xl">Hesap oluşturuldu</h2>
+            <h2 className="text-2xl">Hesap Oluşturuldu</h2>
             <p className="text-muted-foreground">{fullName(created.user)} için tek seferlik şifre aşağıda.</p>
           </div>
           <OneTimePasswordPanel
@@ -97,10 +97,10 @@ export function CreateUserForm() {
                   reset();
                 }}
               >
-                Şifreyi not aldım, yeni kullanıcı ekle
+                Şifreyi Not Aldım, Yeni Kullanıcı Ekle
               </Button>
               <Button asChild variant="secondary">
-                <Link href="/yonetim/kullanicilar">Listeye dön</Link>
+                <Link href="/yonetim/kullanicilar">Listeye Dön</Link>
               </Button>
             </div>
           </OneTimePasswordPanel>
@@ -119,11 +119,11 @@ export function CreateUserForm() {
             <div className="flex flex-col gap-3 rounded-md border border-warning bg-warning-soft p-4 text-warning-soft-foreground">
               <p className="flex items-start gap-2 font-semibold">
                 <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-                Yeni müdür hesabı
+                Yeni Müdür Hesabı
               </p>
               <p className="text-sm">
-                Müdür hesabı tüm kullanıcıları yönetebilir, ban ve şifre işlemlerini yapabilir. Yalnızca güvendiğin kişiler
-                için oluştur.
+                Müdür hesabı tüm kullanıcıları yönetebilir, ban ve şifre işlemlerini yapabilir. Yalnızca güvendiğiniz kişiler
+                için oluşturun.
               </p>
               <label className="flex min-h-touch cursor-pointer items-center gap-3 text-base font-semibold">
                 <input type="checkbox" className="size-6 shrink-0 accent-primary" {...register("confirmMudur")} />
@@ -145,7 +145,7 @@ export function CreateUserForm() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <TextField
-              label="Kullanıcı adı"
+              label="Kullanıcı Adı"
               required
               autoCapitalize="none"
               autoCorrect="off"
@@ -162,12 +162,12 @@ export function CreateUserForm() {
             ) : null}
             {role === "ogretmen" ? (
               <SelectField
-                label="Branş dersi"
+                label="Branş Dersi"
                 hint="İsteğe bağlı. Öğretmen yalnızca bu dersin konu planını yönetir."
                 disabled={lessons.isPending}
                 {...register("branchLessonId")}
               >
-                <option value="">Branş yok</option>
+                <option value="">Branş Yok</option>
                 {(lessons.data ?? []).map((lesson) => (
                   <option key={lesson.id} value={lesson.id}>
                     {lesson.name}
@@ -179,7 +179,7 @@ export function CreateUserForm() {
 
           <div className="flex flex-wrap gap-3">
             <Button type="submit" size="lg" loading={mutation.isPending}>
-              {lockedMudur ? "Müdür hesabı oluştur" : "Hesap oluştur"}
+              {lockedMudur ? "Müdür Hesabı Oluştur" : "Hesap Oluştur"}
             </Button>
             <Button asChild variant="secondary" size="lg">
               <Link href="/yonetim/kullanicilar">Vazgeç</Link>

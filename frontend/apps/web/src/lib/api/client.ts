@@ -63,7 +63,7 @@ export async function run<T>(operation: () => Promise<RawResult<T>>): Promise<Ap
       status: 0,
       network: true,
       problem: {
-        message: "Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar dene.",
+        message: "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.",
         fieldErrors: {},
         formError: null,
         retryAfter: null,

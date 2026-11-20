@@ -12,10 +12,10 @@ import { attemptLogin, baseOrigin, expect, login, logoutViaUi, test } from "./su
 const NEW_PASSWORD = "Yeni-Sifre-2026-Zz";
 
 async function fillChangePassword(page: Page, current: string, next: string) {
-  await page.getByLabel("Mevcut şifre").fill(current);
-  await page.getByLabel(/^Yeni şifre\*?$/).fill(next);
-  await page.getByLabel("Yeni şifre (tekrar)").fill(next);
-  await page.getByRole("button", { name: /Şifreyi (kaydet|değiştir)/ }).click();
+  await page.getByLabel("Mevcut Şifre").fill(current);
+  await page.getByLabel(/^Yeni Şifre\*?$/).fill(next);
+  await page.getByLabel("Yeni Şifre (Tekrar)").fill(next);
+  await page.getByRole("button", { name: /Şifreyi (Kaydet|Değiştir)/ }).click();
 }
 
 async function activatedAccount(role: "ogrenci" | "ogretmen" | "mudur") {
@@ -41,7 +41,7 @@ test.describe("giriş", () => {
       });
     }
     await page.goto("/giris");
-    await page.getByLabel("Kullanıcı adı").fill("yok.kullanici");
+    await page.getByLabel("Kullanıcı Adı").fill("yok.kullanici");
     await page.getByLabel(/^Şifre\*?$/).fill("Yanlis-1");
     await page.getByRole("button", { name: "Giriş Yap" }).click();
     await expect(page.getByTestId("problem-banner")).toContainText("Çok fazla deneme yapıldı");
@@ -56,7 +56,7 @@ test.describe("giriş", () => {
   test("bozuk JSON gövdesinde form hatası gösterilir", async ({ page }) => {
     await page.route("**/api/auth/login", (route) => route.continue({ postData: "{bozuk", headers: { ...route.request().headers(), "content-type": "application/json" } }));
     await page.goto("/giris");
-    await page.getByLabel("Kullanıcı adı").fill("herhangi.biri");
+    await page.getByLabel("Kullanıcı Adı").fill("herhangi.biri");
     await page.getByLabel(/^Şifre\*?$/).fill("Herhangi-1");
     await page.getByRole("button", { name: "Giriş Yap" }).click();
     const alert = page.getByTestId("problem-banner");
@@ -85,10 +85,10 @@ test.describe("giriş", () => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/sifre-degistir/);
 
-    await page.getByLabel("Mevcut şifre").fill(account.oneTimePassword);
-    await page.getByLabel(/^Yeni şifre\*?$/).fill("kisa");
-    await page.getByLabel("Yeni şifre (tekrar)").fill("kisa");
-    await page.getByRole("button", { name: "Şifreyi kaydet" }).click();
+    await page.getByLabel("Mevcut Şifre").fill(account.oneTimePassword);
+    await page.getByLabel(/^Yeni Şifre\*?$/).fill("kisa");
+    await page.getByLabel("Yeni Şifre (Tekrar)").fill("kisa");
+    await page.getByRole("button", { name: "Şifreyi Kaydet" }).click();
     await expect(page.getByText("En az 8 karakter olmalı.")).toBeVisible();
 
     await fillChangePassword(page, account.oneTimePassword, NEW_PASSWORD);
@@ -102,10 +102,10 @@ test.describe("giriş", () => {
     const account = await createAccount("mudur");
     await login(page, account.userName, account.oneTimePassword);
     await expect(page).toHaveURL(/\/sifre-degistir/);
-    await page.getByLabel("Mevcut şifre").fill(account.oneTimePassword);
-    await page.getByLabel(/^Yeni şifre\*?$/).fill("Kisa-Sifre1");
-    await page.getByLabel("Yeni şifre (tekrar)").fill("Kisa-Sifre1");
-    await page.getByRole("button", { name: "Şifreyi kaydet" }).click();
+    await page.getByLabel("Mevcut Şifre").fill(account.oneTimePassword);
+    await page.getByLabel(/^Yeni Şifre\*?$/).fill("Kisa-Sifre1");
+    await page.getByLabel("Yeni Şifre (Tekrar)").fill("Kisa-Sifre1");
+    await page.getByRole("button", { name: "Şifreyi Kaydet" }).click();
     await expect(page.getByText("En az 12 karakter olmalı.")).toBeVisible();
 
     await fillChangePassword(page, account.oneTimePassword, "Mudur-Uzun-Sifre-2026");
@@ -115,9 +115,9 @@ test.describe("giriş", () => {
     const first = (await codes.first().textContent()) ?? "";
     expect(first).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
 
-    const confirm = page.getByRole("button", { name: "Devam et" });
+    const confirm = page.getByRole("button", { name: "Devam Et" });
     await expect(confirm).toBeDisabled();
-    await page.getByLabel("Kodları güvenli bir yere kaydettim").check();
+    await page.getByLabel("Kodları Güvenli Bir Yere Kaydettim").check();
     await expect(confirm).toBeEnabled();
 
     const storage = await page.evaluate(() => JSON.stringify([{ ...localStorage }, { ...sessionStorage }, document.cookie]));
@@ -139,11 +139,11 @@ test.describe("giriş", () => {
     await page.goto("/profil");
     await expect(page).toHaveURL(/\/profil\/kurtarma-kodlari/);
 
-    await page.getByLabel("Mevcut şifre").fill(password);
-    await page.getByRole("button", { name: "Yeni kodlar üret" }).click();
+    await page.getByLabel("Mevcut Şifre").fill(password);
+    await page.getByRole("button", { name: "Yeni Kodlar Üret" }).click();
     await expect(page.getByTestId("recovery-codes").getByRole("listitem")).toHaveCount(10);
-    await page.getByLabel("Kodları güvenli bir yere kaydettim").check();
-    await page.getByRole("button", { name: "Kaydettim, kapat" }).click();
+    await page.getByLabel("Kodları Güvenli Bir Yere Kaydettim").check();
+    await page.getByRole("button", { name: "Kaydettim, Kapat" }).click();
     await page.goto("/profil");
     await expect(page).toHaveURL(/\/profil$/);
   });
@@ -152,8 +152,8 @@ test.describe("giriş", () => {
     const account = await activatedAccount("mudur");
     await login(page, account.userName, account.password);
     await page.goto("/profil/kurtarma-kodlari");
-    await page.getByLabel("Mevcut şifre").fill("Yanlis-Sifre-123");
-    await page.getByRole("button", { name: "Yeni kodlar üret" }).click();
+    await page.getByLabel("Mevcut Şifre").fill("Yanlis-Sifre-123");
+    await page.getByRole("button", { name: "Yeni Kodlar Üret" }).click();
     await expect(page.getByTestId("problem-banner")).toContainText("Mevcut şifre hatalı.");
   });
 });
@@ -245,7 +245,7 @@ test.describe("rol bazlı yönlendirme", () => {
     const account = await activatedAccount("ogrenci");
     await page.goto("/profil");
     await expect(page).toHaveURL(/\/giris\?next=%2Fprofil/);
-    await page.getByLabel("Kullanıcı adı").fill(account.userName);
+    await page.getByLabel("Kullanıcı Adı").fill(account.userName);
     await page.getByLabel(/^Şifre\*?$/).fill(account.password);
     await page.getByRole("button", { name: "Giriş Yap" }).click();
     await expect(page).toHaveURL(/\/profil$/);
@@ -269,7 +269,7 @@ test.describe("rol bazlı yönlendirme", () => {
     await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible();
     await page.goto("/ogretmen/odevler");
     await expect(page.getByRole("heading", { name: "Ödev Yönetimi", level: 1 })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Yeni ödev" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Yeni Ödev" }).first()).toBeVisible();
     await page.goto("/yonetim/ayarlar");
     await expect(page).toHaveURL(/\/$/);
   });
@@ -289,7 +289,7 @@ test.describe("rol bazlı yönlendirme", () => {
     await login(page, account.userName, account.password);
     await expect(page.getByRole("heading", { name: /Merhaba/ })).toBeVisible();
     await page.goto("/yok-boyle-bir-sayfa");
-    await expect(page.getByRole("heading", { name: "Sayfa bulunamadı" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sayfa Bulunamadı" })).toBeVisible();
   });
 });
 
@@ -298,8 +298,8 @@ test.describe("şifremi unuttum ve kurtarma", () => {
     const account = await activatedAccount("ogrenci");
     for (const userName of [account.userName, "hic.yok.boyle.biri"]) {
       await page.goto("/sifremi-unuttum");
-      await page.getByLabel("Kullanıcı adı").fill(userName);
-      await page.getByRole("button", { name: "Talep gönder" }).click();
+      await page.getByLabel("Kullanıcı Adı").fill(userName);
+      await page.getByRole("button", { name: "Talep Gönder" }).click();
       await expect(page.getByRole("status")).toContainText("Talebiniz okul yönetimine iletildi.");
       await expect(page.getByRole("status")).toContainText("Müdür onaylayınca");
     }
@@ -308,13 +308,13 @@ test.describe("şifremi unuttum ve kurtarma", () => {
   test("müdür kurtarma kodu ile şifre yeniler ve kalan kod sayısını görür", async ({ page }) => {
     const account = await activatedAccount("mudur");
     await page.goto("/kurtarma");
-    await page.getByLabel("Kullanıcı adı").fill(account.userName);
-    const codeInput = page.getByLabel("Kurtarma kodu");
+    await page.getByLabel("Kullanıcı Adı").fill(account.userName);
+    const codeInput = page.getByLabel("Kurtarma Kodu");
     await codeInput.fill(account.recoveryCodes[0]!.replaceAll("-", "").toLowerCase());
     await expect(codeInput).toHaveValue(account.recoveryCodes[0]!);
-    await page.getByLabel("Yeni şifre").fill("Kurtarma-Sonrasi-Sifre-1");
-    await page.getByRole("button", { name: "Şifremi yenile" }).click();
-    await expect(page.getByRole("status")).toContainText("Kalan kurtarma kodu sayısı: 9");
+    await page.getByLabel("Yeni Şifre").fill("Kurtarma-Sonrasi-Sifre-1");
+    await page.getByRole("button", { name: "Şifremi Yenile" }).click();
+    await expect(page.getByRole("status")).toContainText("Kalan Kurtarma Kodu Sayısı: 9");
     const wrong = await backend("POST", "/api/auth/recover", {
       body: { userName: account.userName, recoveryCode: account.recoveryCodes[0], newPassword: "Baska-Uzun-Sifre-12" },
     });

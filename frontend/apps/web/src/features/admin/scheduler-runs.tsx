@@ -84,12 +84,12 @@ export function SchedulerRuns() {
   return (
     <Card data-testid="runs-card">
       <CardHeader>
-        <CardTitle as="h2">Çalıştırma geçmişi</CardTitle>
+        <CardTitle as="h2">Çalıştırma Geçmişi</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" role="group" aria-label="Geçmiş filtreleri">
           <SelectField label="Görev" value={filters.kind} onChange={(event) => update({ kind: event.target.value as RunFilters["kind"] })}>
-            <option value="all">Tüm görevler</option>
+            <option value="all">Tüm Görevler</option>
             {SCHEDULER_KINDS.map((kind) => (
               <option key={kind} value={kind}>
                 {kindLabel(kind)}
@@ -103,12 +103,12 @@ export function SchedulerRuns() {
               </option>
             ))}
           </SelectField>
-          <TextField label="Başlangıç tarihi" type="date" value={filters.from} max={filters.to || undefined} onChange={(event) => update({ from: event.target.value })} />
-          <TextField label="Bitiş tarihi" type="date" value={filters.to} min={filters.from || undefined} onChange={(event) => update({ to: event.target.value })} />
+          <TextField label="Başlangıç Tarihi" type="date" value={filters.from} max={filters.to || undefined} onChange={(event) => update({ from: event.target.value })} />
+          <TextField label="Bitiş Tarihi" type="date" value={filters.to} min={filters.from || undefined} onChange={(event) => update({ to: event.target.value })} />
         </div>
         {filtered ? (
           <Button type="button" variant="ghost" className="self-start" onClick={() => update({ kind: "all", status: "all", from: "", to: "" })}>
-            Filtreleri temizle
+            Filtreleri Temizle
           </Button>
         ) : null}
 
@@ -119,9 +119,9 @@ export function SchedulerRuns() {
             ))}
           </div>
         ) : list.isError ? (
-          <EmptyState icon={CloudOff} as="h3" title="Geçmiş yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
+          <EmptyState icon={CloudOff} as="h3" title="Geçmiş Yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
         ) : data && data.items.length === 0 ? (
-          <EmptyState icon={History} as="h3" title="Çalıştırma yok" description={filtered ? "Filtreleri değiştirmeyi dene." : "Henüz kayıtlı bir çalıştırma yok."} />
+          <EmptyState icon={History} as="h3" title="Çalıştırma Yok" description={filtered ? "Filtreleri değiştirmeyi deneyin." : "Henüz kayıtlı bir çalıştırma yok."} />
         ) : data ? (
           <>
             <ul className="grid gap-3 lg:grid-cols-2" aria-label="Çalıştırma listesi">

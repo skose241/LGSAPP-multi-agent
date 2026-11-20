@@ -40,7 +40,7 @@ test.describe("şüpheli cevap anahtarları", () => {
     await loginTeacher(page, dispute.teacher);
 
     await page.goto("/bildirimler");
-    const notification = page.getByTestId("notification").filter({ hasText: "Yapay zekâ C şıkkını doğru buldu" }).first();
+    const notification = page.getByTestId("notification").filter({ hasText: "Yapay Zekâ C şıkkını doğru buldu" }).first();
     await expect(notification).toBeVisible();
     await expect(notification.getByRole("link").first()).toHaveAttribute("href", /\/ogretmen\/supheli-anahtarlar\/\d+$/);
 
@@ -55,16 +55,16 @@ test.describe("şüpheli cevap anahtarları", () => {
 
     await item.getByRole("link", { name: /^İncele/ }).click();
     await expect(page).toHaveURL(new RegExp(`/ogretmen/supheli-anahtarlar/${dispute.questionId}$`));
-    await expect(page.getByRole("heading", { name: "Cevap anahtarı incelemesi" })).toBeVisible();
-    await expect(page.getByTestId("option-B")).toContainText("Mevcut anahtar");
-    await expect(page.getByTestId("option-C")).toContainText("Yapay zekâ önerisi");
+    await expect(page.getByRole("heading", { name: "Cevap Anahtarı İncelemesi" })).toBeVisible();
+    await expect(page.getByTestId("option-B")).toContainText("Mevcut Anahtar");
+    await expect(page.getByTestId("option-C")).toContainText("Yapay Zekâ Önerisi");
     await expect(page.getByTestId("hidden-ai-solution")).toContainText("Sahte yapay zekâ çözümü");
     await expect(page.getByTestId("hidden-ai-solution")).toContainText("öğrencilere gösterilmiyor");
     await expectNoAxeViolations(page, "supheli-detay");
 
-    await page.getByLabel("Not (isteğe bağlı)").fill("Anahtar kaynakla doğrulandı.");
+    await page.getByLabel("Not (İsteğe Bağlı)").fill("Anahtar kaynakla doğrulandı.");
     await page.getByTestId("dismiss-dispute").click();
-    await page.getByRole("dialog").getByRole("button", { name: "Şüpheyi kaldır" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Şüpheyi Kaldır" }).click();
     const outcome = page.getByTestId("review-outcome");
     await expect(outcome).toContainText("Şüphe kaldırıldı");
     await expect(outcome).toContainText("Gizli yapay zekâ çözümü silindi");
@@ -90,13 +90,13 @@ test.describe("şüpheli cevap anahtarları", () => {
 
     await loginTeacher(page, dispute.teacher);
     await page.goto(`/ogretmen/supheli-anahtarlar/${dispute.questionId}`);
-    await expect(page.getByTestId("change-key")).toHaveText("Anahtarı C yap");
+    await expect(page.getByTestId("change-key")).toHaveText("Anahtarı C Yap");
 
     await page.getByTestId("change-key").click();
-    await page.getByRole("dialog").getByRole("button", { name: "Anahtarı değiştir" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Anahtarı Değiştir" }).click();
     const outcome = page.getByTestId("review-outcome");
     await expect(outcome).toContainText("Cevap anahtarı C şıkkına çevrildi");
-    await expect(outcome).toContainText("Doğru olan: 1");
+    await expect(outcome).toContainText("Doğru Olan: 1");
 
     const afterKey = await fetchQuestion(student.token, dispute.questionId);
     expect(afterKey.correctOption).toBe(dispute.aiOption);
@@ -120,11 +120,11 @@ test.describe("şüpheli cevap anahtarları", () => {
     await expect(page.getByTestId("change-key")).toBeVisible();
 
     await page.getByRole("radio", { name: /^A şıkkı/ }).click();
-    await expect(page.getByTestId("change-key")).toHaveText("Anahtarı A yap");
-    await page.getByLabel("Not (isteğe bağlı)").fill("Kaynak kitaba göre doğru cevap A.");
+    await expect(page.getByTestId("change-key")).toHaveText("Anahtarı A Yap");
+    await page.getByLabel("Not (İsteğe Bağlı)").fill("Kaynak kitaba göre doğru cevap A.");
     await page.getByTestId("change-key").click();
     await expect(page.getByRole("dialog")).toContainText("Yapay zekâ çözümü silinir");
-    await page.getByRole("dialog").getByRole("button", { name: "Anahtarı değiştir" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Anahtarı Değiştir" }).click();
     await expect(page.getByTestId("review-outcome")).toContainText("Cevap anahtarı A şıkkına çevrildi");
 
     const view = await fetchQuestion(dispute.teacher.token, dispute.questionId);
@@ -147,11 +147,11 @@ test.describe("şüpheli cevap anahtarları", () => {
     expect(changed.status).toBe(200);
 
     await page.getByTestId("change-key").click();
-    await page.getByRole("dialog").getByRole("button", { name: "Anahtarı değiştir" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Anahtarı Değiştir" }).click();
     const banner = page.getByTestId("problem-banner");
     await expect(banner).toBeVisible();
     await expect(banner).toContainText("başka biri tarafından değiştirilmiş");
-    await expect(page.getByTestId("option-D")).toContainText("Mevcut anahtar");
+    await expect(page.getByTestId("option-D")).toContainText("Mevcut Anahtar");
   });
 
   test("branşı olmayan öğretmen listeyi göremez, öğrenci erişemez, müdür tümünü görür", async ({ page }) => {
@@ -222,9 +222,9 @@ test.describe("branş yetkisi", () => {
     await expect(page.getByTestId("change-key")).toHaveCount(0);
     await expect(page.getByTestId("dismiss-dispute")).toHaveCount(0);
     await expect(page.getByTestId("hidden-ai-solution")).toHaveCount(0);
-    await expect(page.getByTestId("option-C")).not.toContainText("Yapay zekâ önerisi");
+    await expect(page.getByTestId("option-C")).not.toContainText("Yapay Zekâ Önerisi");
     await page.goto("/ogretmen/supheli-anahtarlar");
-    await expect(page.getByTestId("branch-hint")).toContainText(`Branşın: ${otherLesson.name}`);
+    await expect(page.getByTestId("branch-hint")).toContainText(`Branşınız: ${otherLesson.name}`);
     await expectNoAxeViolations(page, "supheli-baska-brans");
 
     const ownContext = await browser.newContext();
@@ -233,7 +233,7 @@ test.describe("branş yetkisi", () => {
       await loginTeacher(ownPage, dispute.teacher);
       await ownPage.goto(`/ogretmen/supheli-anahtarlar/${dispute.questionId}`);
       await expect(ownPage.getByTestId("change-key")).toBeVisible();
-      await expect(ownPage.getByTestId("option-C")).toContainText("Yapay zekâ önerisi");
+      await expect(ownPage.getByTestId("option-C")).toContainText("Yapay Zekâ Önerisi");
       await expect(ownPage.getByTestId("not-my-branch")).toHaveCount(0);
     } finally {
       await ownContext.close();
@@ -247,7 +247,7 @@ test.describe("branş yetkisi", () => {
       await login(mudurPage, mudur.userName, VALID_PASSWORD);
       await mudurPage.goto(`/ogretmen/supheli-anahtarlar/${dispute.questionId}`);
       await expect(mudurPage.getByTestId("change-key")).toBeVisible();
-      await expect(mudurPage.getByTestId("option-C")).toContainText("Yapay zekâ önerisi");
+      await expect(mudurPage.getByTestId("option-C")).toContainText("Yapay Zekâ Önerisi");
     } finally {
       await mudurContext.close();
     }

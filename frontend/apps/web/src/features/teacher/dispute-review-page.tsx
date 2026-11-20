@@ -39,7 +39,7 @@ function NoteField({ value, onChange }: { value: string; onChange: (value: strin
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-sm font-semibold">
-        Not (isteğe bağlı)
+        Not (İsteğe Bağlı)
       </label>
       <textarea
         id={id}
@@ -120,11 +120,11 @@ export function DisputeReviewPage({ id }: { id: number }) {
       <EmptyState
         icon={CloudOff}
         as="h2"
-        title={missing ? "Soru bulunamadı" : "Soru yüklenemedi"}
-        description={missing ? "Bu soruya erişemiyorsun ya da soru kaldırılmış." : (question.error?.message ?? "")}
+        title={missing ? "Soru Bulunamadı" : "Soru Yüklenemedi"}
+        description={missing ? "Bu soruya erişemiyorsunuz ya da soru kaldırılmış." : (question.error?.message ?? "")}
         action={
           <Button asChild variant="secondary">
-            <Link href="/ogretmen/supheli-anahtarlar">Listeye dön</Link>
+            <Link href="/ogretmen/supheli-anahtarlar">Listeye Dön</Link>
           </Button>
         }
       />
@@ -150,11 +150,11 @@ export function DisputeReviewPage({ id }: { id: number }) {
         className="inline-flex min-h-touch items-center gap-2 self-start text-sm font-semibold text-primary underline underline-offset-4"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        Şüpheli anahtarlar
+        Şüpheli Anahtarlar
       </Link>
 
       <div>
-        <h1 className="text-3xl">Cevap anahtarı incelemesi</h1>
+        <h1 className="text-3xl">Cevap Anahtarı İncelemesi</h1>
         <p className="text-muted-foreground">
           {q.lesson.name}
           {q.topic ? ` · ${q.topic.name}` : ""} · {q.stats?.answerCount ?? 0} cevap
@@ -171,7 +171,7 @@ export function DisputeReviewPage({ id }: { id: number }) {
               <>
                 <p className="font-display text-lg font-bold">Cevap anahtarı {outcome.letter} şıkkına çevrildi.</p>
                 <p>
-                  Etkilenen cevap: {outcome.data.affectedAnswerCount} · Doğru olan: {outcome.data.becameCorrect} · Yanlış olan: {outcome.data.becameIncorrect}
+                  Etkilenen Cevap: {outcome.data.affectedAnswerCount} · Doğru Olan: {outcome.data.becameCorrect} · Yanlış Olan: {outcome.data.becameIncorrect}
                 </p>
               </>
             ) : (
@@ -214,11 +214,11 @@ export function DisputeReviewPage({ id }: { id: number }) {
                   >
                     <span className="font-display font-bold">{letter})</span>
                     {text ? <MathText text={text} className="min-w-0 flex-1" /> : <span className="flex-1 text-sm text-muted-foreground">Şık görselde</span>}
-                    {isKey ? <Badge tone="success">Mevcut anahtar</Badge> : null}
+                    {isKey ? <Badge tone="success">Mevcut Anahtar</Badge> : null}
                     {isAi ? (
                       <Badge tone="info">
                         <Bot aria-hidden="true" />
-                        Yapay zekâ önerisi
+                        Yapay Zekâ Önerisi
                       </Badge>
                     ) : null}
                   </li>
@@ -238,7 +238,7 @@ export function DisputeReviewPage({ id }: { id: number }) {
           {disputed && !canResolve ? (
             <div role="status" data-testid="not-my-branch" className="flex items-start gap-3 rounded-md border border-border-strong bg-surface-muted p-4 text-sm font-semibold">
               <ShieldQuestion className="mt-0.5 size-6 shrink-0" aria-hidden="true" />
-              <p>Bu soru senin branşında değil, karar branş öğretmenine ait.</p>
+              <p>Bu soru sizin branşınızda değil, karar branş öğretmenine ait.</p>
             </div>
           ) : null}
 
@@ -260,10 +260,10 @@ export function DisputeReviewPage({ id }: { id: number }) {
                 <NoteField value={note} onChange={setNote} />
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button type="button" disabled={selected === null || sameAsCurrent} onClick={() => setDialog("change")} data-testid="change-key">
-                    {selectedLetter ? `Anahtarı ${selectedLetter} yap` : "Anahtarı değiştir"}
+                    {selectedLetter ? `Anahtarı ${selectedLetter} Yap` : "Anahtarı Değiştir"}
                   </Button>
                   <Button type="button" variant="secondary" onClick={() => setDialog("dismiss")} data-testid="dismiss-dispute">
-                    Anahtar doğru, şüpheyi kaldır
+                    Anahtar Doğru, Şüpheyi Kaldır
                   </Button>
                 </div>
                 {sameAsCurrent ? <p className="text-xs text-muted-foreground">Seçilen şık zaten doğru cevap olarak işaretli.</p> : null}
@@ -276,7 +276,7 @@ export function DisputeReviewPage({ id }: { id: number }) {
               <CardContent className="flex flex-col gap-2" data-testid="hidden-ai-solution">
                 <h2 className="flex items-center gap-2 text-xl">
                   <Bot className="size-6 text-info-soft-foreground" aria-hidden="true" />
-                  Yapay zekâ çözümü
+                  Yapay Zekâ Çözümü
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   {hiddenAi.isHidden ? "Bu çözüm şu an öğrencilere gösterilmiyor." : "Bu çözüm öğrencilere görünür."}
@@ -295,7 +295,7 @@ export function DisputeReviewPage({ id }: { id: number }) {
         description={`Bu soruyu cevaplayan ${answerCount} öğrencinin sonucu ve puanı yeniden hesaplanır. ${
           selected !== null && selected === aiOption ? "Yapay zekâ çözümü öğrencilere görünür olur." : "Yapay zekâ çözümü silinir."
         }`}
-        confirmLabel="Anahtarı değiştir"
+        confirmLabel="Anahtarı Değiştir"
         pending={change.isPending}
         onConfirm={() => {
           if (selected !== null) change.mutate(selected);
@@ -307,7 +307,7 @@ export function DisputeReviewPage({ id }: { id: number }) {
         onOpenChange={(open) => setDialog(open ? "dismiss" : null)}
         title="Şüphe kaldırılsın mı?"
         description={`Mevcut anahtar (${currentLetter ?? "-"}) doğru kabul edilir. Gizli yapay zekâ çözümü silinir ve sonraki çözümler onaylı anahtarla üretilir.`}
-        confirmLabel="Şüpheyi kaldır"
+        confirmLabel="Şüpheyi Kaldır"
         pending={dismiss.isPending}
         onConfirm={() => dismiss.mutate()}
       />

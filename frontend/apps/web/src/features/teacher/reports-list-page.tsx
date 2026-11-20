@@ -45,7 +45,7 @@ function ReportCard({ item }: { item: ReportItem }) {
           <Badge tone="primary">{reportTargetLabel(item.targetType)}</Badge>
           <Badge tone="neutral">{reportReasonLabel(item.reason)}</Badge>
           <Badge tone={statusTone(item.status)}>{reportStatusLabel(item.status)}</Badge>
-          {item.status === "pending" && item.pendingReportCountForTarget > 1 ? <Badge tone="warning">{item.pendingReportCountForTarget} şikâyet</Badge> : null}
+          {item.status === "pending" && item.pendingReportCountForTarget > 1 ? <Badge tone="warning">{item.pendingReportCountForTarget} Şikâyet</Badge> : null}
         </span>
         <span className="line-clamp-2 text-base font-semibold">{item.targetSummary || "Önizleme yok"}</span>
         <span className="line-clamp-2 text-sm text-muted-foreground">{item.description}</span>
@@ -92,7 +92,7 @@ export function ReportsListPage() {
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-3xl">Şikâyetler</h1>
-        <p className="text-muted-foreground">Öğrencilerin soru, çözüm ve yorumlar hakkındaki şikâyetlerini incele ve karara bağla.</p>
+        <p className="text-muted-foreground">Öğrencilerin soru, çözüm ve yorumlar hakkındaki şikâyetlerini inceleyin ve karara bağlayın.</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_14rem] md:items-end">
@@ -128,13 +128,13 @@ export function ReportsListPage() {
           ))}
         </div>
       ) : list.isError ? (
-        <EmptyState icon={CloudOff} as="h2" title="Şikâyetler yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
+        <EmptyState icon={CloudOff} as="h2" title="Şikâyetler Yüklenemedi" description={list.error.message} action={<Button onClick={() => list.refetch()}>Tekrar Dene</Button>} />
       ) : data && data.items.length === 0 ? (
         <EmptyState
           icon={filters.status === "pending" ? ShieldCheck : Flag}
           as="h2"
-          title={filters.status === "pending" ? "Bekleyen şikâyet yok" : "Şikâyet bulunamadı"}
-          description={filters.status === "pending" ? "İncelenmeyi bekleyen bir şikâyet yok." : "Filtreleri değiştirmeyi dene."}
+          title={filters.status === "pending" ? "Bekleyen Şikâyet Yok" : "Şikâyet Bulunamadı"}
+          description={filters.status === "pending" ? "İncelenmeyi bekleyen bir şikâyet yok." : "Filtreleri değiştirmeyi deneyin."}
         />
       ) : data ? (
         <>

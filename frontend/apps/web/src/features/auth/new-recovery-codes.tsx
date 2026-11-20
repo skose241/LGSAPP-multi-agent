@@ -28,7 +28,7 @@ export function NewRecoveryCodes() {
   }
 
   return (
-    <AuthCard title="Kurtarma kodların" description="Müdür hesabı için 10 tek kullanımlık kurtarma kodu üretildi.">
+    <AuthCard title="Kurtarma Kodlarınız" description="Müdür hesabı için 10 tek kullanımlık kurtarma kodu üretildi.">
       <RecoveryCodesPanel
         codes={codes}
         onConfirm={() => {
