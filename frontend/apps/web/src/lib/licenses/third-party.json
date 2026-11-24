@@ -60,7 +60,7 @@
       "name": "class-variance-authority",
       "version": "0.7.1",
       "license": "Apache-2.0",
-      "copyright": "copyright notice that is included in or attached to the work",
+      "copyright": null,
       "repository": "https://github.com/joe-bell/cva",
       "npm": "https://www.npmjs.com/package/class-variance-authority/v/0.7.1"
     },
@@ -103,6 +103,14 @@
       "copyright": "Copyright (c) 2025 Vercel, Inc.",
       "repository": "https://github.com/vercel/next.js",
       "npm": "https://www.npmjs.com/package/next/v/16.4.6"
+    },
+    {
+      "name": "pdfjs-dist",
+      "version": "6.5.438",
+      "license": "Apache-2.0",
+      "copyright": "Copyright Mozilla Foundation and contributors",
+      "repository": "https://github.com/mozilla/pdf.js",
+      "npm": "https://www.npmjs.com/package/pdfjs-dist/v/6.5.438"
     },
     {
       "name": "react",

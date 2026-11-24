@@ -3,8 +3,8 @@
 import { formatDateOnly, letterToOption } from "@lgs/api";
 import { assignmentDetailQuery, assignmentKeys, assignmentMutations, scheduledQuestionsQuery, topicsQuery, type AssignmentManageDetail } from "@lgs/api/queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, ImageIcon, Images, Library, Plus } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { FileText, ImageIcon, Images, Library, Plus, ScanLine } from "lucide-react";
+import { useCallback, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { MathText } from "@/components/math-text";
@@ -18,18 +18,20 @@ import { TextAreaField, TextField } from "@/components/ui/field";
 import { OptionPicker } from "@/components/ui/option-picker";
 import { SelectField } from "@/components/ui/select-field";
 import { useMe } from "@/features/auth/use-me";
+import { PageSplitComposer } from "@/features/page-split/page-split-composer";
 import { toProblemState } from "@/features/student/comment-node";
-import { PhotoQuestionComposer, toComposerFailure, isConflict, type ComposerSubmitInput, type ComposerSubmitResult } from "@/features/upload/photo-question-composer";
+import { PhotoQuestionComposer, toComposerFailure, isConflict, type ComposerCardInfo, type ComposerSubmitInput, type ComposerSubmitResult } from "@/features/upload/photo-question-composer";
 import { api } from "@/lib/api/client";
 import { ASSIGNMENT_BATCH_MAX, findAddedByImage, remainingCapacity, toggleSelection } from "@/lib/teacher/assignments";
 import { CARD_DESCRIPTION_MAX, OPTION_TEXT_MAX, QUESTION_TEXT_MAX, textOrNull, validateTextQuestion } from "@/lib/teacher/composer";
 import { pageSlice } from "@/lib/teacher/students";
 import { cn } from "@/lib/utils";
 
-type PanelKey = "photo" | "text" | "pool";
+type PanelKey = "photo" | "split" | "text" | "pool";
 
 const PANELS: { key: PanelKey; label: string; icon: typeof Images }[] = [
   { key: "photo", label: "Fotoğrafla Ekle", icon: Images },
+  { key: "split", label: "Sayfadan Ayır", icon: ScanLine },
   { key: "text", label: "Metinle Ekle", icon: FileText },
   { key: "pool", label: "Havuzdan Ekle", icon: Library },
 ];
@@ -41,9 +43,8 @@ interface PanelProps {
   onDiscard?: (count: number) => void;
 }
 
-function PhotoPanel({ detail, onChanged, onDiscard }: PanelProps) {
+function useAssignmentCardSubmit(detail: AssignmentManageDetail) {
   const queryClient = useQueryClient();
-  const capacity = remainingCapacity(detail.questions.length);
 
   async function reconcileCard(id: number, input: ComposerSubmitInput): Promise<ComposerSubmitResult> {
     try {
@@ -108,15 +109,40 @@ function PhotoPanel({ detail, onChanged, onDiscard }: PanelProps) {
     }
   }
 
+  return { submitCard, reconcileCard };
+}
+
+interface SharedCapacityProps {
+  otherPending: number;
+  onPending: (count: number) => void;
+}
+
+function CapacityNote({ capacity, otherPending }: { capacity: number; otherPending: number }) {
+  if (otherPending === 0 || capacity - otherPending > 0) return null;
+  return (
+    <p role="status" data-testid="capacity-note" className="rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground">
+      Bir ödeve en fazla 200 soru eklenebilir. Diğer yöntemde bekleyen sorularla birlikte sınıra ulaşıldı, yeni soru eklenemez.
+    </p>
+  );
+}
+
+function PhotoPanel({ detail, onChanged, onDiscard, otherPending, onPending }: PanelProps & SharedCapacityProps) {
+  const { submitCard, reconcileCard } = useAssignmentCardSubmit(detail);
+  const capacity = remainingCapacity(detail.questions.length);
+  const handleCards = useCallback((cards: ComposerCardInfo[]) => onPending(cards.filter((card) => card.phase !== "created").length), [onPending]);
+
   if (capacity === 0) {
     return <p className="text-sm text-muted-foreground">Bir ödeve en fazla 200 soru eklenebilir.</p>;
   }
 
   return (
+    <>
+    <CapacityNote capacity={capacity} otherPending={otherPending} />
     <PhotoQuestionComposer
+      onCardsChange={handleCards}
       lessonId={detail.lesson.id}
       purpose="AssignmentImage"
-      maxCards={Math.min(ASSIGNMENT_BATCH_MAX, capacity)}
+      maxCards={Math.max(0, Math.min(ASSIGNMENT_BATCH_MAX, capacity - otherPending))}
       submitCard={submitCard}
       reconcileCard={reconcileCard}
       onDiscard={onDiscard}
@@ -124,6 +150,35 @@ function PhotoPanel({ detail, onChanged, onDiscard }: PanelProps) {
       successLabel={(count) => (count === 1 ? "Soru ödeve eklendi." : `${count} soru ödeve eklendi.`)}
       repeatLabel={(count) => (count === 1 ? "Bu soru ödevde zaten vardı, tekrar eklenmedi." : `${count} soru ödevde zaten vardı, tekrar eklenmedi.`)}
     />
+    </>
+  );
+}
+
+function SplitPanel({ detail, onChanged, onDiscard, otherPending, onPending }: PanelProps & SharedCapacityProps) {
+  const { submitCard, reconcileCard } = useAssignmentCardSubmit(detail);
+  const capacity = remainingCapacity(detail.questions.length);
+
+  if (capacity === 0) {
+    return <p className="text-sm text-muted-foreground">Bir ödeve en fazla 200 soru eklenebilir.</p>;
+  }
+
+  return (
+    <>
+    <CapacityNote capacity={capacity} otherPending={otherPending} />
+    <PageSplitComposer
+      scope={`assignment-${detail.id}`}
+      onPendingChange={onPending}
+      lessonId={detail.lesson.id}
+      purpose="AssignmentImage"
+      maxCards={Math.max(0, Math.min(ASSIGNMENT_BATCH_MAX, capacity - otherPending))}
+      submitCard={submitCard}
+      reconcileCard={reconcileCard}
+      onDiscard={onDiscard}
+      onCreated={onChanged}
+      successLabel={(count) => (count === 1 ? "Soru ödeve eklendi." : `${count} soru ödeve eklendi.`)}
+      repeatLabel={(count) => (count === 1 ? "Bu soru ödevde zaten vardı, tekrar eklenmedi." : `${count} soru ödevde zaten vardı, tekrar eklenmedi.`)}
+    />
+    </>
   );
 }
 
@@ -378,10 +433,14 @@ function PoolPanel({ detail, onChanged, onFailure }: PanelProps) {
 export function AssignmentAddPanels(props: PanelProps) {
   const [panel, setPanel] = useState<PanelKey>("photo");
   const [poolVisited, setPoolVisited] = useState(false);
+  const [splitVisited, setSplitVisited] = useState(false);
+  const [photoPending, setPhotoPending] = useState(0);
+  const [splitPending, setSplitPending] = useState(0);
 
   function choose(key: PanelKey) {
     setPanel(key);
     if (key === "pool") setPoolVisited(true);
+    if (key === "split") setSplitVisited(true);
   }
 
   return (
@@ -407,7 +466,10 @@ export function AssignmentAddPanels(props: PanelProps) {
       <Card>
         <CardContent>
           <div hidden={panel !== "photo"}>
-            <PhotoPanel {...props} />
+            <PhotoPanel {...props} otherPending={splitPending} onPending={setPhotoPending} />
+          </div>
+          <div hidden={panel !== "split"} data-testid="split-panel">
+            {splitVisited ? <SplitPanel {...props} otherPending={photoPending} onPending={setSplitPending} /> : null}
           </div>
           <div hidden={panel !== "text"}>
             <TextPanel {...props} />

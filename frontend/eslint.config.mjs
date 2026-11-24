@@ -31,6 +31,7 @@ export default tseslint.config(
       "**/playwright-report/**",
       "**/next-env.d.ts",
       "**/.azurite/**",
+      "**/public/pdfjs/**",
     ],
   },
   js.configs.recommended,

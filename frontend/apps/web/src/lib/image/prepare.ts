@@ -76,7 +76,7 @@ function throwIfAborted(signal: AbortSignal | undefined) {
 const HEIC_FAILED = "Bu HEIC fotoğrafı dönüştürülemedi. Fotoğrafı JPEG olarak kaydedip tekrar deneyin.";
 const DECODE_FAILED = "Fotoğraf okunamadı. Başka bir fotoğraf seçip tekrar deneyin.";
 
-async function decode(file: Blob & { name?: string }, deps: ImageDeps): Promise<Decoded> {
+export async function decode(file: Blob & { name?: string }, deps: ImageDeps): Promise<Decoded> {
   if (await looksHeic(file)) {
     try {
       return await deps.decodeHeic(file);

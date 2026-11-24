@@ -25,7 +25,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   allowedDevOrigins,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/pdfjs/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+    ];
   },
   distDir: process.env.NEXT_DIST_DIR || ".next",
 };

@@ -27,7 +27,7 @@ export default defineConfig({
   use: { baseURL, trace: "off" },
   projects,
   webServer: {
-    command: `pnpm exec next dev --port ${port}`,
+    command: `node scripts/copy-pdfjs-assets.mjs && pnpm exec next dev --port ${port}`,
     url: `${baseURL}/tasarim`,
     reuseExistingServer: false,
     timeout: 180_000,

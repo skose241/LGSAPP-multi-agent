@@ -4,7 +4,7 @@ import { generateClientUploadId, isApiError, letterToOption, type UploadItem, ty
 import { fileMutations, topicsQuery } from "@lgs/api/queries";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ImagePlus, Images, Loader2, Send, Trash2, WifiOff } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useId, useImperativeHandle, useRef, useState, type ChangeEvent, type ReactNode, type Ref } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { useCountdown, type ProblemState } from "@/components/problem-banner";
@@ -31,6 +31,8 @@ interface CardState {
   repeated: boolean;
   requestId: string;
   uncertain: CardValues | null;
+  label: string | null;
+  sourceKey: string | null;
 }
 
 interface CardValues {
@@ -53,7 +55,28 @@ export interface ComposerSubmitInput {
 
 export type ComposerSubmitResult = { ok: true; id: number | null; alreadyPresent?: boolean } | { ok: false; state: ProblemState; message?: string };
 
+export interface ComposerIncoming {
+  file: File;
+  option?: string;
+  topicId?: number | null;
+  label?: string;
+  sourceKey?: string;
+}
+
+export interface ComposerHandle {
+  addFiles(entries: ComposerIncoming[]): number;
+  slots(): number;
+}
+
+export interface ComposerCardInfo {
+  sourceKey: string | null;
+  phase: Phase;
+}
+
 interface ComposerProps {
+  ref?: Ref<ComposerHandle>;
+  hidePicker?: boolean;
+  onCardsChange?: (cards: ComposerCardInfo[]) => void;
   lessonId: number;
   purpose: UploadPurpose;
   maxCards: number;
@@ -121,6 +144,7 @@ function CardView({ index, card, item, topics, topicsLoading, showErrors, disabl
   const previewUrl = useObjectUrl(item?.previewBlob ?? null);
   const textId = useId();
   const number = index + 1;
+  const title = card.label ?? `Fotoğraf ${number}`;
   const errors = validateComposerCard({ option: card.option, description: card.description });
   const visible = showErrors ? errors : {};
 
@@ -129,7 +153,7 @@ function CardView({ index, card, item, topics, topicsLoading, showErrors, disabl
       <li data-testid="composer-card" data-phase="created" className="flex items-center gap-3 rounded-lg border border-success bg-success-soft p-3 text-success-soft-foreground">
         {previewUrl ? <img src={previewUrl} alt="" className="size-16 rounded-md object-cover" /> : null}
         <div className="flex-1 text-sm">
-          <p className="font-semibold">Fotoğraf {number} eklendi</p>
+          <p className="font-semibold">{title} eklendi</p>
           {card.repeated ? <p data-testid="card-repeated">Bu fotoğraf ödevde zaten vardı, tekrar eklenmedi.</p> : null}
           {card.note ? (
             <p role="status" data-testid="card-note" className="font-medium">
@@ -149,19 +173,19 @@ function CardView({ index, card, item, topics, topicsLoading, showErrors, disabl
     <li data-testid="composer-card" data-phase={card.phase} className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm md:flex-row">
       <div className="flex flex-col gap-3 md:w-56 md:shrink-0">
         {previewUrl ? (
-          <img src={previewUrl} alt={`Fotoğraf ${number} önizlemesi`} className="aspect-[4/3] w-full rounded-md border border-border bg-surface-muted object-cover" />
+          <img src={previewUrl} alt={`${title} önizlemesi`} className="aspect-[4/3] w-full rounded-md border border-border bg-surface-muted object-cover" />
         ) : (
-          <div role="img" aria-label={`Fotoğraf ${number} hazırlanıyor`} className="flex aspect-[4/3] w-full items-center justify-center rounded-md border border-border bg-surface-muted text-muted-foreground">
+          <div role="img" aria-label={`${title} hazırlanıyor`} className="flex aspect-[4/3] w-full items-center justify-center rounded-md border border-border bg-surface-muted text-muted-foreground">
             <Loader2 className="size-6 animate-spin motion-reduce:animate-none" aria-hidden="true" />
           </div>
         )}
-        {item ? <UploadStatus item={item} label={`Fotoğraf ${number}`} onRetry={onRetry} onCancel={onCancel} /> : null}
+        {item ? <UploadStatus item={item} label={title} onRetry={onRetry} onCancel={onCancel} /> : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-4">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-lg">Fotoğraf {number}</h3>
-          <Button type="button" variant="secondary" className="h-11" onClick={onRemove} disabled={card.phase === "creating"} aria-label={`Fotoğraf ${number} kaldır`} data-testid="card-remove">
+          <h3 className="text-lg">{title}</h3>
+          <Button type="button" variant="secondary" className="h-11" onClick={onRemove} disabled={card.phase === "creating"} aria-label={`${title} kaldır`} data-testid="card-remove">
             <Trash2 aria-hidden="true" />
             Kaldır
           </Button>
@@ -186,7 +210,7 @@ function CardView({ index, card, item, topics, topicsLoading, showErrors, disabl
               *
             </span>
           </p>
-          <OptionPicker value={card.option} onValueChange={(option) => onChange({ option })} disabled={locked} label={`Fotoğraf ${number} için doğru cevap`} />
+          <OptionPicker value={card.option} onValueChange={(option) => onChange({ option })} disabled={locked} label={`${title} için doğru cevap`} />
           {visible.option ? (
             <p role="alert" className="text-sm font-medium text-danger">
               {visible.option}
@@ -232,7 +256,7 @@ function CardView({ index, card, item, topics, topicsLoading, showErrors, disabl
   );
 }
 
-export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = false, submitCard, onCreated, validateExtra, footerSlot, successLabel, repeatLabel, reconcileCard, onDiscard, createdNote }: ComposerProps) {
+export function PhotoQuestionComposer({ ref, hidePicker = false, onCardsChange, lessonId, purpose, maxCards, disabled = false, submitCard, onCreated, validateExtra, footerSlot, successLabel, repeatLabel, reconcileCard, onDiscard, createdNote }: ComposerProps) {
   const queue = useUploadQueue<undefined>();
   const items = useQueueItems(queue);
   const online = useOnline();
@@ -287,20 +311,16 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
     setCards((current) => current.map((card) => (card.key === key ? { ...card, ...patch } : card)));
   }
 
-  function onFiles(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = "";
-    if (files.length === 0) return;
-    setNotice(null);
-    const accepted = files.slice(0, slots);
-    if (accepted.length < files.length) {
-      setNotice(slots === 0 ? `Aynı anda en fazla ${maxCards} fotoğraf hazırlanabilir.` : `En fazla ${slots} fotoğraf daha ekleyebilirsiniz. ${files.length - accepted.length} fotoğraf eklenmedi.`);
-    }
-    const last = cards[cards.length - 1];
-    const fresh: CardState[] = accepted.map((file) => ({
-      key: queue.add(file, purpose, undefined),
-      topicId: last?.topicId ?? null,
-      option: undefined,
+  function addIncoming(entries: ComposerIncoming[]): number {
+    const current = cardsRef.current;
+    const available = cardsSelectable(current.filter((card) => card.phase !== "created").length, maxCards);
+    const accepted = entries.slice(0, available);
+    if (accepted.length === 0) return 0;
+    const last = current[current.length - 1];
+    const fresh: CardState[] = accepted.map((entry) => ({
+      key: queue.add(entry.file, purpose, undefined),
+      topicId: entry.topicId !== undefined ? entry.topicId : (last?.topicId ?? null),
+      option: entry.option,
       description: "",
       phase: "editing",
       resultId: null,
@@ -309,8 +329,29 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
       repeated: false,
       requestId: generateClientUploadId(),
       uncertain: null,
+      label: entry.label ?? null,
+      sourceKey: entry.sourceKey ?? null,
     }));
-    setCards((current) => [...current, ...fresh]);
+    cardsRef.current = [...current, ...fresh];
+    setCards((existing) => [...existing, ...fresh]);
+    return accepted.length;
+  }
+
+  useImperativeHandle(ref, () => ({ addFiles: addIncoming, slots: () => cardsSelectable(cardsRef.current.filter((card) => card.phase !== "created").length, maxCards) }));
+
+  useEffect(() => {
+    onCardsChange?.(cards.map((card) => ({ sourceKey: card.sourceKey, phase: card.phase })));
+  }, [cards, onCardsChange]);
+
+  function onFiles(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (files.length === 0) return;
+    setNotice(null);
+    const added = addIncoming(files.map((file) => ({ file })));
+    if (added < files.length) {
+      setNotice(slots === 0 ? `Aynı anda en fazla ${maxCards} fotoğraf hazırlanabilir.` : `En fazla ${slots} fotoğraf daha ekleyebilirsiniz. ${files.length - added} fotoğraf eklenmedi.`);
+    }
   }
 
   function removeCard(card: CardState) {
@@ -430,17 +471,19 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-2">
-        <input id={inputId} type="file" accept="image/*" multiple className="peer sr-only" onChange={onFiles} disabled={slots === 0 || submitting || disabled} data-testid="photo-input" />
-        <label
-          htmlFor={inputId}
-          className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong bg-surface px-4 py-6 text-center hover:bg-surface-muted peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
-        >
-          <ImagePlus className="size-7 text-primary" aria-hidden="true" />
-          <span className="text-base font-semibold">Fotoğraf Seç</span>
-          <span className="text-sm text-muted-foreground">Birden fazla fotoğrafı bir seferde seçebilirsiniz. Her fotoğraf ayrı bir soru olur. En fazla {slots} fotoğraf daha ekleyebilirsiniz.</span>
-        </label>
-      </div>
+      {hidePicker ? null : (
+        <div className="flex flex-col gap-2">
+          <input id={inputId} type="file" accept="image/*" multiple className="peer sr-only" onChange={onFiles} disabled={slots === 0 || submitting || disabled} data-testid="photo-input" />
+          <label
+            htmlFor={inputId}
+            className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border-strong bg-surface px-4 py-6 text-center hover:bg-surface-muted peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
+          >
+            <ImagePlus className="size-7 text-primary" aria-hidden="true" />
+            <span className="text-base font-semibold">Fotoğraf Seç</span>
+            <span className="text-sm text-muted-foreground">Birden fazla fotoğrafı bir seferde seçebilirsiniz. Her fotoğraf ayrı bir soru olur. En fazla {slots} fotoğraf daha ekleyebilirsiniz.</span>
+          </label>
+        </div>
+      )}
 
       {notice ? (
         <p role="status" data-testid="composer-notice" className="rounded-md border border-info bg-info-soft p-3 text-sm font-medium text-info-soft-foreground">
@@ -454,7 +497,9 @@ export function PhotoQuestionComposer({ lessonId, purpose, maxCards, disabled = 
       ) : null}
 
       {cards.length === 0 ? (
-        <EmptyState icon={Images} as="h3" title="Henüz Fotoğraf Seçmediniz" description="Yukarıdan bir ya da birkaç fotoğraf seçin. Her fotoğraf için doğru şıkkı işaretleyin." />
+        hidePicker ? null : (
+          <EmptyState icon={Images} as="h3" title="Henüz Fotoğraf Seçmediniz" description="Yukarıdan bir ya da birkaç fotoğraf seçin. Her fotoğraf için doğru şıkkı işaretleyin." />
+        )
       ) : (
         <section aria-label="Eklenecek Sorular" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">

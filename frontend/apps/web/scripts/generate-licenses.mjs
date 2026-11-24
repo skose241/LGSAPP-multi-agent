@@ -43,6 +43,9 @@ function copyrightOf(dir) {
   return null;
 }
 
+const copyrightOverrides = { "pdfjs-dist": "Copyright Mozilla Foundation and contributors" };
+const templateCopyright = /copyright notice that is included in or attached to the work/i;
+
 function licenseOf(pkg) {
   if (typeof pkg.license === "string") return pkg.license;
   if (pkg.license?.type) return pkg.license.type;
@@ -58,7 +61,10 @@ const packages = names.map((name) => {
     name,
     version: pkg.version,
     license: licenseOf(pkg),
-    copyright: copyrightOf(path.dirname(file)),
+    copyright: copyrightOverrides[name] ?? (() => {
+      const found = copyrightOf(path.dirname(file));
+      return found && templateCopyright.test(found) ? null : found;
+    })(),
     repository: repositoryOf(pkg),
     npm: `https://www.npmjs.com/package/${name}/v/${pkg.version}`,
   };

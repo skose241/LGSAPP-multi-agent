@@ -3,7 +3,7 @@
 import { addDaysToDateOnly, formatDateOnly, isDateOnly, todayInIstanbul } from "@lgs/api";
 import { assignmentKeys, lessonsQuery, questionKeys, questionMutations, scheduledQuestionsQuery } from "@lgs/api/queries";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ImageIcon, Send } from "lucide-react";
+import { CalendarClock, Images, ImageIcon, ScanLine, Send } from "lucide-react";
 import Link from "next/link";
 import { useId, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TextField } from "@/components/ui/field";
 import { SelectField } from "@/components/ui/select-field";
 import { useMe } from "@/features/auth/use-me";
+import { PageSplitComposer } from "@/features/page-split/page-split-composer";
 import { NoBranchNotice } from "@/features/teacher/needs-solution-page";
 import { PhotoQuestionComposer, toComposerFailure, type ComposerSubmitInput, type ComposerSubmitResult } from "@/features/upload/photo-question-composer";
 import { api } from "@/lib/api/client";
@@ -28,6 +29,12 @@ const PLANNED_PAGE_SIZE = 10;
 const MAX_CARDS = 20;
 
 type PublishMode = "now" | "scheduled";
+type AddSource = "photos" | "split";
+
+const ADD_SOURCES: { value: AddSource; label: string; icon: typeof Images }[] = [
+  { value: "photos", label: "Fotoğraflar", icon: Images },
+  { value: "split", label: "Sayfadan Ayır", icon: ScanLine },
+];
 
 function PlannedList({ lessonId }: { lessonId: number }) {
   const [page, setPage] = useState(1);
@@ -97,6 +104,8 @@ export function PoolAddPage() {
   const [lessonChoice, setLessonChoice] = useState<number | null>(null);
   const [mode, setMode] = useState<PublishMode>("now");
   const [date, setDate] = useState(tomorrow);
+  const [addSource, setAddSource] = useState<AddSource>("photos");
+  const [splitVisited, setSplitVisited] = useState(false);
 
   const isMudur = me.data?.role === "mudur";
   const branchless = isNoBranch(me.data?.role, me.data?.branchLessonId);
@@ -134,6 +143,24 @@ export function PoolAddPage() {
       queryClient.invalidateQueries({ queryKey: assignmentKeys.scheduledAll }),
       queryClient.invalidateQueries({ queryKey: questionKeys.all }),
     ]);
+  }
+
+  function composerProps(lesson: number) {
+    return {
+      lessonId: lesson,
+      purpose: "QuestionImage" as const,
+      maxCards: MAX_CARDS,
+      submitCard,
+      onCreated,
+      validateExtra,
+      successLabel: (count: number) => (mode === "scheduled" ? (count === 1 ? "Soru planlandı." : `${count} soru planlandı.`) : count === 1 ? "Soru yayınlandı." : `${count} soru yayınlandı.`),
+      createdNote: (id: number | null) =>
+        id ? (
+          <Link href={`/sorular/${id}`} className="font-semibold underline">
+            Soruyu Aç
+          </Link>
+        ) : null,
+    };
   }
 
   if (branchless) {
@@ -214,22 +241,32 @@ export function PoolAddPage() {
       ) : (
         <section aria-label="Soru Fotoğrafları" className="flex flex-col gap-3">
           <h2 className="text-xl">Soru Fotoğrafları</h2>
-          <PhotoQuestionComposer
-            lessonId={lessonId}
-            purpose="QuestionImage"
-            maxCards={MAX_CARDS}
-            submitCard={submitCard}
-            onCreated={onCreated}
-            validateExtra={validateExtra}
-            successLabel={(count) => (mode === "scheduled" ? (count === 1 ? "Soru planlandı." : `${count} soru planlandı.`) : count === 1 ? "Soru yayınlandı." : `${count} soru yayınlandı.`)}
-            createdNote={(id) =>
-              id ? (
-                <Link href={`/sorular/${id}`} className="font-semibold underline">
-                  Soruyu Aç
-                </Link>
-              ) : null
-            }
-          />
+          <div role="group" aria-label="Soru Ekleme Yöntemi" className="flex flex-wrap gap-2">
+            {ADD_SOURCES.map((entry) => (
+              <button
+                key={entry.value}
+                type="button"
+                aria-pressed={addSource === entry.value}
+                onClick={() => {
+                  setAddSource(entry.value);
+                  if (entry.value === "split") setSplitVisited(true);
+                }}
+                className={cn(
+                  "inline-flex min-h-touch items-center gap-2 rounded-pill border px-4 text-sm font-semibold transition-colors",
+                  addSource === entry.value ? "border-primary bg-primary text-primary-foreground" : "border-border-strong bg-surface text-foreground hover:bg-surface-muted",
+                )}
+              >
+                <entry.icon className="size-4" aria-hidden="true" />
+                {entry.label}
+              </button>
+            ))}
+          </div>
+          <div hidden={addSource !== "photos"}>
+            <PhotoQuestionComposer {...composerProps(lessonId)} />
+          </div>
+          <div hidden={addSource !== "split"} data-testid="split-panel">
+            {splitVisited ? <PageSplitComposer scope="pool" {...composerProps(lessonId)} /> : null}
+          </div>
         </section>
       )}
 

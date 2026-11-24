@@ -12,3 +12,5 @@ blob-report
 next-env.d.ts
 .next-e2e
 .e2e
+
+apps/web/public/pdfjs
