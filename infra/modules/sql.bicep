@@ -74,7 +74,7 @@ resource database 'Microsoft.Sql/servers/databases@2023-08-01' = {
     capacity: sku.capacity
   }
   properties: {
-    collation: 'SQL_Latin1_General_CP1_CI_AS'
+    collation: 'Turkish_CI_AS'
     maxSizeBytes: sku.maxSizeBytes
   }
 }

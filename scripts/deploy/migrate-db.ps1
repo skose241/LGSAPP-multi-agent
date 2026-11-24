@@ -103,6 +103,6 @@ finally {
     $pepper = $null
     $connection = $null
     Write-Step "Gecici guvenlik duvari kurali siliniyor: $ruleName"
-    & az sql server firewall-rule delete --resource-group $ResourceGroup --server $sqlServer --name $ruleName --yes --output none
+    & az sql server firewall-rule delete --resource-group $ResourceGroup --server $sqlServer --name $ruleName --output none
     if ($LASTEXITCODE -ne 0) { Write-Warning "Kural silinemedi! Elle silin: az sql server firewall-rule delete -g $ResourceGroup -s $sqlServer -n $ruleName" }
 }

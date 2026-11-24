@@ -45,7 +45,14 @@ function Invoke-NativeCapture {
         [Parameter(Mandatory)][string]$File,
         [string[]]$Arguments = @()
     )
-    $output = & $File @Arguments 2>$null
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & $File @Arguments 2>$null
+    }
+    finally {
+        $ErrorActionPreference = $previousPreference
+    }
     if ($LASTEXITCODE -ne 0) { return $null }
     return ($output | Out-String).Trim()
 }
