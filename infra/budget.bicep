@@ -1,7 +1,7 @@
 targetScope = 'subscription'
 
 @description('Aylık bütçe tutarı (abonelik para birimi cinsinden; Öğrenci kredisi için USD).')
-param amount int = 100
+param amount int = 40
 
 @description('Bütçe adı.')
 param budgetName string = 'lgsapp-monthly'
@@ -16,8 +16,8 @@ param contactRoles array = [
 
 @description('Gerçekleşen harcama uyarı eşikleri (para birimi tutarı olarak).')
 param alertAmounts array = [
-  50
-  80
+  25
+  35
 ]
 
 @description('Bütçe başlangıç tarihi (ayın ilk günü, yyyy-MM-dd). Varsayılan: dağıtım ayının ilk günü.')
