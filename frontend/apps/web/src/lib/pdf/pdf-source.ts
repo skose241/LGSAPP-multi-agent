@@ -6,6 +6,7 @@ import { pdfSourceKey } from "@/lib/page-split/draft-store";
 import { MAX_PDF_BYTES, MAX_PDF_PAGES } from "@/lib/page-split/model";
 import { SourceError, throwIfAborted, type PageSize, type PageSource } from "@/lib/page-split/sources";
 import { documentOptions, mapPdfError, type PdfjsModule } from "./pdfjs";
+import { extractPageText } from "./text-content";
 
 export interface OpenedPdf {
   document: PDFDocumentProxy;
@@ -102,6 +103,20 @@ export function createPdfSource({ document, sizes, fingerprint }: OpenedPdf): Pa
       const plan = planCrop(rect.width * size.width, rect.height * size.height);
       if (!plan.ok) throw new SourceError(plan.reason, plan.message);
       return run(page + 1, plan.scale, plan.width, plan.height, JPEG_CROP_QUALITY, { x: rect.x * size.width * plan.scale, y: rect.y * size.height * plan.scale }, signal);
+    },
+    async textContent(page, signal) {
+      throwIfAborted(signal);
+      if (page < 0 || page >= sizes.length) throw new SourceError("render", "Sayfa bulunamadı.");
+      try {
+        const proxy = await document.getPage(page + 1);
+        try {
+          return await extractPageText(proxy);
+        } finally {
+          proxy.cleanup();
+        }
+      } catch (error) {
+        throw mapPdfError(error);
+      }
     },
     dispose() {
       for (const task of tasks) task.cancel();

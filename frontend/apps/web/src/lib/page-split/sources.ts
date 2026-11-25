@@ -1,3 +1,4 @@
+import type { TextFragment } from "@/lib/pdf/text-content";
 import type { Rect, Rotation } from "./geometry";
 
 export interface PageSize {
@@ -12,6 +13,7 @@ export interface PageSource {
   pageSize(page: number): PageSize;
   renderPreview(page: number, maxEdge: number, rotation: Rotation, signal?: AbortSignal): Promise<Blob>;
   renderCrop(page: number, rect: Rect, rotation: Rotation, signal?: AbortSignal): Promise<Blob>;
+  textContent?(page: number, signal?: AbortSignal): Promise<TextFragment[]>;
   dispose(): void;
 }
 

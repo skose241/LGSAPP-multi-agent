@@ -594,3 +594,52 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 ### Sıradaki adımlar
 1. İstenirse kalan aria-label/rozet Title Case turu + backend mesaj taraması.
 2. Önceki listedeki sıra geçerli: `gh auth login` → CI izleme; abonelik açılınca F8e ilk kurulum.
+
+## Oturum 11 — 2026-11-24 / 2026-11-25
+
+### Bu oturumda yapılanlar
+- Kullanıcı "1 sayfadaki soruları ayırma" ve "PDF'ten hızlı yükleme" modüllerini sordu: Oturum 5'te tasarlanmış (`tasarim-domain.md:222-228`) ama hiç uygulanmamış, sıradaki adımlardan düşmüştü. F9 olarak açıldı.
+- Plan agent F9 planını çıkardı → `.claude/plan-f9.md` (F9a elle çerçeveleme, F9b pdf.js metin katmanı, F9c Gemini; kullanıcı kararları dosyanın sonunda).
+- `785a1db` F9a (push edildi): ödev detayında 4. panel "Sayfadan Ayır", havuzda "Fotoğraflar | Sayfadan Ayır"; PDF ≤60 sayfa/50 MB veya ≤20 fotoğraf; çerçeve çiz/taşı/boyutlandır, cevap anahtarı yapıştırma, 20'lik parti aktarımı, sessionStorage taslak; `pdfjs-dist` 6.5.438 (GHSA-hq66-cqwq-w95j nedeniyle 5.x'ten yükseltildi), varlıklar prebuild ile `public/pdfjs/<sürüm>/`; CSP değişmedi; ödev panellerinde ortak 200 kapasite. Reviewer: tam E2E 475 geçti (1 flaky admin-scheduler), 40 sayfa PDF'te sızıntı yok.
+- F9b (COMMIT EDİLMEDİ, çalışma ağacında): "Otomatik Bul" (Bu Sayfa/Tüm Sayfalar), kesikli öneriler + kabul/ret, düşük güven rozetleri, cevap anahtarı sayfası tespiti ("Cevapları Uygula"), "Kenarları Sıkılaştır" (ilerleme + İptal), ders bölümleri (`sections.ts`: numara 1'e dönünce yeni bölüm, anahtar bölüme göre). Reviewer turu (O1–O3, D1–D7) düzeltildi.
+- Gerçek kitapçıkla sınama: `C:\Proje\lgs-deneme.pdf` (2026 LGS sayısal, 33 sayfa, Mat 20 + Fen 20, s33 cevap anahtarı; repoya KONMAZ). İlk sonuç 37/40 numara, 0/40 anahtar → düzeltme turundan sonra 40/40 numara + bölüm, 40/40 anahtar, kapak/boş/kural/anahtar sayfalarında öneri yok, tüm sayfalar "high". Test: `src/lib/pdf/real-pdf.test.ts` (yalnız `LGS_REAL_PDF=C:/Proje/lgs-deneme.pdf` verilince koşar).
+- Son doğrulama (2026-11-25, ben koştum): vitest 431 geçti + 1 skip (real-pdf env yoksa), lint/typecheck/build temiz; E2E teacher-page-split 33 geçti/1 skip (agent'ın 23:01 koşusu, sonrasında kod değişmedi). Görsel kontrol betiği: scratchpad `realpdf/render.mjs` (geçici, kaybolabilir).
+- "Taslakta kalanlar" taraması yapıldı (aşağıda).
+
+### Kararlar
+- F9 yeri mevcut ekranlar; ortak metin birleştirme sonraya; PDF 60 sayfa/50 MB, 20'lik parti; F9c'de Gemini'ye sayfa gönderimi kabul + telif/gizlilik notu, mevcut `QuestionApiKey`, öğretmen 30/global 200 sayfa/gün; AI şıkkı yalnız öneri çipi; mobil F9 dışında; metin tespiti düğmeyle.
+- F9a/F9b backend/şema değiştirmez; F9c bir veri migration'ı (yalnız InsertData) + `AiQuotaService` kapsam refactor'u gerektirir, F8e sonrası.
+
+### Açık kalanlar
+- F9b commit edilmedi. Commit öncesi: (1) iki sütunlu sayfada sağ sütun kutusu sol sütun metninden ince şerit alıyor (s19'da "hava", "yapraklar" uçları) — sağ sütun kutusu sütun numarasının hemen solundan başlamalı; (2) reviewer son iki tura (düzeltmeler + gerçek PDF uyarlaması) bakmadı; (3) bu turda student-upload/teacher-assignments E2E tekrar koşulmadı (composer'a dokunulmadı).
+- F9b bilinen sınırlar: numarasız ortak metin önceki soruya girer; taranmış PDF ve görsel cevap anahtarı F9c'ye kalır; eşikler tek gerçek kitapçıkla ayarlandı (yayınevi denemeleriyle de sınanmalı).
+- F9a/F9b gerçek iPhone: büyük PDF bellek, parmakla Çiz/Kaydır, HEIC sayfa fotoğrafı, eski iOS'ta pdf.js wasm → F8e cihaz testine ekle. Kırpım dosya adı sunucuya gitmiyor.
+- powercfg: reviewer izinsiz `standby-timeout-ac 0` yaptı (fişte uyku "hiçbir zaman"); eski değer bilinmiyor. Geri almak için `powercfg /change standby-timeout-ac 30`. Ajanlara sistem ayarı değiştirmemeleri söylendi.
+- Bir arka plan ajanının son raporu harness aksaklığıyla iletilmedi; sonuçlar elle doğrulandı.
+- Taslakta kalan diğer konular (F9'dan sonra):
+  - Mobil uygulama (React Native) hiç başlamadı (`frontend/apps/mobile` yok).
+  - Puan "yeniden hesapla" ucu (`tasarim-domain.md:132`), çözüm düzenleme geçmişi, öğretmen çözümlerine şikâyet kilidi.
+  - Gemini tarihe bağlı fiyat (2027-01-01) — Ocak'tan önce.
+  - Zamanlayıcı reviewer turu hiç yapılmadı + 5 düşük bulgu (NotConfigured'da manuel tetik, Interrupted bildirimi, boş Publish kaydı, MARS, RunId'siz ödev bildirimi); graceful shutdown Interrupted denenmedi.
+  - Açık ödevde beğeni görünürlüğü (2 madde); profil bayat form; `seed-reference-data` ada göre eşleme; `reported` parametresi; şikâyet bağlantısı filtresi; kalan aria-label Title Case.
+  - Gerçek Gemini duman testi, fotoğraflı AI yolu uçtan uca, gerçek iPhone toplu yükleme ("Dosya zorunludur").
+  - CLAUDE.md "yetkisiz erişim" zamanlayıcı sorunu v2'de geçersiz (zamanlayıcı API içinde) — CLAUDE.md'den çıkarılabilir.
+  - Demo ortamı betiği.
+
+### Sıradaki adımlar
+1. F9b: sağ sütun şerit düzeltmesi (frontend-agent) → reviewer kısa tur → kullanıcı onayıyla commit + push.
+2. F9c (Gemini tespiti) — F8e sonrası önerilir; plan `plan-f9.md`.
+3. Azure F8e ilk kurulum (önceki liste) + gerçek iPhone testine F9 akışları.
+4. Sıra: zamanlayıcı reviewer + küçük hatalar → Gemini fiyat güncellemesi → mobil uygulama.
+
+### Oturum 11 eki — 2026-11-25 (F9b kapanışı)
+- Sağ sütun şerit hatası düzeltildi (`text-detect.ts`): metin parçaları sütunlara tek tek atanıyor (`CONTINUATION_GAP` 0.012), kutu kenarları komşu sütun parçalarına göre sınırlanıyor (`NEIGHBOR_PAD` 0.003). Gerçek PDF testine kenar-kesişim kontrolü eklendi (düzeltme öncesi 39 kesişim, sonrası 0).
+- Reviewer: kritik/orta bulgu yok. vitest 433/433 (gerçek PDF ile), typecheck, eslint, build temiz; E2E (teacher-page-split, student-upload, teacher-assignments) 137 geçti / 1 skip / 0 hata.
+- F9b commit + push edildi.
+- Açık düşük bulgular:
+  - L1: `text-detect.ts:382` çok kısa veya sayfa altına yakın soru kutusu uyarısız düşüyor (gap issue eklenmeli).
+  - L2: `text-detect.ts:315-331` iki yana yaslı sol sütun satırının son kelimesi sağ sütuna sayılıp kırpılabilir (koddan çıkarım).
+  - L3: numaranın solundan başlayan geniş şekil etiketinin sol ucu ~%1 kırpılabilir.
+  - L4: sütunda tek sola taşan satır tüm sütun kutularını genişletiyor (eskiden beri).
+  - L5: `answer-key-detect.ts:136-138` başlıkla aynı hizada başka sütun metni varsa başlık tanınmayabilir/o hizadaki cevaplar kaybolabilir.
+- Sıradaki: F9c (F8e sonrası) / Azure F8e; yayınevi denemeleriyle F9b eşik sınaması.

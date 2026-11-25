@@ -13,6 +13,8 @@ export interface CanvasBox {
   number: number;
   option: string | undefined;
   transferred: boolean;
+  suggested?: boolean;
+  section?: string;
 }
 
 interface PageCanvasProps {
@@ -215,17 +217,19 @@ export function PageCanvas({ imageUrl, loading, error, aspect, pageLabel, boxes,
                 role="button"
                 tabIndex={0}
                 aria-pressed={selected}
-                aria-label={`Soru ${box.number}${box.option ? ` · ${box.option}` : ""} Çerçevesi${box.transferred ? ", Aktarıldı" : ""}`}
+                aria-label={`${box.section ?? "Soru"} ${box.number}${box.option ? ` · ${box.option}` : ""} Çerçevesi${box.transferred ? ", Aktarıldı" : ""}${box.suggested ? ", Öneri" : ""}`}
                 data-testid="split-box"
                 data-box-id={box.id}
                 data-number={box.number}
                 data-selected={selected}
+                data-suggested={box.suggested === true}
                 data-option={box.option ?? ""}
                 onPointerDown={(event) => onBoxDown(event, box)}
                 onFocus={() => onSelect(box.id)}
                 className={cn(
                   "absolute border-2 outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary",
-                  selected ? "z-10 border-primary bg-primary/15" : box.transferred ? "border-success bg-success/10" : "border-accent bg-accent/10",
+                  box.suggested && "border-dashed",
+                  selected ? "z-10 border-primary bg-primary/15" : box.suggested ? "border-info bg-info/10" : box.transferred ? "border-success bg-success/10" : "border-accent bg-accent/10",
                   mode === "draw" && "cursor-move",
                 )}
                 style={{ left: percent(rect.x), top: percent(rect.y), width: percent(rect.width), height: percent(rect.height), touchAction: mode === "draw" ? "none" : "auto" }}

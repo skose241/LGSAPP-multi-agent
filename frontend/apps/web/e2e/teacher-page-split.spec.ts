@@ -5,7 +5,7 @@ import { assignmentDetail, createDraftAssignment, pngFile } from "./support/assi
 import { expectNoAxeViolations } from "./support/axe";
 import { backend } from "./support/backend";
 import { expect, login, test } from "./support/fixtures";
-import { brokenPdf, pdfFile, questionRect, type NormalizedRect } from "./support/pdf-fixture";
+import { brokenPdf, pdfFile, questionRect, type NormalizedRect, type PdfFixtureOptions } from "./support/pdf-fixture";
 import type { ActiveUser } from "./support/student-data";
 import { world } from "./support/world";
 
@@ -371,5 +371,207 @@ test.describe("sayfadan ayır", () => {
     await box.tap({ position: { x: 10, y: 10 } });
     await expect(box).toHaveAttribute("data-selected", "true");
     await expect(page.getByTestId("handle-se")).toBeVisible();
+  });
+});
+
+test.describe("otomatik bul", () => {
+  async function openSplit(page: Page, label: string) {
+    const target = await lesson();
+    const teacher = await branchTeacher(target.id);
+    const id = await newAssignment(teacher, target.id, label);
+    await loginAs(page, teacher);
+    await page.goto(`/ogretmen/odevler/${id}`);
+    await page.getByRole("button", { name: "Sayfadan Ayır" }).click();
+    return { teacher, id };
+  }
+
+  async function openFixture(page: Page, options: PdfFixtureOptions, name = "deneme.pdf") {
+    await page.getByTestId("split-pdf-input").setInputFiles(pdfFile(name, options));
+    await expect(page.getByTestId("split-workspace")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("page-image")).toBeVisible({ timeout: 60_000 });
+  }
+
+  test("iki sütunlu PDF için 8 öneri bulunur, kabul edilir, aktarılır ve ödevde soru oluşur", async ({ page }) => {
+    test.setTimeout(300_000);
+    const { teacher, id } = await openSplit(page, "Otomatik bul ödevi");
+    await openFixture(page, { pages: 1 });
+    await page.getByTestId("auto-detect-page").click();
+    const boxes = page.getByTestId("split-box");
+    await expect(boxes).toHaveCount(8);
+    await expect(page.getByTestId("suggestion-count")).toHaveText("8 öneri var");
+    for (let index = 0; index < 8; index += 1) await expect(boxes.nth(index)).toHaveAttribute("data-suggested", "true");
+    await expect(page.getByTestId("box-row").filter({ hasText: "Öneri" })).toHaveCount(8);
+    await expect(page.getByTestId("split-notice")).toContainText("8 çerçeve önerisi bulundu");
+    await expect(page.getByTestId("split-transfer")).toBeDisabled();
+    expect(await boxes.first().evaluate((element) => getComputedStyle(element).borderTopStyle)).toBe("dashed");
+    await expectNoAxeViolations(page, "sayfadan-ayir-oneriler");
+
+    await page.getByTestId("suggestions-accept").click();
+    await expect(page.getByTestId("suggestions")).toHaveCount(0);
+    for (let index = 0; index < 8; index += 1) await expect(boxes.nth(index)).toHaveAttribute("data-suggested", "false");
+    await expect(page.getByTestId("split-transfer")).toBeEnabled();
+
+    await page.getByTestId("answer-key-open").click();
+    await page.getByRole("dialog").getByTestId("answer-key-text").fill("ABCDABCD");
+    await page.getByRole("dialog").getByTestId("answer-key-apply").click();
+    await page.getByTestId("split-transfer").click();
+    const cards = page.getByTestId("composer-card");
+    await expect(cards).toHaveCount(8);
+    await expect(cards.nth(0).getByRole("heading", { name: "Soru 1" })).toBeVisible();
+    await expect(cards.nth(7).getByRole("heading", { name: "Soru 8" })).toBeVisible();
+    await waitUploaded(page, 8);
+    await page.getByTestId("split-panel").getByTestId("composer-submit").click();
+    await expect(page.getByTestId("assignment-question")).toHaveCount(8, { timeout: 180_000 });
+    const detail = await assignmentDetail(teacher, id);
+    expect(detail.questions.map((question) => question.correctOption)).toEqual([1, 2, 3, 4, 1, 2, 3, 4]);
+  });
+
+  test("öneriler reddedilir, tek tek silinir ve düzeltilir; aktarım yalnız kabul edilenlerle yapılır", async ({ page }) => {
+    test.setTimeout(240_000);
+    await openSplit(page, "Öneri düzeltme ödevi");
+    await openFixture(page, { pages: 1 });
+    const boxes = page.getByTestId("split-box");
+    await page.getByTestId("auto-detect-page").click();
+    await expect(boxes).toHaveCount(8);
+    await page.getByTestId("suggestions-reject").click();
+    await expect(boxes).toHaveCount(0);
+    await expect(page.getByTestId("split-notice")).toContainText("8 öneri reddedildi");
+
+    await page.getByTestId("auto-detect-page").click();
+    await expect(boxes).toHaveCount(8);
+    await page.getByTestId("box-row").nth(0).getByRole("button", { name: /Çerçevesini Sil/ }).click();
+    await expect(boxes).toHaveCount(7);
+    await boxes.first().focus();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("c");
+    await expect(boxes.first()).toHaveAttribute("data-option", "C");
+    await expect(boxes.first()).toHaveAttribute("data-suggested", "true");
+    await expect(page.getByTestId("suggestion-accept-one")).toBeVisible();
+    await page.getByTestId("suggestion-accept-one").click();
+    await expect(boxes.first()).toHaveAttribute("data-suggested", "false");
+    await expect(page.getByTestId("suggestion-count")).toHaveText("6 öneri var");
+    await page.getByTestId("split-transfer").click();
+    await expect(page.getByTestId("composer-card")).toHaveCount(1);
+    await expect(page.getByTestId("composer-card").first().getByRole("radio", { name: "C şıkkı" })).toBeChecked();
+    await expect(page.getByTestId("suggestion-count")).toHaveText("6 öneri var");
+  });
+
+  test("mevcut çerçeveyle çakışan öneri atlanır", async ({ page }) => {
+    test.setTimeout(180_000);
+    await openSplit(page, "Çakışma ödevi");
+    await openFixture(page, { pages: 1 });
+    await drawBox(page, inside(questionRect(0)));
+    await expect(page.getByTestId("split-box")).toHaveCount(1);
+    await page.getByTestId("auto-detect-page").click();
+    await expect(page.getByTestId("split-box")).toHaveCount(8);
+    await expect(page.getByTestId("split-notice")).toContainText("1 öneri mevcut çerçevelerle çakıştığı için atlandı");
+    await expect(page.getByTestId("suggestion-count")).toHaveText("7 öneri var");
+  });
+
+  test("cevap anahtarı sayfası önerilir ve tıklanınca uygulanır", async ({ page }) => {
+    test.setTimeout(240_000);
+    await openSplit(page, "Anahtar ödevi");
+    await openFixture(page, { pages: 1, answerKey: "ACBDABCD" });
+    await expect(page.getByTestId("page-thumb")).toHaveCount(2);
+    await page.getByTestId("auto-detect-all").click();
+    const boxes = page.getByTestId("split-box");
+    await expect(boxes).toHaveCount(8);
+    const suggestion = page.getByTestId("key-suggestion");
+    await expect(suggestion).toContainText("Sayfa 2");
+    await expect(suggestion).toContainText("8 cevap okundu");
+    await expect(page.getByTestId("page-thumb-badge")).toHaveCount(0);
+    await page.getByTestId("suggestions-accept").click();
+    await page.getByTestId("key-apply").click();
+    await expect(page.getByTestId("split-notice")).toContainText("8 çerçeveye cevap uygulandı");
+    await expect(suggestion).toHaveCount(0);
+    const expected = ["A", "C", "B", "D", "A", "B", "C", "D"];
+    for (let index = 0; index < 8; index += 1) await expect(boxes.nth(index)).toHaveAttribute("data-option", expected[index]!);
+  });
+
+  test("numara sırası eksik sayfa rozet ve uyarı gösterir", async ({ page }) => {
+    test.setTimeout(180_000);
+    await openSplit(page, "Eksik numara ödevi");
+    await openFixture(page, { pages: 2, gapAfter: 3 });
+    await page.getByTestId("auto-detect-all").click();
+    await expect(page.getByTestId("split-box")).toHaveCount(8);
+    await expect(page.getByTestId("page-thumb-badge").first()).toHaveText("Numara Sırası Eksik");
+    await expect(page.getByTestId("page-issues")).toContainText("Numara Sırası Eksik");
+    await expect(page.getByTestId("split-notice")).toContainText("numara sırası güvenilir değil");
+  });
+
+  test("numara boşluklu sayfada cevap anahtarı okunan numaraya göre uygulanır ve elle girilen başlangıç numarası korunur", async ({ page }) => {
+    test.setTimeout(180_000);
+    await openSplit(page, "Boşluklu anahtar ödevi");
+    await openFixture(page, { pages: 1, gapAfter: 3 });
+    await page.getByTestId("auto-detect-page").click();
+    const boxes = page.getByTestId("split-box");
+    await expect(boxes).toHaveCount(8);
+    await page.getByTestId("suggestions-accept").click();
+    await expect(boxes.nth(3)).toHaveAttribute("data-number", "5");
+    await expect(page.getByTestId("box-row").nth(3)).toHaveAttribute("data-number", "5");
+    await page.getByTestId("answer-key-open").click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByTestId("answer-key-text").fill("1A 2B 3C 5D 6A 9B");
+    await dialog.getByTestId("answer-key-apply").click();
+    await expect(boxes.nth(3)).toHaveAttribute("data-option", "D");
+    await expect(boxes.nth(4)).toHaveAttribute("data-option", "A");
+    await expect(boxes.nth(7)).toHaveAttribute("data-option", "B");
+    await expect(boxes.nth(5)).toHaveAttribute("data-option", "");
+  });
+
+  test("metin katmanı olmayan PDF için uyarı çıkar ve elle çizim sürer", async ({ page }) => {
+    test.setTimeout(180_000);
+    await openSplit(page, "Metinsiz ödev");
+    await openFixture(page, { pages: 2, textless: true }, "taranmis.pdf");
+    await page.getByTestId("auto-detect-page").click();
+    await expect(page.getByTestId("auto-warning")).toHaveText("Bu sayfada metin bulunamadı, çerçeveleri elle çizin.");
+    await expect(page.getByTestId("split-box")).toHaveCount(0);
+    await page.getByTestId("auto-detect-all").click();
+    await expect(page.getByTestId("auto-warning")).toHaveText("Bu PDF'te metin bulunamadı, çerçeveleri elle çizin.");
+    await page.getByTestId("page-overlay").evaluate((element) => window.scrollBy(0, element.getBoundingClientRect().top - 90));
+    await drawBox(page, inside(questionRect(0)));
+    await expect(page.getByTestId("split-box")).toHaveCount(1);
+    await expect(page.getByTestId("split-box").first()).toHaveAttribute("data-suggested", "false");
+  });
+
+  test("kenarları sıkılaştır seçili ve tüm elle çizilen çerçevelerde çalışır", async ({ page }) => {
+    test.setTimeout(240_000);
+    await openSplit(page, "Sıkılaştırma ödevi");
+    await openFixture(page, { pages: 1 });
+    const loose = (rect: NormalizedRect): NormalizedRect => ({ x: Math.max(0, rect.x - 0.03), y: Math.max(0, rect.y - 0.025), width: rect.width + 0.07, height: rect.height + 0.05 });
+    await drawBox(page, loose(questionRect(0)));
+    await drawBox(page, loose(questionRect(4)));
+    const boxes = page.getByTestId("split-box");
+    await expect(boxes).toHaveCount(2);
+    const beforeFirst = await styleNumber(boxes.nth(0), "width");
+    const beforeSecond = await styleNumber(boxes.nth(1), "width");
+    await boxes.nth(0).focus();
+    await page.getByTestId("trim-selected").click();
+    await expect(page.getByTestId("split-notice")).toContainText("1 çerçevenin kenarları sıkılaştırıldı");
+    const afterFirst = await styleNumber(boxes.nth(0), "width");
+    expect(afterFirst).toBeLessThan(beforeFirst - 3);
+    expect(afterFirst).toBeGreaterThan(40);
+    expect(await styleNumber(boxes.nth(1), "width")).toBeCloseTo(beforeSecond, 1);
+    await page.getByTestId("trim-all").click();
+    await expect(page.getByTestId("split-notice")).toContainText("kenarları sıkılaştırıldı");
+    expect(await styleNumber(boxes.nth(1), "width")).toBeLessThan(beforeSecond - 3);
+    await page.getByTestId("box-undo").click();
+    expect(await styleNumber(boxes.nth(1), "width")).toBeCloseTo(beforeSecond, 1);
+  });
+
+  test("yenilemeden sonra kabul edilmemiş öneriler taslakla geri gelir", async ({ page }) => {
+    test.setTimeout(180_000);
+    await openSplit(page, "Öneri taslağı ödevi");
+    await openFixture(page, { pages: 1 }, "taslak.pdf");
+    await page.getByTestId("auto-detect-page").click();
+    await expect(page.getByTestId("split-box")).toHaveCount(8);
+    page.on("dialog", (dialog) => void dialog.accept());
+    await page.reload();
+    await page.getByRole("button", { name: "Sayfadan Ayır" }).click();
+    await openFixture(page, { pages: 1 }, "taslak.pdf");
+    await expect(page.getByTestId("split-notice")).toContainText("Önceki çalışmanız geri yüklendi");
+    await expect(page.getByTestId("split-box")).toHaveCount(8);
+    await expect(page.getByTestId("suggestion-count")).toHaveText("8 öneri var");
+    await expect(page.getByTestId("split-box").first()).toHaveAttribute("data-suggested", "true");
   });
 });

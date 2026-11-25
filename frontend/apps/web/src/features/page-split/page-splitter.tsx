@@ -1,19 +1,26 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, FileText, Hand, ImagePlus, Loader2, Merge, MousePointer2, Plus, RotateCw, Send, Trash2, Undo2, ZoomIn, ZoomOut, ListChecks } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Hand, ImagePlus, Loader2, Merge, MousePointer2, Plus, RotateCw, Scissors, Send, Trash2, Undo2, ZoomIn, ZoomOut, ListChecks } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type RefObject } from "react";
+import { Badge } from "@/components/ui/badge";
 import { OptionPicker } from "@/components/ui/option-picker";
 import { Button } from "@/components/ui/button";
 import { useBeforeUnload } from "@/features/upload/hooks";
 import type { ComposerCardInfo, ComposerHandle, ComposerIncoming } from "@/features/upload/photo-question-composer";
 import { loadDraft, saveDraft, type DraftStorage } from "@/lib/page-split/draft-store";
 import { displayedSize, mergeRects, rotateBy, unrotateRect, type Rect, type Rotation } from "@/lib/page-split/geometry";
-import { applyAnswers, canMerge, cropFileName, newBoxId, pendingBoxes, readingOrder, type SplitBox } from "@/lib/page-split/model";
+import { mergeKeyPages, type KeySection } from "@/lib/page-split/answer-key-detect";
+import { acceptSuggestions, applyAnswers, applySectionKeys, boxLabel, canMerge, confirmedBoxes, cropFileName, newBoxId, numberingOf, pendingBoxes, readingOrder, rejectSuggestions, suggestedBoxes, type SplitBox } from "@/lib/page-split/model";
 import { SourceError, type PageSource } from "@/lib/page-split/sources";
+import { applyDetections } from "@/lib/page-split/suggest";
+import { badgeFor, type PageDetection } from "@/lib/page-split/text-detect";
+import { trimBoxRect } from "@/lib/page-split/trim-render";
 import { AnswerKeyDialog } from "./answer-key-dialog";
+import { AutoDetectPanel, type KeySuggestion } from "./auto-detect-panel";
 import { BoxList } from "./box-list";
 import { PageCanvas, type CanvasMode } from "./page-canvas";
 import { PageStrip } from "./page-strip";
+import { useAutoDetect, type AutoDetectScope } from "./use-auto-detect";
 import { usePagePreview, usePageSource } from "./use-page-source";
 
 const ZOOM_STEPS = [1, 1.5, 2, 3] as const;
@@ -42,6 +49,7 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
   const photoInputId = useId();
   const host = usePageSource();
   const source = host.source;
+  const auto = useAutoDetect(source);
 
   const [boxes, setBoxesState] = useState<SplitBox[]>([]);
   const [rotations, setRotations] = useState<Record<number, Rotation>>({});
@@ -54,6 +62,13 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
   const [transferring, setTransferring] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
+  const [detections, setDetections] = useState<Record<number, PageDetection>>({});
+  const [keySuggestion, setKeySuggestion] = useState<KeySuggestion | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [trimming, setTrimming] = useState(false);
+  const [trimProgress, setTrimProgress] = useState<{ done: number; total: number } | null>(null);
+  const trimAbort = useRef<AbortController | null>(null);
+  const keyAnswers = useRef<KeySection[] | null>(null);
 
   const boxesRef = useRef<SplitBox[]>([]);
   const history = useRef<SplitBox[][]>([]);
@@ -66,6 +81,7 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
     mounted.current = true;
     return () => {
       mounted.current = false;
+      trimAbort.current?.abort();
     };
   }, []);
 
@@ -87,12 +103,26 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
   const view = displayedSize(pageSize.width, pageSize.height, rotation);
   const preview = usePagePreview(source, page, rotation, PREVIEW_EDGE);
 
-  const ordered = useMemo(() => readingOrder(boxes), [boxes]);
-  const numberOf = useCallback((id: string) => startNumber + ordered.findIndex((box) => box.id === id), [ordered, startNumber]);
-  const pending = boxes.filter((box) => !box.transferred);
+  const confirmed = useMemo(() => confirmedBoxes(boxes), [boxes]);
+  const numbering = useMemo(() => numberingOf(confirmed, startNumber), [confirmed, startNumber]);
+  const everything = useMemo(() => readingOrder(boxes), [boxes]);
+  const numberOf = useCallback(
+    (id: string) => {
+      const box = boxes.find((entry) => entry.id === id);
+      if (box?.suggested) return box.detectedNumber ?? 0;
+      return numbering.get(id) ?? 0;
+    },
+    [boxes, numbering],
+  );
+  const suggestions = useMemo(() => suggestedBoxes(boxes), [boxes]);
+  const pending = confirmed.filter((box) => !box.transferred);
   const [slots, setSlots] = useState(0);
   const ready = Math.min(pending.length, slots);
-  const transferredCount = boxes.length - pending.length;
+  const transferredCount = confirmed.length - pending.length;
+  const badges = useMemo(() => Object.fromEntries(Object.values(detections).flatMap((entry) => {
+    const label = badgeFor(entry);
+    return label ? [[entry.page, label] as const] : [];
+  })), [detections]);
   const counts = useMemo(() => Array.from({ length: source?.pageCount ?? 0 }, (_, index) => boxes.filter((box) => box.page === index).length), [boxes, source]);
 
   useBeforeUnload(pending.length > 0, LEAVE_PENDING);
@@ -142,6 +172,10 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
     setSelectedId(null);
     setZoomIndex(0);
     setProblems([]);
+    setDetections({});
+    setKeySuggestion(null);
+    setWarning(null);
+    keyAnswers.current = null;
   }
 
   async function adopt(opened: PageSource | null) {
@@ -214,7 +248,7 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
   }
 
   function mergeWithNext(id: string) {
-    const samePage = readingOrder(boxesRef.current.filter((box) => box.page === page));
+    const samePage = readingOrder(confirmedBoxes(boxesRef.current).filter((box) => box.page === page));
     const index = samePage.findIndex((box) => box.id === id);
     const first = samePage[index];
     const second = samePage[index + 1];
@@ -236,10 +270,21 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
   }
 
   function applyKey(answers: Map<number, string>) {
-    const result = applyAnswers(boxesRef.current, answers, startNumber);
-    commit(result.boxes);
-    const extra = result.unmatched.length > 0 ? ` Çerçevesi olmayan numaralar: ${result.unmatched.slice(0, 10).join(", ")}.` : "";
-    setNotice(`${result.applied} çerçeveye cevap uygulandı.${extra}`);
+    const result = applyAnswers(confirmedBoxes(boxesRef.current), answers, startNumber);
+    const updated = new Map(result.boxes.map((box) => [box.id, box]));
+    const early = new Set<number>();
+    commit(
+      boxesRef.current.map((box) => {
+        if (!box.suggested) return updated.get(box.id) ?? box;
+        const letter = box.detectedNumber === undefined ? undefined : answers.get(box.detectedNumber);
+        if (!letter) return box;
+        early.add(box.detectedNumber as number);
+        return { ...box, option: letter };
+      }),
+    );
+    const missing = result.unmatched.filter((number) => !early.has(number));
+    const extra = missing.length > 0 ? ` Çerçevesi olmayan numaralar: ${missing.slice(0, 10).join(", ")}.` : "";
+    setNotice(`${result.applied + early.size} çerçeveye cevap uygulandı.${extra}`);
   }
 
   async function transfer() {
@@ -255,19 +300,19 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
     setNotice(null);
     setProblems([]);
     try {
-      const order = readingOrder(boxesRef.current);
+      const order = numberingOf(confirmedBoxes(boxesRef.current), startNumber);
       const entries: ComposerIncoming[] = [];
       const used: SplitBox[] = [];
       const failures: string[] = [];
       for (const box of batch) {
         if (!mounted.current) return;
-        const number = startNumber + order.findIndex((entry) => entry.id === box.id);
+        const number = order.get(box.id) ?? 0;
         try {
           const blob = await current.renderCrop(box.page, box.rect, rotations[box.page] ?? 0);
-          entries.push({ file: new File([blob], cropFileName(box.page, number), { type: "image/jpeg" }), option: box.option, label: `Soru ${number}`, sourceKey: box.id });
+          entries.push({ file: new File([blob], cropFileName(box.page, number), { type: "image/jpeg" }), option: box.option, label: boxLabel(box, number), sourceKey: box.id });
           used.push(box);
         } catch (failure) {
-          failures.push(`Soru ${number}: ${failure instanceof SourceError ? failure.message : "Çerçeve kırpılamadı."}`);
+          failures.push(`${boxLabel(box, number)}: ${failure instanceof SourceError ? failure.message : "Çerçeve kırpılamadı."}`);
         }
       }
       if (!mounted.current) return;
@@ -283,12 +328,142 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
     }
   }
 
+  async function detect(scope: AutoDetectScope) {
+    const outcome = await auto.run(scope, page);
+    if (!outcome || !mounted.current) return;
+    const result = applyDetections(boxesRef.current, outcome.detections);
+    commit(result.boxes);
+    setDetections((current) => ({ ...current, ...Object.fromEntries(outcome.detections.map((entry) => [entry.page, entry])) }));
+    const merged = mergeKeyPages(outcome.keys.pages, outcome.scope);
+    const keyPages = outcome.keys.pages.filter((entry) => entry.isKey && outcome.scope.includes(entry.page)).map((entry) => entry.page);
+    if (keyPages.length > 0) {
+      keyAnswers.current = merged.sections;
+      setKeySuggestion({
+        pages: keyPages,
+        answerCount: merged.sections.reduce((sum, section) => sum + section.answers.size, 0),
+        conflicts: merged.conflicts,
+        sections: merged.sections.map((section) => ({ name: section.name, count: section.answers.size })),
+      });
+    } else {
+      keyAnswers.current = null;
+      setKeySuggestion(null);
+    }
+    const empty = outcome.detections.filter((entry) => entry.issues.some((issue) => issue.code === "noText"));
+    if (empty.length > 0 && empty.length === outcome.detections.length) {
+      setWarning(scope === "page" ? "Bu sayfada metin bulunamadı, çerçeveleri elle çizin." : "Bu PDF'te metin bulunamadı, çerçeveleri elle çizin.");
+    } else if (empty.length > 0) {
+      setWarning(`${empty.length} sayfada metin bulunamadı, bu sayfalarda çerçeveleri elle çizin.`);
+    } else {
+      setWarning(null);
+    }
+    const unreliable = outcome.detections.filter((entry) => entry.confidence === "low").length;
+    const parts: string[] = [];
+    if (result.added > 0) parts.push(`${result.added} çerçeve önerisi bulundu.`);
+    else if (empty.length === 0 && keyPages.length === 0) parts.push("Otomatik çerçeve bulunamadı. Çerçeveleri elle çizebilirsiniz.");
+    if (result.skipped > 0) parts.push(`${result.skipped} öneri mevcut çerçevelerle çakıştığı için atlandı.`);
+    if (unreliable > 0) parts.push(`${unreliable} sayfada numara sırası güvenilir değil, önerileri kontrol edin.`);
+    setNotice(parts.length > 0 ? parts.join(" ") : null);
+  }
+
+  function acceptAll() {
+    const count = suggestedBoxes(boxesRef.current).length;
+    if (count === 0) return;
+    const next = acceptSuggestions(boxesRef.current);
+    commit(next);
+    setNotice(`${count} öneri kabul edildi. Metinden gelen çerçeveler okunan soru numarasını taşır.`);
+  }
+
+  function acceptOne(id: string) {
+    const next = boxesRef.current.map((box) => (box.id === id && box.suggested ? { ...box, suggested: false } : box));
+    commit(next);
+  }
+
+  function rejectAll() {
+    const count = suggestedBoxes(boxesRef.current).length;
+    if (count === 0) return;
+    commit(rejectSuggestions(boxesRef.current));
+    setSelectedId((current) => (current && boxesRef.current.some((box) => box.id === current) ? current : null));
+    setNotice(`${count} öneri reddedildi.`);
+  }
+
+  function applyDetectedKey() {
+    const sections = keyAnswers.current;
+    if (!sections || sections.every((section) => section.answers.size === 0)) return;
+    const result = applySectionKeys(boxesRef.current, sections);
+    let next = result.boxes;
+    let manual = 0;
+    const only = sections.length === 1 ? sections[0] : undefined;
+    if (only) {
+      const manualBoxes = confirmedBoxes(next).filter((box) => box.source !== "text");
+      if (manualBoxes.length > 0) {
+        const positional = applyAnswers(manualBoxes, only.answers, startNumber);
+        const byId = new Map(positional.boxes.map((box) => [box.id, box]));
+        next = next.map((box) => byId.get(box.id) ?? box);
+        manual = positional.applied;
+      }
+    }
+    commit(next);
+    const missing = result.unmatched
+      .slice(0, 3)
+      .map((entry) => `${entry.name ? `${entry.name}: ` : ""}${entry.numbers.slice(0, 6).join(", ")}`)
+      .join("; ");
+    setNotice(`${result.applied + manual} çerçeveye cevap uygulandı.${missing ? ` Çerçevesi olmayan numaralar: ${missing}.` : ""}`);
+    setKeySuggestion(null);
+    keyAnswers.current = null;
+  }
+
+  async function trim(ids: string[] | null) {
+    const current = source;
+    if (!current || trimming) return;
+    const targets = boxesRef.current.filter((box) => !box.transferred && (ids ? ids.includes(box.id) : !box.suggested));
+    if (targets.length === 0) return;
+    setTrimming(true);
+    setNotice(null);
+    const abort = new AbortController();
+    trimAbort.current = abort;
+    setTrimProgress(targets.length > 1 ? { done: 0, total: targets.length } : null);
+    try {
+      const updates = new Map<string, Rect>();
+      let failed = 0;
+      let done = 0;
+      for (const box of targets) {
+        if (!mounted.current || abort.signal.aborted) break;
+        try {
+          const result = await trimBoxRect(current, box.page, box.rect, rotations[box.page] ?? 0, abort.signal);
+          if (result.changed) updates.set(box.id, result.rect);
+        } catch {
+          if (abort.signal.aborted) break;
+          failed += 1;
+        }
+        done += 1;
+        if (mounted.current) setTrimProgress(targets.length > 1 ? { done, total: targets.length } : null);
+      }
+      if (!mounted.current) return;
+      if (updates.size > 0) commit(boxesRef.current.map((box) => (updates.has(box.id) ? { ...box, rect: updates.get(box.id) as Rect } : box)));
+      const failure = failed > 0 ? ` ${failed} çerçeve işlenemedi.` : "";
+      if (abort.signal.aborted) setNotice(`İşlem iptal edildi. ${updates.size} çerçevenin kenarları sıkılaştırıldı.${failure}`);
+      else setNotice(updates.size > 0 ? `${updates.size} çerçevenin kenarları sıkılaştırıldı.${failure}` : `Sıkılaştırılacak boşluk bulunamadı.${failure}`);
+    } finally {
+      trimAbort.current = null;
+      if (mounted.current) {
+        setTrimming(false);
+        setTrimProgress(null);
+      }
+    }
+  }
+
+  function cancelTrim() {
+    trimAbort.current?.abort();
+  }
+
   const selected = boxes.find((box) => box.id === selectedId) ?? null;
-  const pageBoxes = boxes.filter((box) => box.page === page).map((box) => ({ id: box.id, rect: box.rect, number: numberOf(box.id), option: box.option, transferred: box.transferred }));
-  const listed = ordered.map((box) => ({ id: box.id, number: startNumber + ordered.indexOf(box), page: box.page, option: box.option, transferred: box.transferred }));
+  const pageBoxes = boxes.filter((box) => box.page === page).map((box) => ({ id: box.id, rect: box.rect, number: numberOf(box.id), option: box.option, transferred: box.transferred, suggested: box.suggested === true, section: box.section }));
+  const listed = everything.map((box) => ({ id: box.id, number: numberOf(box.id), page: box.page, option: box.option, transferred: box.transferred, suggested: box.suggested === true, section: box.section }));
   const zoom = ZOOM_STEPS[zoomIndex] ?? 1;
   const busy = host.status === "loading";
-  const locked = disabled || transferring;
+  const locked = disabled || transferring || trimming || auto.busy;
+  const pageDetection = detections[page];
+  const canDetect = source?.kind === "pdf" && typeof source.textContent === "function";
 
   const transferLabel = ready === 0 ? "Kartlara Aktar" : transferredCount > 0 ? `Sonraki ${ready} Çerçeveyi Aktar` : `${ready} Çerçeveyi Kartlara Aktar`;
 
@@ -329,6 +504,11 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
           {host.error}
         </p>
       ) : null}
+      {warning || auto.error ? (
+        <p role="alert" data-testid="auto-warning" className="rounded-md border border-warning bg-warning-soft p-3 text-sm font-medium text-warning-soft-foreground">
+          {auto.error ?? warning}
+        </p>
+      ) : null}
       {notice ? (
         <p role="status" data-testid="split-notice" className="rounded-md border border-info bg-info-soft p-3 text-sm font-medium text-info-soft-foreground">
           {notice}
@@ -344,7 +524,7 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
 
       {source ? (
         <div className="grid gap-4 lg:grid-cols-[7rem_minmax(0,1fr)_18rem]" data-testid="split-workspace" data-source-kind={source.kind}>
-          <PageStrip source={source} current={page} rotations={rotations} counts={counts} onSelect={setPage} />
+          <PageStrip source={source} current={page} rotations={rotations} counts={counts} badges={badges} onSelect={setPage} />
 
           <div className="flex min-w-0 flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Sayfa Araçları">
@@ -391,6 +571,19 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
               ) : null}
             </div>
 
+            {pageDetection && pageDetection.issues.length > 0 && !pageDetection.skipped ? (
+              <div className="flex flex-col gap-1 rounded-md border border-warning bg-warning-soft p-2 text-sm text-warning-soft-foreground" data-testid="page-issues">
+                <Badge tone="warning" className="self-start">
+                  {badgeFor(pageDetection)}
+                </Badge>
+                <ul className="list-disc pl-5">
+                  {pageDetection.issues.map((issue) => (
+                    <li key={issue.message}>{issue.message}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
             <PageCanvas
               imageUrl={preview.url}
               loading={preview.loading}
@@ -412,12 +605,25 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
 
             {selected ? (
               <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3" data-testid="selected-controls">
-                <p className="text-sm font-semibold">Seçili: Soru {numberOf(selected.id)}</p>
+                <p className="text-sm font-semibold">
+                  Seçili: {selected.section ?? "Soru"} {numberOf(selected.id)}
+                  {selected.suggested ? " (Öneri)" : ""}
+                </p>
                 <OptionPicker value={selected.option} onValueChange={(option) => setOption(selected.id, option)} disabled={locked} label="Seçili Çerçevenin Doğru Cevabı" />
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="secondary" onClick={() => mergeWithNext(selected.id)} disabled={locked} data-testid="box-merge">
-                    <Merge aria-hidden="true" />
-                    Sonrakiyle Birleştir
+                  {selected.suggested ? (
+                    <Button type="button" onClick={() => acceptOne(selected.id)} disabled={locked} data-testid="suggestion-accept-one">
+                      Bu Öneriyi Kabul Et
+                    </Button>
+                  ) : (
+                    <Button type="button" variant="secondary" onClick={() => mergeWithNext(selected.id)} disabled={locked} data-testid="box-merge">
+                      <Merge aria-hidden="true" />
+                      Sonrakiyle Birleştir
+                    </Button>
+                  )}
+                  <Button type="button" variant="secondary" onClick={() => void trim([selected.id])} loading={trimming} disabled={locked || selected.transferred} data-testid="trim-selected">
+                    <Scissors aria-hidden="true" />
+                    Kenarları Sıkılaştır
                   </Button>
                   <Button type="button" variant="secondary" onClick={() => deleteBox(selected.id)} disabled={locked} data-testid="box-delete">
                     <Trash2 aria-hidden="true" />
@@ -431,6 +637,24 @@ export function PageSplitter({ scope, composerRef, cards, disabled = false }: Pa
           </div>
 
           <aside className="flex flex-col gap-3" aria-label="Çerçeve Özeti">
+            {canDetect ? (
+              <AutoDetectPanel
+                busy={auto.busy}
+                disabled={locked}
+                suggestionCount={suggestions.length}
+                keySuggestion={keySuggestion}
+                trimming={trimming}
+                trimProgress={trimProgress}
+                onTrimCancel={cancelTrim}
+                trimmableCount={confirmed.filter((box) => !box.transferred).length}
+                onDetect={(scope) => void detect(scope)}
+                onAccept={acceptAll}
+                onReject={rejectAll}
+                onApplyKey={applyDetectedKey}
+                onDismissKey={() => setKeySuggestion(null)}
+                onTrimAll={() => void trim(null)}
+              />
+            ) : null}
             <h3 className="text-lg">Çerçeveler ({boxes.length})</h3>
             <BoxList boxes={listed} selectedId={selectedId} disabled={locked} onSelect={selectBox} onDelete={deleteBox} />
             <Button type="button" variant="secondary" onClick={() => setAnswerOpen(true)} disabled={boxes.length === 0 || locked} data-testid="answer-key-open">

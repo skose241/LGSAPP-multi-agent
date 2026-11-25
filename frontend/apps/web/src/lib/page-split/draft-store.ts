@@ -4,6 +4,7 @@ import { isOption, type SplitBox } from "./model";
 export const DRAFT_VERSION = 1;
 export const DRAFT_MAX_CHARS = 200_000;
 export const DRAFT_MAX_BOXES = 400;
+const SECTION_MAX = 40;
 
 export interface Draft {
   version: number;
@@ -53,13 +54,20 @@ function sanitizeBox(value: unknown, pageCount: number): SplitBox | null {
   const { x, y, width, height } = rect;
   if (!isNumber(x) || !isNumber(y) || !isNumber(width) || !isNumber(height)) return null;
   if (x < 0 || y < 0 || width <= 0 || height <= 0 || x + width > 1.0001 || y + height > 1.0001) return null;
-  return {
+  const result: SplitBox = {
     id: box.id,
     page: box.page,
     rect: { x, y, width, height },
     option: isOption(box.option) ? box.option : undefined,
     transferred: box.transferred === true,
   };
+  if (box.source === "text") {
+    result.source = "text";
+    if (box.suggested === true && !result.transferred) result.suggested = true;
+    if (isNumber(box.detectedNumber) && Number.isInteger(box.detectedNumber) && box.detectedNumber >= 1) result.detectedNumber = box.detectedNumber;
+    if (typeof box.section === "string" && box.section.length > 0 && box.section.length <= SECTION_MAX) result.section = box.section;
+  }
+  return result;
 }
 
 export function saveDraft(storage: DraftStorage, scope: string, draft: Draft): boolean {
@@ -114,9 +122,9 @@ export function peekDraft(storage: DraftStorage, scope: string): { sourceKey: st
   try {
     const text = storage.getItem(storageKey(scope));
     if (!text) return null;
-    const parsed = JSON.parse(text) as { version?: number; sourceKey?: string; boxes?: { transferred?: boolean }[] };
+    const parsed = JSON.parse(text) as { version?: number; sourceKey?: string; boxes?: { transferred?: boolean; suggested?: boolean }[] };
     if (parsed.version !== DRAFT_VERSION || typeof parsed.sourceKey !== "string" || !Array.isArray(parsed.boxes)) return null;
-    return { sourceKey: parsed.sourceKey, pending: parsed.boxes.filter((box) => !box.transferred).length };
+    return { sourceKey: parsed.sourceKey, pending: parsed.boxes.filter((box) => !box.transferred && !box.suggested).length };
   } catch {
     return null;
   }

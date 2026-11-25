@@ -7,6 +7,10 @@ export interface SplitBox {
   rect: Rect;
   option: string | undefined;
   transferred: boolean;
+  source?: "text";
+  suggested?: boolean;
+  detectedNumber?: number;
+  section?: string;
 }
 
 export const MAX_PDF_PAGES = 60;
@@ -26,9 +30,49 @@ export function readingOrder(boxes: readonly SplitBox[]): SplitBox[] {
   return pages.flatMap((page) => sortReadingOrder(boxes.filter((box) => box.page === page)));
 }
 
+export function boxNumber(box: SplitBox, index: number, startNumber: number): number {
+  return box.source === "text" && box.detectedNumber !== undefined ? box.detectedNumber : startNumber + index;
+}
+
+export function numberingOf(boxes: readonly SplitBox[], startNumber = 1): Map<string, number> {
+  const result = new Map<string, number>();
+  readingOrder(boxes).forEach((box, index) => result.set(box.id, boxNumber(box, index, startNumber)));
+  return result;
+}
+
+export function boxLabel(box: SplitBox, number: number): string {
+  return `${box.section ?? "Soru"} ${number}`;
+}
+
+export interface SectionKeyInput {
+  name: string | null;
+  answers: ReadonlyMap<number, string>;
+}
+
+export function applySectionKeys(boxes: readonly SplitBox[], sections: readonly SectionKeyInput[]): { boxes: SplitBox[]; applied: number; unmatched: { name: string | null; numbers: number[] }[] } {
+  const matched = new Map<SectionKeyInput, Set<number>>(sections.map((section) => [section, new Set<number>()]));
+  const hasBoxes = new Set<SectionKeyInput>();
+  let applied = 0;
+  const next = boxes.map((box) => {
+    if (box.source !== "text" || box.detectedNumber === undefined) return box;
+    const key = sections.length === 1 ? sections[0] : sections.find((section) => section.name === (box.section ?? null));
+    if (!key) return box;
+    hasBoxes.add(key);
+    const letter = key.answers.get(box.detectedNumber);
+    if (!letter) return box;
+    matched.get(key)?.add(box.detectedNumber);
+    applied += 1;
+    return { ...box, option: letter };
+  });
+  const unmatched = sections
+    .filter((section) => hasBoxes.has(section))
+    .map((section) => ({ name: section.name, numbers: [...section.answers.keys()].filter((number) => !matched.get(section)?.has(number)).sort((a, b) => a - b) }))
+    .filter((entry) => entry.numbers.length > 0);
+  return { boxes: next, applied, unmatched };
+}
+
 export function numberFor(boxes: readonly SplitBox[], id: string, startNumber = 1): number {
-  const index = readingOrder(boxes).findIndex((box) => box.id === id);
-  return index < 0 ? 0 : startNumber + index;
+  return numberingOf(boxes, startNumber).get(id) ?? 0;
 }
 
 export function applyAnswers(boxes: readonly SplitBox[], answers: ReadonlyMap<number, string>, startNumber = 1): { boxes: SplitBox[]; applied: number; unmatched: number[] } {
@@ -36,7 +80,7 @@ export function applyAnswers(boxes: readonly SplitBox[], answers: ReadonlyMap<nu
   const byId = new Map<string, string>();
   const matched = new Set<number>();
   ordered.forEach((box, index) => {
-    const number = startNumber + index;
+    const number = boxNumber(box, index, startNumber);
     const letter = answers.get(number);
     if (letter) {
       byId.set(box.id, letter);
@@ -47,8 +91,24 @@ export function applyAnswers(boxes: readonly SplitBox[], answers: ReadonlyMap<nu
   return { boxes: boxes.map((box) => (byId.has(box.id) ? { ...box, option: byId.get(box.id) } : box)), applied: byId.size, unmatched };
 }
 
+export function confirmedBoxes(boxes: readonly SplitBox[]): SplitBox[] {
+  return boxes.filter((box) => !box.suggested);
+}
+
+export function suggestedBoxes(boxes: readonly SplitBox[]): SplitBox[] {
+  return boxes.filter((box) => box.suggested === true);
+}
+
+export function acceptSuggestions(boxes: readonly SplitBox[]): SplitBox[] {
+  return boxes.map((box) => (box.suggested ? { ...box, suggested: false } : box));
+}
+
+export function rejectSuggestions(boxes: readonly SplitBox[]): SplitBox[] {
+  return confirmedBoxes(boxes);
+}
+
 export function pendingBoxes(boxes: readonly SplitBox[]): SplitBox[] {
-  return readingOrder(boxes.filter((box) => !box.transferred));
+  return readingOrder(boxes.filter((box) => !box.transferred && !box.suggested));
 }
 
 export function canMerge(first: SplitBox, second: SplitBox): boolean {

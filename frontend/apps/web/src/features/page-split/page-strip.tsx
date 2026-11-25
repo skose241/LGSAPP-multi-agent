@@ -12,10 +12,11 @@ interface ThumbProps {
   rotation: Rotation;
   active: boolean;
   count: number;
+  badge: string | null;
   onSelect: () => void;
 }
 
-function Thumb({ source, page, rotation, active, count, onSelect }: ThumbProps) {
+function Thumb({ source, page, rotation, active, count, badge, onSelect }: ThumbProps) {
   const holder = useRef<HTMLButtonElement | null>(null);
   const [visible, setVisible] = useState(false);
   const size = source.pageSize(page);
@@ -60,6 +61,11 @@ function Thumb({ source, page, rotation, active, count, onSelect }: ThumbProps) 
         <span className="sr-only">Sayfa </span>
         {page + 1}
       </span>
+      {badge ? (
+        <span className="w-full rounded bg-warning-soft px-1 text-center text-[10px] font-semibold leading-tight text-warning-soft-foreground" data-testid="page-thumb-badge">
+          {badge}
+        </span>
+      ) : null}
       {count > 0 ? (
         <span className="absolute right-1 top-1 rounded-pill bg-primary px-1.5 text-xs font-bold text-primary-foreground">
           {count}
@@ -75,14 +81,15 @@ interface PageStripProps {
   current: number;
   rotations: Record<number, Rotation>;
   counts: number[];
+  badges?: Record<number, string>;
   onSelect: (page: number) => void;
 }
 
-export function PageStrip({ source, current, rotations, counts, onSelect }: PageStripProps) {
+export function PageStrip({ source, current, rotations, counts, badges = {}, onSelect }: PageStripProps) {
   return (
     <nav aria-label="Sayfalar" className="flex gap-2 overflow-x-auto pb-1 lg:max-h-[75dvh] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pb-0" data-testid="page-strip">
       {Array.from({ length: source.pageCount }, (_, page) => (
-        <Thumb key={page} source={source} page={page} rotation={rotations[page] ?? 0} active={page === current} count={counts[page] ?? 0} onSelect={() => onSelect(page)} />
+        <Thumb key={page} source={source} page={page} rotation={rotations[page] ?? 0} active={page === current} count={counts[page] ?? 0} badge={badges[page] ?? null} onSelect={() => onSelect(page)} />
       ))}
     </nav>
   );
