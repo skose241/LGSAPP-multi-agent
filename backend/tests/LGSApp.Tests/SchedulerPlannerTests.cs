@@ -167,12 +167,152 @@ public class SchedulerPlannerTests
     {
         var interrupted = Run(GenerationKind.Generate, GenerationRunStatus.Interrupted, At(17, 30), At(17, 40));
 
-        var early = SchedulerPlanner.Plan(Options, At(17, 45), Today, [AssignmentsDone(), interrupted]);
+        var early = SchedulerPlanner.Plan(Options, At(17, 41), Today, [AssignmentsDone(), interrupted]);
         Assert.DoesNotContain(GenerationKind.Generate, early.Due);
-        Assert.Equal(At(17, 50), early.NextWakeUtc);
+        Assert.Equal(At(17, 42), early.NextWakeUtc);
 
-        var ready = SchedulerPlanner.Plan(Options, At(17, 50), Today, [AssignmentsDone(), interrupted]);
+        var ready = SchedulerPlanner.Plan(Options, At(17, 42), Today, [AssignmentsDone(), interrupted]);
         Assert.Contains(GenerationKind.Generate, ready.Due);
+    }
+
+    [Fact]
+    public void Interrupted_retry_delay_is_shorter_than_failure_delay()
+    {
+        var interrupted = Run(GenerationKind.Generate, GenerationRunStatus.Interrupted, At(17, 30), At(17, 40));
+        var failed = Run(GenerationKind.Generate, GenerationRunStatus.Failed, At(17, 30), At(17, 40));
+
+        Assert.Contains(GenerationKind.Generate, SchedulerPlanner.Plan(Options, At(17, 43), Today, [AssignmentsDone(), interrupted]).Due);
+        Assert.DoesNotContain(GenerationKind.Generate, SchedulerPlanner.Plan(Options, At(17, 43), Today, [AssignmentsDone(), failed]).Due);
+    }
+
+    [Fact]
+    public void Interrupted_runs_do_not_consume_failure_attempts()
+    {
+        var runs = new List<RunInfo> { AssignmentsDone() };
+        for (var i = 0; i < Options.MaxTimerAttemptsPerDay; i++)
+        {
+            runs.Add(Run(GenerationKind.Generate, GenerationRunStatus.Interrupted, At(17, 30 + i * 12), At(17, 35 + i * 12)));
+        }
+
+        var plan = SchedulerPlanner.Plan(Options, At(20, 0), Today, runs);
+
+        Assert.Contains(GenerationKind.Generate, plan.Due);
+    }
+
+    [Fact]
+    public void Interrupted_runs_have_their_own_higher_daily_cap()
+    {
+        var limit = Options.MaxTimerAttemptsPerDay * SchedulerPlanner.InterruptedAttemptsFactor;
+        var runs = new List<RunInfo> { AssignmentsDone() };
+        for (var i = 0; i < limit - 1; i++)
+        {
+            runs.Add(Run(GenerationKind.Generate, GenerationRunStatus.Interrupted, At(17, 30 + i), At(17, 30 + i, 30)));
+        }
+
+        Assert.Contains(GenerationKind.Generate, SchedulerPlanner.Plan(Options, At(20, 0), Today, runs).Due);
+
+        runs.Add(Run(GenerationKind.Generate, GenerationRunStatus.Interrupted, At(17, 50), At(17, 51)));
+
+        Assert.DoesNotContain(GenerationKind.Generate, SchedulerPlanner.Plan(Options, At(20, 0), Today, runs).Due);
+    }
+
+    [Fact]
+    public void Complete_takes_over_when_generate_gave_up_after_only_interruptions()
+    {
+        var limit = Options.MaxTimerAttemptsPerDay * SchedulerPlanner.InterruptedAttemptsFactor;
+        var runs = new List<RunInfo> { AssignmentsDone() };
+        for (var i = 0; i < limit; i++)
+        {
+            runs.Add(Run(GenerationKind.Generate, GenerationRunStatus.Interrupted, At(17, 30 + i), At(17, 30 + i, 30)));
+        }
+
+        var early = SchedulerPlanner.Plan(Options, At(18, 0), Today, runs);
+        Assert.DoesNotContain(GenerationKind.Generate, early.Due);
+        Assert.DoesNotContain(GenerationKind.Complete, early.Due);
+
+        var ready = SchedulerPlanner.Plan(Options, At(18, 15), Today, runs);
+        Assert.Contains(GenerationKind.Complete, ready.Due);
+    }
+
+    [Fact]
+    public void Complete_is_not_started_while_generate_can_still_be_retried()
+    {
+        var interrupted = Run(GenerationKind.Generate, GenerationRunStatus.Interrupted, At(17, 30), At(17, 40));
+
+        var plan = SchedulerPlanner.Plan(Options, At(18, 20), Today, [AssignmentsDone(), interrupted]);
+
+        Assert.Contains(GenerationKind.Generate, plan.Due);
+        Assert.DoesNotContain(GenerationKind.Complete, plan.Due);
+    }
+
+    [Fact]
+    public void Expired_running_generate_is_treated_as_dead_and_generate_is_due()
+    {
+        var dead = Run(GenerationKind.Generate, GenerationRunStatus.Running, At(17, 30), null);
+
+        var plan = SchedulerPlanner.Plan(Options, At(17, 35), Today, [AssignmentsDone(), dead]);
+
+        Assert.Equal([GenerationKind.Generate], plan.Due);
+    }
+
+    [Fact]
+    public void Expired_running_complete_is_dead_and_does_not_block_publish_or_complete()
+    {
+        var generate = Run(GenerationKind.Generate, GenerationRunStatus.Succeeded, At(17, 30), At(17, 50), 3);
+        var dead = Run(GenerationKind.Complete, GenerationRunStatus.Running, At(18, 15), null);
+
+        var plan = SchedulerPlanner.Plan(Options, At(19, 0), Today, [AssignmentsDone(), generate, dead]);
+
+        Assert.Equal([GenerationKind.Complete, GenerationKind.Publish], plan.Due);
+    }
+
+    [Fact]
+    public void Expired_running_publish_is_due_again()
+    {
+        var dead = Run(GenerationKind.Publish, GenerationRunStatus.Running, At(19, 0), null);
+        var generate = Run(GenerationKind.Generate, GenerationRunStatus.Succeeded, At(17, 30), At(17, 50), 3);
+
+        var plan = SchedulerPlanner.Plan(Options, At(19, 10), Today, [AssignmentsDone(), generate, dead]);
+
+        Assert.Contains(GenerationKind.Publish, plan.Due);
+    }
+
+    [Fact]
+    public void Expired_running_close_assignments_is_due_again()
+    {
+        var dead = Run(GenerationKind.CloseAssignments, GenerationRunStatus.Running, At(0, 5), null);
+
+        var plan = SchedulerPlanner.Plan(Options, At(0, 20), Today, [dead]);
+
+        Assert.Contains(GenerationKind.CloseAssignments, plan.Due);
+    }
+
+    [Fact]
+    public void Live_running_publish_and_assignments_still_block_themselves()
+    {
+        var publish = Run(GenerationKind.Publish, GenerationRunStatus.Running, At(19, 0), null);
+        var generate = Run(GenerationKind.Generate, GenerationRunStatus.Succeeded, At(17, 30), At(17, 50), 3);
+        var assignments = Run(GenerationKind.CloseAssignments, GenerationRunStatus.Running, At(0, 5), null);
+
+        var plan = SchedulerPlanner.Plan(Options, At(19, 1), Today, [assignments with { LeaseUntil = At(19, 3) }, generate, publish]);
+
+        Assert.DoesNotContain(GenerationKind.Publish, plan.Due);
+        Assert.DoesNotContain(GenerationKind.CloseAssignments, plan.Due);
+    }
+
+    [Fact]
+    public void Dead_run_at_exact_lease_boundary_is_still_live()
+    {
+        var running = Run(GenerationKind.Generate, GenerationRunStatus.Running, At(17, 30), null);
+
+        var atBoundary = SchedulerPlanner.Plan(Options, running.LeaseUntil, Today, [AssignmentsDone(), running]);
+        Assert.DoesNotContain(GenerationKind.Generate, atBoundary.Due);
+
+        var after = SchedulerPlanner.Plan(Options, running.LeaseUntil.AddSeconds(1), Today, [AssignmentsDone(), running]);
+        Assert.DoesNotContain(GenerationKind.Generate, after.Due);
+
+        var later = SchedulerPlanner.Plan(Options, running.LeaseUntil + SchedulerPlanner.InterruptedRetryDelay, Today, [AssignmentsDone(), running]);
+        Assert.Contains(GenerationKind.Generate, later.Due);
     }
 
     [Fact]
@@ -181,7 +321,7 @@ public class SchedulerPlannerTests
         var runs = new List<RunInfo> { AssignmentsDone() };
         for (var i = 0; i < 3; i++)
         {
-            runs.Add(Run(GenerationKind.Generate, GenerationRunStatus.Interrupted, At(17, 30 + i * 12), At(17, 35 + i * 12)));
+            runs.Add(Run(GenerationKind.Generate, GenerationRunStatus.Failed, At(17, 30 + i * 12), At(17, 35 + i * 12)));
         }
 
         var plan = SchedulerPlanner.Plan(Options, At(20, 0), Today, runs);
@@ -207,7 +347,7 @@ public class SchedulerPlannerTests
     public void Publish_waits_while_production_is_running_then_gives_up()
     {
         var generate = Run(GenerationKind.Generate, GenerationRunStatus.Succeeded, At(17, 30), At(17, 50), 3);
-        var complete = Run(GenerationKind.Complete, GenerationRunStatus.Running, At(18, 55), null);
+        var complete = Run(GenerationKind.Complete, GenerationRunStatus.Running, At(18, 55), null) with { LeaseUntil = At(19, 40) };
         var runs = new[] { AssignmentsDone(), generate, complete };
 
         var waiting = SchedulerPlanner.Plan(Options, At(19, 0), Today, runs);

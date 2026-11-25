@@ -143,20 +143,31 @@ public static class SchedulerMessages
     public const string GenerationDisabledManual = "Soru üretimi ayarlardan kapatılmış.";
     public const string AlreadyRunning = "Bu görev şu anda çalışıyor.";
     public const string LeaseExpired = "Kira süresi doldu, devralındı.";
+    public const string AiAccountMissing = "Yapay zekâ sistem hesabı bulunamadı.";
+    public const string AiNotConfiguredManual = "Yapay zekâ sağlayıcısı yapılandırılmadığı için bu görevi başlatamazsınız. Lütfen yapay zekâ ayarlarını kontrol edin.";
+    public const string InterruptedOnShutdown = "Uygulama kapanırken yarıda kesildi.";
+    public const string InterruptedOwnershipLost = "Çalıştırma sahipliği kaybedildi.";
 
-    public static string RunFailureNotice(GenerationKind kind)
+    private static string KindName(GenerationKind kind) => kind switch
     {
-        var name = kind switch
-        {
-            GenerationKind.Generate => "Günlük soru üretimi",
-            GenerationKind.Complete => "Günlük soru tamamlama",
-            GenerationKind.Publish => "Günlük soru yayınlama",
-            GenerationKind.CloseAssignments => "Ödev kapatma",
-            _ => "Zamanlayıcı"
-        };
+        GenerationKind.Generate => "Günlük soru üretimi",
+        GenerationKind.Complete => "Günlük soru tamamlama",
+        GenerationKind.Publish => "Günlük soru yayınlama",
+        GenerationKind.CloseAssignments => "Ödev kapatma",
+        _ => "Zamanlayıcı"
+    };
 
-        return $"{name} görevi beklenmeyen bir hata nedeniyle tamamlanamadı.";
-    }
+    public static string RunFailureNotice(GenerationKind kind) =>
+        $"{KindName(kind)} görevi beklenmeyen bir hata nedeniyle tamamlanamadı.";
+
+    public static string RunInterruptedNotice(GenerationKind kind, bool shutdown) =>
+        $"{KindName(kind)} görevi yarıda kesildi{(shutdown ? " (uygulama yeniden başlatıldı)" : string.Empty)}. Zamanlayıcı görevi yeniden deneyecektir; gerekirse zamanlayıcı ekranından elle de başlatabilirsiniz.";
+
+    public static string RunTakenOverNotice(GenerationKind kind) =>
+        $"{KindName(kind)} görevi yarıda kalmıştı; kira süresi dolduğu için yeni bir çalıştırma devraldı. Sonucu zamanlayıcı ekranından izleyebilirsiniz.";
+
+    public static string AiAccountMissingNotice(GenerationKind kind) =>
+        $"{KindName(kind)} görevi çalıştırılamadı: yapay zekâ sistem hesabı bulunamadı. Lütfen sistem hesaplarını kontrol edin.";
 
     public static string? TryForErrorKind(AiErrorKind kind) => kind switch
     {

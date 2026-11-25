@@ -149,6 +149,7 @@ var apiSettings = [
   { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
   { name: 'HttpsRedirection__Enabled', value: 'false' }
   { name: 'Scheduler__Enabled', value: 'true' }
+  { name: 'WEBSITES_CONTAINER_STOP_TIME_LIMIT', value: '90' }
   { name: 'Ai__Provider', value: aiEnabled ? 'Gemini' : 'None' }
   { name: 'Cors__AllowedOrigins__0', value: webOrigin }
   { name: 'Storage__Container', value: 'images' }

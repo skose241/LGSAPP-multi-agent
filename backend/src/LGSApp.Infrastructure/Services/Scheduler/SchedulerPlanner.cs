@@ -30,8 +30,18 @@ public static class SchedulerPlanner
             _ => o.AssignmentsTime
         });
 
+    public const int InterruptedAttemptsFactor = 3;
+    public static readonly TimeSpan InterruptedRetryDelay = TimeSpan.FromMinutes(2);
+
     public static SchedulerPlan Plan(SchedulerOptions o, DateTime nowUtc, DateOnly today, IReadOnlyList<RunInfo> runs)
     {
+        runs = runs
+            .Select(r => r.Status == GenerationRunStatus.Running && r.LeaseUntil < nowUtc
+                ? r with { Status = GenerationRunStatus.Interrupted, FinishedAt = r.LeaseUntil }
+                : r)
+            .ToList();
+
+        var interruptedLimit = o.MaxTimerAttemptsPerDay * InterruptedAttemptsFactor;
         var due = new List<GenerationKind>();
         var candidates = new List<DateTime>();
         var retry = TimeSpan.FromMinutes(o.RetryDelayMinutes);
@@ -55,9 +65,16 @@ public static class SchedulerPlanner
             .OrderByDescending(r => r.FinishedAt)
             .FirstOrDefault();
 
-        if (generateFinished is not null)
+        var generateInterrupted = runs
+            .Where(r => r.Kind == GenerationKind.Generate && r.Trigger == GenerationTrigger.Timer && r.Status == GenerationRunStatus.Interrupted && r.FinishedAt is not null)
+            .OrderByDescending(r => r.FinishedAt)
+            .ToList();
+        var generateGaveUp = !generateDone && generateFinished is null && generateInterrupted.Count >= interruptedLimit;
+        var generateReference = generateFinished ?? (generateGaveUp ? generateInterrupted[0] : null);
+
+        if (generateReference is not null)
         {
-            var completeEarliest = Max(completeAt, generateFinished.FinishedAt!.Value.AddMinutes(o.CompleteMinGapMinutes));
+            var completeEarliest = Max(completeAt, generateReference.FinishedAt!.Value.AddMinutes(o.CompleteMinGapMinutes));
             Evaluate(GenerationKind.Complete, completeEarliest, IsDoneByFinish(runs, GenerationKind.Complete), nowUtc <= catchUpUntil, generationGroupBusy);
         }
         else if (!generateDone && nowUtc <= catchUpUntil)
@@ -115,20 +132,32 @@ public static class SchedulerPlanner
                 return;
             }
 
-            if (runs.Count(r => r.Kind == kind && r.Trigger == GenerationTrigger.Timer) >= o.MaxTimerAttemptsPerDay)
+            var timerRuns = runs.Where(r => r.Kind == kind && r.Trigger == GenerationTrigger.Timer).ToList();
+            if (timerRuns.Count(r => r.Status != GenerationRunStatus.Interrupted) >= o.MaxTimerAttemptsPerDay
+                || timerRuns.Count(r => r.Status == GenerationRunStatus.Interrupted) >= interruptedLimit)
             {
                 return;
             }
 
             var ready = earliest;
             var lastFailure = runs
-                .Where(r => r.Kind == kind && r.Status is GenerationRunStatus.Failed or GenerationRunStatus.Interrupted or GenerationRunStatus.PartiallySucceeded && r.FinishedAt is not null)
+                .Where(r => r.Kind == kind && r.Status is GenerationRunStatus.Failed or GenerationRunStatus.PartiallySucceeded && r.FinishedAt is not null)
                 .Select(r => r.FinishedAt!.Value)
                 .DefaultIfEmpty()
                 .Max();
             if (lastFailure != default)
             {
                 ready = Max(ready, lastFailure + retry);
+            }
+
+            var lastInterrupt = timerRuns
+                .Where(r => r.Status == GenerationRunStatus.Interrupted && r.FinishedAt is not null)
+                .Select(r => r.FinishedAt!.Value)
+                .DefaultIfEmpty()
+                .Max();
+            if (lastInterrupt != default)
+            {
+                ready = Max(ready, lastInterrupt + InterruptedRetryDelay);
             }
 
             if (nowUtc < ready)

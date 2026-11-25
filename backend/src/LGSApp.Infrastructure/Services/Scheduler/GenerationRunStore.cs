@@ -12,7 +12,9 @@ namespace LGSApp.Infrastructure.Services.Scheduler;
 
 public sealed record RunClaim(int RunId, GenerationKind Kind, GenerationTrigger Trigger, int? UserId, DateOnly RunDate, DateTime StartedAt);
 
-public sealed record ClaimResult(RunClaim? Claim, string? ConflictMessage, int? ConflictRunId)
+public sealed record TakenOverRun(int RunId, GenerationKind Kind);
+
+public sealed record ClaimResult(RunClaim? Claim, string? ConflictMessage, int? ConflictRunId, IReadOnlyList<TakenOverRun>? TakenOver = null)
 {
     public bool Succeeded => Claim is not null;
 }
@@ -64,6 +66,7 @@ public sealed class GenerationRunStore(
                     return new ClaimResult(null, SchedulerMessages.AlreadyRunning, live.Id);
                 }
 
+                var takenOver = rows.Select(r => new TakenOverRun(r.Id, r.Kind)).ToList();
                 if (rows.Count > 0)
                 {
                     foreach (var stale in rows)
@@ -94,10 +97,10 @@ public sealed class GenerationRunStore(
                 catch (DbUpdateException ex) when (ex.IsUniqueViolation())
                 {
                     db.ChangeTracker.Clear();
-                    return new ClaimResult(null, SchedulerMessages.AlreadyRunning, null);
+                    return new ClaimResult(null, SchedulerMessages.AlreadyRunning, null, takenOver);
                 }
 
-                return new ClaimResult(new RunClaim(run.Id, kind, trigger, userId, run.RunDate, now), null, null);
+                return new ClaimResult(new RunClaim(run.Id, kind, trigger, userId, run.RunDate, now), null, null, takenOver);
             }, cancellationToken);
         }
         finally

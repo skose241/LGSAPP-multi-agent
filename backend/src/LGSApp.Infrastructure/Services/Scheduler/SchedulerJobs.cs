@@ -51,7 +51,21 @@ public sealed class GenerationJob(
 
         if (plan.AiUserId is null)
         {
-            return new JobOutcome(0, 1, "Yapay zekâ sistem hesabı bulunamadı.");
+            try
+            {
+                await notifier.NotifyRoleAsync(
+                    Roles.MudurId,
+                    NotificationType.GenerationReport,
+                    SchedulerMessages.AiAccountMissingNotice(context.Claim.Kind),
+                    context.Claim.RunId,
+                    cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogWarning(ex, "Yapay zekâ hesabı bildirimi gönderilemedi.");
+            }
+
+            return new JobOutcome(0, 1, SchedulerMessages.AiAccountMissing);
         }
 
         var attempts = await db.GenerationLogs.AsNoTracking()

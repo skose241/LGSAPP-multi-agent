@@ -40,13 +40,18 @@ public sealed class SchedulerService(
     SchedulerSignals signals,
     IServiceProvider services,
     IRunNotifier notifier,
+    IQuestionGenerator generator,
     TurkeyTime clock,
     TimeProvider timeProvider,
     IOptions<SchedulerOptions> options,
     ILogger<SchedulerService> logger) : ISchedulerService
 {
-    public Task<ClaimResult> ClaimAsync(GenerationKind kind, GenerationTrigger trigger, int? userId, CancellationToken cancellationToken) =>
-        store.ClaimAsync(kind, trigger, userId, cancellationToken);
+    public async Task<ClaimResult> ClaimAsync(GenerationKind kind, GenerationTrigger trigger, int? userId, CancellationToken cancellationToken)
+    {
+        var result = await store.ClaimAsync(kind, trigger, userId, cancellationToken);
+        await NotifyTakeoverAsync(result);
+        return result;
+    }
 
     public async Task<ManualStartOutcome> StartManualAsync(int userId, GenerationKind kind, CancellationToken cancellationToken)
     {
@@ -57,9 +62,15 @@ public sealed class SchedulerService(
             {
                 return new ManualStartOutcome(Fail.Conflict(SchedulerMessages.GenerationDisabledManual), null);
             }
+
+            if (!generator.IsConfigured)
+            {
+                return new ManualStartOutcome(Fail.Conflict(SchedulerMessages.AiNotConfiguredManual), null);
+            }
         }
 
         var claim = await store.ClaimAsync(kind, GenerationTrigger.Manual, userId, cancellationToken);
+        await NotifyTakeoverAsync(claim);
         if (claim.Claim is null)
         {
             return new ManualStartOutcome(Fail.Conflict(claim.ConflictMessage ?? SchedulerMessages.AlreadyRunning), claim.ConflictRunId);
@@ -92,8 +103,8 @@ public sealed class SchedulerService(
             interrupted = true;
             status = GenerationRunStatus.Interrupted;
             outcome = new JobOutcome(0, 0, stoppingToken.IsCancellationRequested
-                ? "Uygulama kapanırken yarıda kesildi."
-                : "Çalıştırma sahipliği kaybedildi.");
+                ? SchedulerMessages.InterruptedOnShutdown
+                : SchedulerMessages.InterruptedOwnershipLost);
         }
         catch (Exception ex)
         {
@@ -138,20 +149,48 @@ public sealed class SchedulerService(
 
         if (runFaulted)
         {
-            using var notifyCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            await NotifyManagersAsync(SchedulerMessages.RunFailureNotice(claim.Kind), claim.RunId, "Görev hata bildirimi gönderilemedi.");
+        }
+        else if (interrupted)
+        {
+            await NotifyManagersAsync(
+                SchedulerMessages.RunInterruptedNotice(claim.Kind, stoppingToken.IsCancellationRequested),
+                claim.RunId,
+                "Görev kesinti bildirimi gönderilemedi.");
+        }
+    }
+
+    private async Task NotifyTakeoverAsync(ClaimResult result)
+    {
+        if (result.TakenOver is not { Count: > 0 } taken)
+        {
+            return;
+        }
+
+        using var notifyCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        foreach (var run in taken)
+        {
             try
             {
-                await notifier.NotifyRoleAsync(
-                    Roles.MudurId,
-                    NotificationType.GenerationReport,
-                    SchedulerMessages.RunFailureNotice(claim.Kind),
-                    claim.RunId,
-                    notifyCts.Token);
+                await notifier.NotifyRoleAsync(Roles.MudurId, NotificationType.GenerationReport, SchedulerMessages.RunTakenOverNotice(run.Kind), run.RunId, notifyCts.Token);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Görev hata bildirimi gönderilemedi. Çalıştırma {RunId}", claim.RunId);
+                logger.LogWarning(ex, "Devralma bildirimi gönderilemedi. Çalıştırma {RunId}", run.RunId);
             }
+        }
+    }
+
+    private async Task NotifyManagersAsync(string message, int runId, string failureLog)
+    {
+        using var notifyCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        try
+        {
+            await notifier.NotifyRoleAsync(Roles.MudurId, NotificationType.GenerationReport, message, runId, notifyCts.Token);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "{Message} Çalıştırma {RunId}", failureLog, runId);
         }
     }
 
