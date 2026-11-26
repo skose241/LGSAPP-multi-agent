@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDateTimeShort, isApiError, optionToLetter, questionSourceLabel } from "@lgs/api";
+import { formatDateTimeShort, isApiError, normalizeAiState, optionToLetter, questionSourceLabel } from "@lgs/api";
 import {
   questionKeys,
   questionMutations,
@@ -274,7 +274,8 @@ export function QuestionDetail({ id }: { id: number }) {
               <TeacherSolutionSection question={q} />
               <SolutionsSection
                 questionId={q.id}
-                aiSlot={(aiSolution) => <AiSolutionSection question={q} aiSolution={aiSolution} />}
+                aiInPanel={normalizeAiState(q.aiSolutionState) === "available"}
+                aiSlot={(aiSolution, actions) => <AiSolutionSection question={q} aiSolution={aiSolution} actions={actions} />}
               />
               <CommentSection questionId={q.id} solutionId={null} label="Soru yorumları" />
             </>

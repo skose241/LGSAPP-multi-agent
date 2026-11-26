@@ -91,11 +91,40 @@ function EditSolution({ solution, questionId, onDone }: { solution: Solution; qu
   );
 }
 
+export function SolutionActions({ solution, questionId, minReport }: { solution: Solution; questionId: number; minReport: number }) {
+  const [showComments, setShowComments] = useState(false);
+  const [reporting, setReporting] = useState(false);
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-1 border-t border-border pt-2">
+        <Button type="button" variant="ghost" className="h-11 px-3" aria-expanded={showComments} onClick={() => setShowComments((value) => !value)}>
+          <MessageSquare aria-hidden="true" />
+          Yorumlar ({solution.commentCount})
+        </Button>
+        {!solution.isMine ? (
+          <Button type="button" variant="ghost" className="h-11 px-3" onClick={() => setReporting(true)}>
+            <Flag aria-hidden="true" />
+            Şikâyet Et
+          </Button>
+        ) : null}
+      </div>
+
+      {showComments ? <CommentSection questionId={questionId} solutionId={solution.id} label="Çözüm yorumları" /> : null}
+      <ReportDialog
+        open={reporting}
+        onOpenChange={setReporting}
+        target="solution"
+        minLength={minReport}
+        submit={(reason, description) => solutionMutations.report(api(), solution.id, reason, description)}
+      />
+    </>
+  );
+}
+
 function SolutionCard({ solution, questionId, minReport }: { solution: Solution; questionId: number; minReport: number }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [showComments, setShowComments] = useState(false);
-  const [reporting, setReporting] = useState(false);
   const locked = editLockedMessage(solution.editLockedReason);
   const authorName = solution.author?.fullName || solution.author?.userName || "Kullanıcı";
 
@@ -152,45 +181,36 @@ function SolutionCard({ solution, questionId, minReport }: { solution: Solution;
             </div>
           ) : null}
 
-          <div className="flex flex-wrap gap-1 border-t border-border pt-2">
-            <Button type="button" variant="ghost" className="h-11 px-3" aria-expanded={showComments} onClick={() => setShowComments((value) => !value)}>
-              <MessageSquare aria-hidden="true" />
-              Yorumlar ({solution.commentCount})
-            </Button>
-            {!solution.isMine ? (
-              <Button type="button" variant="ghost" className="h-11 px-3" onClick={() => setReporting(true)}>
-                <Flag aria-hidden="true" />
-                Şikâyet Et
-              </Button>
-            ) : null}
-          </div>
-
-          {showComments ? <CommentSection questionId={questionId} solutionId={solution.id} label="Çözüm yorumları" /> : null}
+          <SolutionActions solution={solution} questionId={questionId} minReport={minReport} />
         </CardContent>
       </Card>
-      <ReportDialog
-        open={reporting}
-        onOpenChange={setReporting}
-        target="solution"
-        minLength={minReport}
-        submit={(reason, description) => solutionMutations.report(api(), solution.id, reason, description)}
-      />
     </li>
   );
 }
 
-export function SolutionsSection({ questionId, aiSlot }: { questionId: number; aiSlot?: (aiSolution: Solution | undefined) => ReactNode }) {
+export function SolutionsSection({
+  questionId,
+  aiSlot,
+  aiInPanel = false,
+}: {
+  questionId: number;
+  aiSlot?: (aiSolution: Solution | undefined, actions: ReactNode) => ReactNode;
+  aiInPanel?: boolean;
+}) {
   const solutions = useQuery(solutionsQuery(api(), questionId));
   const settings = usePublicSettings();
   const items = solutions.data?.items ?? [];
   const aiSolution = items.find((item) => item.type === "ai");
   const others = items.filter((item) => item.type !== "ai");
-  const ordered = [...others, ...(aiSolution ? [aiSolution] : [])];
+  const showAiInList = aiSolution !== undefined && !(aiSlot && aiInPanel);
+  const ordered = [...others, ...(showAiInList ? [aiSolution] : [])];
+  const settingsMin = settings.data?.sikayetMinKarakter ?? 10;
+  const aiActions = aiSolution ? <SolutionActions solution={aiSolution} questionId={questionId} minReport={settingsMin} /> : null;
 
   return (
     <section aria-label="Çözümler" className="flex flex-col gap-3">
       <h2 className="text-xl">Çözümler</h2>
-      {aiSlot ? aiSlot(aiSolution) : null}
+      {aiSlot ? aiSlot(aiSolution, aiActions) : null}
       {solutions.isPending ? (
         <div role="status" aria-label="Çözümler yükleniyor" className="h-24 animate-pulse rounded-md bg-surface-muted" />
       ) : solutions.isError ? (
@@ -206,7 +226,7 @@ export function SolutionsSection({ questionId, aiSlot }: { questionId: number; a
       ) : (
         <ul className="flex flex-col gap-3" aria-label="Çözüm listesi">
           {ordered.map((solution) => (
-            <SolutionCard key={solution.id} solution={solution} questionId={questionId} minReport={settings.data?.sikayetMinKarakter ?? 10} />
+            <SolutionCard key={solution.id} solution={solution} questionId={questionId} minReport={settingsMin} />
           ))}
         </ul>
       )}

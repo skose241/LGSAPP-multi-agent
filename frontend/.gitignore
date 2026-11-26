@@ -11,6 +11,8 @@ blob-report
 .env*.local
 next-env.d.ts
 .next-e2e
+.next-demo
 .e2e
 
 apps/web/public/pdfjs
+.demo

@@ -20,6 +20,7 @@ interface AiSolutionPanelProps {
   requestDisabled?: boolean;
   notice?: ReactNode;
   solution?: ReactNode;
+  actions?: ReactNode;
 }
 
 interface StateInfo {
@@ -56,7 +57,7 @@ const info: Record<Exclude<AiPanelState, "none" | "loading" | "available">, Stat
   },
 };
 
-export function AiSolutionPanel({ state, quotaLeft, quotaText, onRequest, requestDisabled = false, notice, solution }: AiSolutionPanelProps) {
+export function AiSolutionPanel({ state, quotaLeft, quotaText, onRequest, requestDisabled = false, notice, solution, actions }: AiSolutionPanelProps) {
   if (state === "none") {
     return (
       <PanelFrame tone="border-primary-200 bg-primary-soft text-primary-soft-foreground" icon={Sparkles} title="Yapay Zekâ Çözümü">
@@ -101,6 +102,7 @@ export function AiSolutionPanel({ state, quotaLeft, quotaText, onRequest, reques
         <p className="text-xs text-muted-foreground">
           Bu çözüm yapay zekâ tarafından üretildi. Hata olabilir, kendi çözümünüzle karşılaştırın.
         </p>
+        {actions}
       </PanelFrame>
     );
   }

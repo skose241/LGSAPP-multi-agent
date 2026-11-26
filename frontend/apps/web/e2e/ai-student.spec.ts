@@ -42,6 +42,10 @@ test.describe("öğrenci yapay zekâ çözümü", () => {
 
     await page.reload();
     await expect(page.getByTestId("ai-solution")).toContainText("Doğru seçenek");
+    await expect(page.getByText("Sahte yapay zekâ çözümü")).toHaveCount(1);
+    await expect(page.getByTestId("solution").filter({ hasText: "Yapay Zekâ Çözümü" })).toHaveCount(0);
+    await expect(page.getByTestId("ai-solution").getByRole("button", { name: /Yorumlar \(/ })).toBeVisible();
+    await expect(page.getByTestId("ai-solution").getByRole("button", { name: "Şikâyet Et" })).toBeVisible();
     await expectNoAxeViolations(page, "ai-available");
   });
 

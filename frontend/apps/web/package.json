@@ -15,7 +15,8 @@
     "prebuild": "node scripts/generate-licenses.mjs && node scripts/copy-pdfjs-assets.mjs",
     "pdfjs:copy": "node scripts/copy-pdfjs-assets.mjs",
     "licenses:generate": "node scripts/generate-licenses.mjs",
-    "e2e:run": "node e2e/run-e2e.mjs"
+    "e2e:run": "node e2e/run-e2e.mjs",
+    "demo:run": "node demo/run-demo.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "7.0.6",

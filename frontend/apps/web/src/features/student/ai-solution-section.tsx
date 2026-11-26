@@ -66,7 +66,7 @@ function FailureNotice({ failure, countdown }: { failure: FailureState; countdow
   );
 }
 
-export function AiSolutionSection({ question, aiSolution }: { question: QuestionDetailData; aiSolution: Solution | undefined }) {
+export function AiSolutionSection({ question, aiSolution, actions }: { question: QuestionDetailData; aiSolution: Solution | undefined; actions?: ReactNode }) {
   const queryClient = useQueryClient();
   const [failure, setFailure] = useState<FailureState | null>(null);
 
@@ -117,7 +117,7 @@ export function AiSolutionSection({ question, aiSolution }: { question: Question
   const solutionNode: ReactNode = aiSolution?.text ? <MathText text={aiSolution.text} className="max-w-prose text-base" /> : undefined;
 
   if (state !== "none") {
-    return <AiSolutionPanel state={state} solution={solutionNode} />;
+    return <AiSolutionPanel state={state} solution={solutionNode} actions={state === "available" && aiSolution ? actions : undefined} />;
   }
 
   const blockedByDaily = failure?.kind === "dailyLimit";
