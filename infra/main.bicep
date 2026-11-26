@@ -57,6 +57,21 @@ param cspReportOnly bool = true
 @description('Key Vault temizleme koruması. Açıldıktan sonra kapatılamaz ve silinen kasa adı bekleme süresince yeniden kullanılamaz; pepper kaybını önlemek için varsayılan açıktır.')
 param enableKeyVaultPurgeProtection bool = true
 
+@description('Web uygulamasına bağlanacak özel alan adları (örn. netpesinde.com, www.netpesinde.com). Boşsa özel alan adı bağlanmaz. Önce asuid TXT kayıtları DNS kayıtlarında olmalıdır.')
+param webCustomDomains array = []
+
+@description('Özel alan adı aşaması. none: yok; bind: yalnızca SSL olmadan bağlama; certify: bağlama, yönetilen sertifika ve SNI (ilk kez); secured: mevcut sertifikalarla SNI bağlama (sonraki tüm dağıtımlar).')
+@allowed([
+  'none'
+  'bind'
+  'certify'
+  'secured'
+])
+param webCustomDomainStage string = 'none'
+
+@description('Web uygulamasının kanonik ana makine adı. Yalnızca aşama secured ve değer webCustomDomains içindeyse uygulanır; aksi halde yok sayılır.')
+param webCanonicalHost string = ''
+
 @description('Tüm kaynaklara eklenecek etiketler.')
 param tags object = {
   app: 'lgsapp'
@@ -72,6 +87,14 @@ var sqlDatabaseName = 'LGSApp'
 var storageName = take('${cleanPrefix}st${suffix}', 24)
 var keyVaultName = take('${cleanPrefix}-kv-${suffix}', 24)
 var webOrigin = 'https://${webName}.azurewebsites.net'
+var domainsActive = webCustomDomainStage != 'none' && !empty(webCustomDomains)
+var effectiveDomains = domainsActive ? webCustomDomains : []
+var certificateNames = [for domain in webCustomDomains: '${webName}-${replace(domain, '.', '-')}']
+var canonicalApplies = webCustomDomainStage == 'secured' && contains(webCustomDomains, webCanonicalHost)
+var effectiveCanonicalHost = canonicalApplies ? webCanonicalHost : ''
+var customOrigins = [for domain in effectiveDomains: 'https://${domain}']
+var allWebOrigins = concat(customOrigins, [webOrigin])
+var corsSettings = [for (origin, i) in allWebOrigins: { name: 'Cors__AllowedOrigins__${i}', value: origin }]
 var blobOrigin = 'https://${storageName}.blob.${environment().suffixes.storage}'
 
 module monitoring 'modules/monitoring.bicep' = if (deployMonitoring) {
@@ -151,7 +174,6 @@ var apiSettings = [
   { name: 'Scheduler__Enabled', value: 'true' }
   { name: 'WEBSITES_CONTAINER_STOP_TIME_LIMIT', value: '90' }
   { name: 'Ai__Provider', value: aiEnabled ? 'Gemini' : 'None' }
-  { name: 'Cors__AllowedOrigins__0', value: webOrigin }
   { name: 'Storage__Container', value: 'images' }
   { name: 'SCM_DO_BUILD_DURING_DEPLOYMENT', value: 'false' }
   { name: 'ConnectionStrings__DefaultConnection', value: '@Microsoft.KeyVault(SecretUri=${vaultUri}secrets/Sql-ConnectionString)' }
@@ -163,6 +185,8 @@ var apiSettings = [
   { name: 'Ai__Gemini__SolutionApiKey', value: '@Microsoft.KeyVault(SecretUri=${vaultUri}secrets/Gemini-SolutionApiKey)' }
 ]
 
+var apiAllSettings = concat(apiSettings, corsSettings)
+
 module api 'modules/webapp.bicep' = {
   name: 'api'
   params: {
@@ -172,7 +196,7 @@ module api 'modules/webapp.bicep' = {
     planId: plan.outputs.id
     linuxFxVersion: apiRuntime
     healthCheckPath: '/health/live'
-    appSettings: apiSettings
+    appSettings: apiAllSettings
     logAnalyticsWorkspaceId: logWorkspaceId
   }
 }
@@ -183,12 +207,16 @@ var webBaseSettings = [
   { name: 'TRUST_PROXY', value: 'true' }
   { name: 'TRUSTED_PROXY_HOPS', value: '1' }
   { name: 'SESSION_COOKIE_SECURE', value: 'true' }
-  { name: 'APP_ORIGIN', value: webOrigin }
+  { name: 'APP_ORIGIN', value: join(allWebOrigins, ',') }
   { name: 'API_BASE_URL', value: 'https://${api.outputs.defaultHostName}' }
   { name: 'CSP_IMG_HOSTS', value: blobOrigin }
   { name: 'CSP_REPORT_ONLY', value: cspReportOnly ? 'true' : 'false' }
   { name: 'SCM_DO_BUILD_DURING_DEPLOYMENT', value: 'false' }
   { name: 'BFF_PROXY_KEY', value: '@Microsoft.KeyVault(SecretUri=${vaultUri}secrets/Bff-ProxyKey)' }
+]
+
+var webCanonicalSettings = empty(effectiveCanonicalHost) ? [] : [
+  { name: 'CANONICAL_HOST', value: effectiveCanonicalHost }
 ]
 
 var webMonitoringSettings = deployMonitoring ? [
@@ -206,8 +234,32 @@ module web 'modules/webapp.bicep' = {
     linuxFxVersion: webRuntime
     appCommandLine: 'node apps/web/server.js'
     healthCheckPath: '/healthz'
-    appSettings: concat(webBaseSettings, webMonitoringSettings)
+    appSettings: concat(webBaseSettings, webMonitoringSettings, webCanonicalSettings)
     logAnalyticsWorkspaceId: logWorkspaceId
+  }
+}
+
+module webDomains 'modules/webapp-domains.bicep' = if (domainsActive && (webCustomDomainStage == 'bind' || webCustomDomainStage == 'certify')) {
+  name: 'web-domains'
+  params: {
+    location: location
+    siteName: web.outputs.name
+    planId: plan.outputs.id
+    domains: webCustomDomains
+    certificateNames: certificateNames
+    createCertificates: webCustomDomainStage == 'certify'
+    tags: tags
+  }
+}
+
+module webDomainSsl 'modules/webapp-domain-ssl.bicep' = if (domainsActive && (webCustomDomainStage == 'certify' || webCustomDomainStage == 'secured')) {
+  name: 'web-domain-ssl'
+  params: {
+    siteName: web.outputs.name
+    domains: webCustomDomains
+    certificateNames: certificateNames
+    useExistingCertificates: webCustomDomainStage == 'secured'
+    createdThumbprints: webDomains.?outputs.thumbprints ?? []
   }
 }
 
@@ -226,7 +278,10 @@ module keyVaultRoles 'modules/keyvault-roles.bicep' = {
 output apiAppName string = api.outputs.name
 output webAppName string = web.outputs.name
 output apiUrl string = 'https://${api.outputs.defaultHostName}'
-output webUrl string = 'https://${web.outputs.defaultHostName}'
+output webUrl string = 'https://${empty(effectiveCanonicalHost) ? web.outputs.defaultHostName : effectiveCanonicalHost}'
+output webCanonicalHostIgnored bool = !empty(webCanonicalHost) && !canonicalApplies
+output webDefaultUrl string = 'https://${web.outputs.defaultHostName}'
+output webCustomDomainVerificationId string = web.outputs.customDomainVerificationId
 output keyVaultName string = keyVault.outputs.name
 output sqlServerName string = sql.outputs.serverName
 output sqlServerFqdn string = sql.outputs.serverFqdn

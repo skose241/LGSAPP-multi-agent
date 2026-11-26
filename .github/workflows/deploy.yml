@@ -110,6 +110,7 @@ jobs:
             echo "WEB_APP=$(jq -r .webAppName.value <<<"${outputs}")"
             echo "API_URL=$(jq -r .apiUrl.value <<<"${outputs}")"
             echo "WEB_URL=$(jq -r .webUrl.value <<<"${outputs}")"
+            echo "WEB_HEALTH_URL=$(jq -r '.webDefaultUrl.value // .webUrl.value' <<<"${outputs}")"
             echo "VAULT=$(jq -r .keyVaultName.value <<<"${outputs}")"
             echo "SQL_SERVER=$(jq -r .sqlServerName.value <<<"${outputs}")"
           } >>"${GITHUB_ENV}"
@@ -162,4 +163,4 @@ jobs:
             return 1
           }
           check "${API_URL}/health/ready"
-          check "${WEB_URL}/healthz"
+          check "${WEB_HEALTH_URL}/healthz"

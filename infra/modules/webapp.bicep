@@ -77,3 +77,4 @@ output id string = site.id
 output name string = site.name
 output defaultHostName string = site.properties.defaultHostName
 output principalId string = site.identity.principalId
+output customDomainVerificationId string = site.properties.customDomainVerificationId

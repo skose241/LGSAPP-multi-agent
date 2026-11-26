@@ -60,6 +60,20 @@ Tek komutla rehberli akış: `./scripts/deploy/first-install.ps1 -ResourceGroup 
 
 Gerekçe notu: migration paketi ve `dotnet LGSApp.Api.dll seed-reference-data` işlemleri yayın makinesinde çalışır. Migration paketi uygulamanın ana bilgisayarını kurmaz, `AppDbContextFactory` kullanır; bu yüzden Production'da da çalışır. Bağlantı `ConnectionStrings__DefaultConnection` ortam değişkeniyle (betik ve `deploy.yml` böyle yapar; sır komut satırında görünmez) ya da `--connection` ile verilir; Production'da ikisi de yoksa LocalDB'ye düşülmez. Yerelde Production ortamıyla her iki yolla da doğrulandı.
 
+## Özel alan adı (netpesinde.com) - web uygulaması
+
+Yalnızca web uygulaması taşınır; API `azurewebsites.net` adresinde kalır. Parametreler boşken (`webCustomDomains=[]`) davranış değişmez.
+
+Cloudflare kayıtlarının tümü yalnızca DNS (gri bulut) olmalıdır. Neden: yönetilen sertifikanın verilmesi ve yenilenmesi Azure'un alan adını doğrudan çözebilmesine bağlıdır; ayrıca turuncu bulut istemci IP'sini gizler ve hız sınırlaması yanlış IP'yi görür.
+
+1. Doğrulama kimliğini alın: `az webapp show -g <rg> -n <web> --query customDomainVerificationId -o tsv` (dağıtım çıktısı `webCustomDomainVerificationId` da verir). Gelen IP: `az webapp show -g <rg> -n <web> --query inboundIpAddress -o tsv`.
+2. Cloudflare'de ön kayıtlar: TXT `asuid.netpesinde.com` ve TXT `asuid.www.netpesinde.com` = doğrulama kimliği.
+3. Cloudflare'de yönlendirme kayıtları: A `@` -> web gelen IP; CNAME `www` -> `<web>.azurewebsites.net`. Sertifika verilmeden önce bu kayıtlar uygulamaya çözülmelidir (apex için A kaydı şarttır).
+4. Aşama A (`bind`): `webCustomDomains=["netpesinde.com","www.netpesinde.com"]`, `webCustomDomainStage=bind` ile dağıtın. Alan adı bağlamaları SSL olmadan oluşur; APP_ORIGIN ve API CORS özel alan adlarını da içerir.
+5. Aşama B (`certify`): A ve CNAME kayıtları gri bulutla oluşturulup uygulamaya çözülmeye başladıktan sonra `webCustomDomainStage=certify` ile dağıtın. Sıra: bağlamalar (SSL yok, kesinti olmaz), yönetilen sertifikalar, SNI SSL ile yeniden bağlama. Sertifika verilmesi birkaç dakika sürebilir. Bu aşama yalnızca ilk sertifika için kullanılır.
+6. Aşama C (`secured`): `webCustomDomainStage=secured` ve `webCanonicalHost=netpesinde.com` ile kısa bir üçüncü dağıtım yapın. Bu aşamada mevcut sertifikalar okunur ve bağlamalar doğrudan SNI olarak yazılır (SSL düşmez). Sonraki tüm altyapı dağıtımları `secured` kalmalıdır. `webCanonicalHost` yalnızca `secured` aşamasında ve `webCustomDomains` içindeyse uygulanır; aksi halde yok sayılır ve `webCanonicalHostIgnored` çıktısı `true` olur. Uygulanınca web uygulaması `CANONICAL_HOST` ile diğer adresleri buna yönlendirir ve `webUrl` çıktısı bu adı gösterir. `deploy.yml` sağlık denetimi azurewebsites adresini (`webDefaultUrl`) kullanır, DNS/sertifikaya bağlı değildir.
+7. Apex A kaydı uygulamanın gelen IP'sini gösterir. Plan yeniden oluşturulursa veya başka bir ölçek birimine taşınırsa bu IP değişebilir. Düzenli olarak `az webapp show -g <rg> -n <web> --query inboundIpAddress -o tsv` ile kontrol edin ve değiştiyse Cloudflare'deki A kaydını güncelleyin.
+
 ## GitHub Actions
 
 - `ci.yml`: backend (build `-warnaserror`, test, OpenAPI farkı, güvenlik açığı denetimi), frontend (lint, typecheck, test, build, şema farkı, `pnpm audit --prod` yalnız uyarı), smoke (Linux Release publish + Production + Azurite), e2e (yalnız elle, taslak).

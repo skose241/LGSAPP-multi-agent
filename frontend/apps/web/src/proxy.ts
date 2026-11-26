@@ -1,10 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { cookieNames } from "@/lib/bff/config";
+import { cookieNames, trustProxy } from "@/lib/bff/config";
+import { canonicalRedirectUrl } from "@/lib/canonical-host";
 import { REPORTING_ENDPOINTS, buildCsp, createNonce, cspHeaderName, isReportOnly } from "@/lib/csp";
 import { decodeJwt, secondsUntilExpiry } from "@/lib/jwt";
 import { decideRoute } from "@/lib/route-guard";
 
 export function proxy(request: NextRequest) {
+  const canonicalUrl = canonicalRedirectUrl({
+    canonicalHost: process.env.CANONICAL_HOST,
+    method: request.method,
+    host: request.headers.get("host"),
+    forwardedHost: request.headers.get("x-forwarded-host"),
+    trustProxy: trustProxy(),
+    pathname: request.nextUrl.pathname,
+    search: request.nextUrl.search,
+  });
+  if (canonicalUrl) {
+    return NextResponse.redirect(canonicalUrl, 308);
+  }
+
   const names = cookieNames();
   const access = request.cookies.get(names.access)?.value;
   const info = decodeJwt(access);

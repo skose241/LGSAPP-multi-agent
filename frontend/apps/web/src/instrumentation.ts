@@ -4,4 +4,7 @@ export async function register() {
   for (const warning of bffStartupWarnings(process.env)) {
     console.warn(`[BFF] ${warning}`);
   }
+  const { canonicalHostWarning } = await import("@/lib/canonical-host");
+  const canonical = canonicalHostWarning(process.env);
+  if (canonical) console.warn(`[BFF] ${canonical}`);
 }
