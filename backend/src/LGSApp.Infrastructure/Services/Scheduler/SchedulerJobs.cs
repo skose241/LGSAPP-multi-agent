@@ -335,7 +335,7 @@ public sealed class PublishJob(
             await notifier.NotifyRoleAsync(
                 Roles.OgrenciId,
                 NotificationType.QuestionsPublished,
-                $"Bugünün {total.ToString(CultureInfo.InvariantCulture)} sorusu yayında.",
+                $"{total.ToString(CultureInfo.InvariantCulture)} yeni soru yayında.",
                 context.Claim.RunId,
                 cancellationToken);
         }

@@ -140,7 +140,7 @@ public class SchedulerServiceTests
         Assert.Equal(Roles.MudurId, notice.RoleId);
         Assert.Equal(NotificationType.GenerationReport, notice.Type);
         Assert.Equal(7, notice.RunId);
-        Assert.Equal(SchedulerMessages.RunInterruptedNotice(GenerationKind.CloseAssignments, true), notice.Message);
+        Assert.Equal(SchedulerMessages.RunInterruptedNotice(GenerationKind.CloseAssignments, true, GenerationTrigger.Timer), notice.Message);
     }
 
     [Fact]

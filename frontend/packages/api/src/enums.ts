@@ -71,7 +71,7 @@ const notificationLabels: Record<string, string> = {
   questionsPublished: "Yeni Sorular Yayında",
   assignmentOpened: "Yeni Ödev",
   assignmentClosed: "Ödev Kapandı",
-  generationReport: "Soru Üretim Raporu",
+  generationReport: "Zamanlayıcı Raporu",
   reportResolved: "Şikâyetiniz İncelendi",
   commentRemoved: "Yorumunuz Kaldırıldı",
   answerKeyChanged: "Cevap Anahtarı Değişti",

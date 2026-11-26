@@ -154,7 +154,7 @@ public sealed class SchedulerService(
         else if (interrupted)
         {
             await NotifyManagersAsync(
-                SchedulerMessages.RunInterruptedNotice(claim.Kind, stoppingToken.IsCancellationRequested),
+                SchedulerMessages.RunInterruptedNotice(claim.Kind, stoppingToken.IsCancellationRequested, claim.Trigger),
                 claim.RunId,
                 "Görev kesinti bildirimi gönderilemedi.");
         }

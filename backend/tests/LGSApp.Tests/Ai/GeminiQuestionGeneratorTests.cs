@@ -22,7 +22,7 @@ public class GeminiQuestionGeneratorTests
         options.Pricing["gemini-3.8-flash"] = new AiPricingOptions { InputPerMTokUsd = 0.75m, OutputPerMTokUsd = 3.75m };
         var client = AiTestData.CreateClient(handler, clock, options);
         var generator = new GeminiQuestionGenerator(
-            client, Options.Create(options), new AiCostCalculator(Options.Create(options)), new AiProviderGate(clock, Options.Create(options)), clock, NullLogger<GeminiQuestionGenerator>.Instance);
+            client, Options.Create(options), new AiCostCalculator(Options.Create(options), clock), new AiProviderGate(clock, Options.Create(options)), clock, NullLogger<GeminiQuestionGenerator>.Instance);
         return (generator, handler, clock);
     }
 

@@ -34,15 +34,21 @@ public sealed class TurkeyTime(TimeProvider timeProvider)
         return TimeZoneInfo.ConvertTimeToUtc(local, Zone);
     }
 
-    private static TimeZoneInfo Resolve()
+    private static TimeZoneInfo Resolve() => Resolve(TimeZoneInfo.FindSystemTimeZoneById);
+
+    public static TimeZoneInfo Resolve(Func<string, TimeZoneInfo> lookup)
     {
-        try
+        foreach (var id in new[] { "Europe/Istanbul", "Turkey Standard Time" })
         {
-            return TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+            try
+            {
+                return lookup(id);
+            }
+            catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+            {
+            }
         }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
-        }
+
+        return TimeZoneInfo.CreateCustomTimeZone("Europe/Istanbul", TimeSpan.FromHours(3), "Turkey Time", "Turkey Time");
     }
 }

@@ -58,7 +58,7 @@ public sealed class SchedulerRunStoreTests : IAsyncLifetime
         var deadId = await SeedRunningAsync(GenerationKind.Generate, Now.UtcDateTime.AddSeconds(-1));
 
         await using var db = TestDatabase.Open(_database);
-        var result = await NewStore(db).ClaimAsync(GenerationKind.Complete, GenerationTrigger.Timer, null, CancellationToken.None);
+        var result = await NewStore(db).ClaimAsync(GenerationKind.Complete, GenerationTrigger.Manual, null, CancellationToken.None);
 
         Assert.True(result.Succeeded);
         var taken = Assert.Single(result.TakenOver!);
@@ -71,6 +71,116 @@ public sealed class SchedulerRunStoreTests : IAsyncLifetime
         Assert.Equal(SchedulerMessages.LeaseExpired, dead.Summary);
         var running = await verify.GenerationRuns.AsNoTracking().Where(r => r.Status == GenerationRunStatus.Running).ToListAsync();
         Assert.Equal(result.Claim!.RunId, Assert.Single(running).Id);
+    }
+
+    private async Task SeedFinishedAsync(GenerationKind kind, GenerationRunStatus status, DateTime finishedAt, GenerationTrigger trigger = GenerationTrigger.Timer)
+    {
+        await using var db = TestDatabase.Open(_database);
+        db.GenerationRuns.Add(new GenerationRun
+        {
+            RunDate = new DateOnly(2026, 11, 25),
+            Kind = kind,
+            Trigger = trigger,
+            Status = status,
+            StartedAt = finishedAt.AddMinutes(-1),
+            FinishedAt = finishedAt,
+            LeaseUntil = finishedAt,
+            SucceededCount = 1
+        });
+        await db.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task Timer_claim_is_rejected_when_the_kind_is_already_done_today()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        await SeedFinishedAsync(GenerationKind.Publish, GenerationRunStatus.Succeeded, Now.UtcDateTime.AddMinutes(-5));
+
+        await using var db = TestDatabase.Open(_database);
+        var result = await NewStore(db).ClaimAsync(GenerationKind.Publish, GenerationTrigger.Timer, null, CancellationToken.None);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(SchedulerMessages.NotDue, result.ConflictMessage);
+        await using var verify = TestDatabase.Open(_database);
+        Assert.Equal(1, await verify.GenerationRuns.CountAsync());
+    }
+
+    [Fact]
+    public async Task Timer_claim_is_allowed_when_the_kind_is_due()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        await using var db = TestDatabase.Open(_database);
+        var result = await NewStore(db).ClaimAsync(GenerationKind.Generate, GenerationTrigger.Timer, null, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task Manual_claim_ignores_the_plan_when_the_kind_is_already_done_today()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        await SeedFinishedAsync(GenerationKind.Publish, GenerationRunStatus.Succeeded, Now.UtcDateTime.AddMinutes(-5));
+
+        await using var db = TestDatabase.Open(_database);
+        var result = await NewStore(db).ClaimAsync(GenerationKind.Publish, GenerationTrigger.Manual, null, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task Rejected_timer_claim_still_reports_and_persists_taken_over_runs()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        await SeedFinishedAsync(GenerationKind.Publish, GenerationRunStatus.Succeeded, Now.UtcDateTime.AddMinutes(-5));
+        var deadId = await SeedRunningAsync(GenerationKind.Publish, Now.UtcDateTime.AddSeconds(-1));
+
+        await using var db = TestDatabase.Open(_database);
+        var result = await NewStore(db).ClaimAsync(GenerationKind.Publish, GenerationTrigger.Timer, null, CancellationToken.None);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(SchedulerMessages.NotDue, result.ConflictMessage);
+        Assert.Equal(new TakenOverRun(deadId, GenerationKind.Publish), Assert.Single(result.TakenOver!));
+        await using var verify = TestDatabase.Open(_database);
+        Assert.Equal(GenerationRunStatus.Interrupted, (await verify.GenerationRuns.AsNoTracking().SingleAsync(r => r.Id == deadId)).Status);
+    }
+
+    [Fact]
+    public async Task Timer_claim_takes_over_a_stale_run_when_the_kind_is_due()
+    {
+        if (!_available)
+        {
+            return;
+        }
+
+        var deadId = await SeedRunningAsync(GenerationKind.Generate, Now.UtcDateTime.AddMinutes(-3));
+
+        await using var db = TestDatabase.Open(_database);
+        var result = await NewStore(db).ClaimAsync(GenerationKind.Generate, GenerationTrigger.Timer, null, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new TakenOverRun(deadId, GenerationKind.Generate), Assert.Single(result.TakenOver!));
+        await using var verify = TestDatabase.Open(_database);
+        var dead = await verify.GenerationRuns.AsNoTracking().SingleAsync(r => r.Id == deadId);
+        Assert.Equal(GenerationRunStatus.Interrupted, dead.Status);
+        Assert.Equal(Now.UtcDateTime, dead.FinishedAt);
+        Assert.Equal(SchedulerMessages.LeaseExpired, dead.Summary);
+        Assert.Equal(result.Claim!.RunId, Assert.Single(await verify.GenerationRuns.AsNoTracking().Where(r => r.Status == GenerationRunStatus.Running).ToListAsync()).Id);
     }
 
     [Fact]

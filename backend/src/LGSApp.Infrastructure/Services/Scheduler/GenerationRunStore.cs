@@ -79,6 +79,23 @@ public sealed class GenerationRunStore(
                     await db.SaveChangesAsync(token);
                 }
 
+                if (trigger == GenerationTrigger.Timer)
+                {
+                    var today = TurkeyTime.ToLocalDate(now);
+                    var infos = (await db.GenerationRuns.AsNoTracking()
+                            .Where(r => r.RunDate == today)
+                            .OrderBy(r => r.Id)
+                            .Select(r => new RunInfo(r.Id, r.Kind, r.Trigger, r.Status, r.StartedAt, r.FinishedAt, r.LeaseUntil, r.SucceededCount))
+                            .ToListAsync(token))
+                        .Select(r => takenOver.Any(t => t.RunId == r.Id) ? r with { FinishedAt = r.LeaseUntil } : r)
+                        .ToList();
+                    var plan = SchedulerPlanner.Plan(options.Value, now, today, infos);
+                    if (!plan.Due.Contains(kind))
+                    {
+                        return new ClaimResult(null, SchedulerMessages.NotDue, null, takenOver);
+                    }
+                }
+
                 var run = new GenerationRun
                 {
                     RunDate = TurkeyTime.ToLocalDate(now),

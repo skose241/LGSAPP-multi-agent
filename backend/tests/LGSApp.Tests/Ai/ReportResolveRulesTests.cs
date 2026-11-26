@@ -44,7 +44,19 @@ public class ReportResolveRulesTests
     [InlineData(GenerationKind.Generate, "Günlük soru üretimi görevi beklenmeyen bir hata nedeniyle tamamlanamadı.")]
     [InlineData(GenerationKind.Complete, "Günlük soru tamamlama görevi beklenmeyen bir hata nedeniyle tamamlanamadı.")]
     [InlineData(GenerationKind.Publish, "Günlük soru yayınlama görevi beklenmeyen bir hata nedeniyle tamamlanamadı.")]
-    [InlineData(GenerationKind.CloseAssignments, "Ödev kapatma görevi beklenmeyen bir hata nedeniyle tamamlanamadı.")]
+    [InlineData(GenerationKind.CloseAssignments, "Ödev açma/kapatma görevi beklenmeyen bir hata nedeniyle tamamlanamadı.")]
     public void Run_failure_notice_names_job_without_raw_error(GenerationKind kind, string expected) =>
         Assert.Equal(expected, SchedulerMessages.RunFailureNotice(kind));
+
+    [Fact]
+    public void Interrupted_notice_depends_on_trigger()
+    {
+        var timer = SchedulerMessages.RunInterruptedNotice(GenerationKind.Publish, false, GenerationTrigger.Timer);
+        var manual = SchedulerMessages.RunInterruptedNotice(GenerationKind.Publish, true, GenerationTrigger.Manual);
+
+        Assert.Contains("Zamanlayıcı görevi yeniden deneyecektir", timer);
+        Assert.DoesNotContain("yeniden deneyecektir", manual);
+        Assert.Contains("uygulama yeniden başlatıldı", manual);
+        Assert.Contains("Görevi zamanlayıcı ekranından yeniden başlatabilirsiniz.", manual);
+    }
 }

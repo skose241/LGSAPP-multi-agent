@@ -246,14 +246,63 @@ public class GeminiResponseParserTests
 
 public class AiCostCalculatorTests
 {
-    private static AiCostCalculator Create()
+    private static readonly DateTimeOffset Switch = new(2027, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    private static AiCostCalculator Create(DateTimeOffset? now = null, params AiPriceChangeOptions[] changes)
     {
         var options = new AiOptions();
         options.Pricing = new Dictionary<string, AiPricingOptions>(StringComparer.OrdinalIgnoreCase)
         {
-            ["gemini-3.8-flash"] = new() { InputPerMTokUsd = 0.75m, OutputPerMTokUsd = 3.75m }
+            ["gemini-3.8-flash"] = new() { InputPerMTokUsd = 0.75m, OutputPerMTokUsd = 3.75m, Changes = changes.ToList() }
         };
-        return new AiCostCalculator(Microsoft.Extensions.Options.Options.Create(options));
+        var clock = new Microsoft.Extensions.Time.Testing.FakeTimeProvider(now ?? new DateTimeOffset(2026, 11, 26, 12, 0, 0, TimeSpan.Zero));
+        return new AiCostCalculator(Microsoft.Extensions.Options.Options.Create(options), clock);
+    }
+
+    private static AiPriceChangeOptions Change(DateTimeOffset from, decimal input, decimal output) =>
+        new() { EffectiveFrom = from, InputPerMTokUsd = input, OutputPerMTokUsd = output };
+
+    [Fact]
+    public void Before_effective_date_base_price_applies()
+    {
+        var calc = Create(Switch.AddTicks(-1), Change(Switch, 1.5m, 7.5m));
+
+        Assert.Equal(4.5m, calc.Calculate("gemini-3.8-flash", 1_000_000, 1_000_000, null));
+    }
+
+    [Fact]
+    public void Exactly_at_effective_date_new_price_applies()
+    {
+        var calc = Create(Switch, Change(Switch, 1.5m, 7.5m));
+
+        Assert.Equal(9m, calc.Calculate("gemini-3.8-flash", 1_000_000, 1_000_000, null));
+    }
+
+    [Fact]
+    public void Latest_applicable_change_wins_regardless_of_order()
+    {
+        var later = Switch.AddMonths(6);
+        var changes = new[] { Change(later, 3m, 9m), Change(Switch, 1.5m, 7.5m) };
+
+        Assert.Equal(9m, Create(Switch.AddDays(10), changes).Calculate("gemini-3.8-flash", 1_000_000, 1_000_000, null));
+        Assert.Equal(12m, Create(later, changes).Calculate("gemini-3.8-flash", 1_000_000, 1_000_000, null));
+    }
+
+    [Fact]
+    public void Dated_price_applies_to_prefix_matched_model_and_thinking_tokens()
+    {
+        var calc = Create(Switch.AddDays(1), Change(Switch, 1.5m, 7.5m));
+
+        Assert.Equal(9m, calc.Calculate("gemini-3.8-flash-001", 1_000_000, 500_000, 500_000));
+    }
+
+    [Fact]
+    public void Offset_effective_date_is_compared_as_an_instant()
+    {
+        var change = Change(new DateTimeOffset(2027, 1, 1, 3, 0, 0, TimeSpan.FromHours(3)), 1.5m, 7.5m);
+
+        Assert.Equal(4.5m, Create(Switch.AddTicks(-1), change).Calculate("gemini-3.8-flash", 1_000_000, 1_000_000, null));
+        Assert.Equal(9m, Create(Switch, change).Calculate("gemini-3.8-flash", 1_000_000, 1_000_000, null));
     }
 
     [Fact]

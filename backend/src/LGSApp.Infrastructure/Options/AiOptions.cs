@@ -52,6 +52,14 @@ public sealed class AiPricingOptions
 {
     public decimal InputPerMTokUsd { get; set; }
     public decimal OutputPerMTokUsd { get; set; }
+    public List<AiPriceChangeOptions> Changes { get; set; } = new();
+}
+
+public sealed class AiPriceChangeOptions
+{
+    public DateTimeOffset EffectiveFrom { get; set; }
+    public decimal? InputPerMTokUsd { get; set; }
+    public decimal? OutputPerMTokUsd { get; set; }
 }
 
 public sealed class AiFakeOptions
@@ -201,6 +209,17 @@ public sealed class AiOptions
             if (string.IsNullOrWhiteSpace(model) || price.InputPerMTokUsd < 0 || price.OutputPerMTokUsd < 0)
             {
                 return "Ai:Pricing girdileri model adı içermeli ve fiyatlar negatif olmamalıdır.";
+            }
+
+            var changes = price.Changes ?? new List<AiPriceChangeOptions>();
+            if (changes.Any(c => c is null || c.EffectiveFrom == default || c.InputPerMTokUsd is null or < 0 || c.OutputPerMTokUsd is null or < 0))
+            {
+                return $"Ai:Pricing:{model}:Changes girdilerinde EffectiveFrom, InputPerMTokUsd ve OutputPerMTokUsd belirtilmeli ve fiyatlar negatif olmamalıdır.";
+            }
+
+            if (changes.Select(c => c.EffectiveFrom.UtcDateTime).Distinct().Count() != changes.Count)
+            {
+                return $"Ai:Pricing:{model}:Changes girdilerinde aynı EffectiveFrom değeri birden fazla kez kullanılamaz.";
             }
         }
 

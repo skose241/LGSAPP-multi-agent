@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace LGSApp.Infrastructure.Services.Ai;
 
-public sealed class AiCostCalculator(IOptions<AiOptions> options)
+public sealed class AiCostCalculator(IOptions<AiOptions> options, TimeProvider timeProvider)
 {
     private const decimal TokensPerUnit = 1_000_000m;
 
@@ -29,8 +29,24 @@ public sealed class AiCostCalculator(IOptions<AiOptions> options)
             price = pricing[match];
         }
 
-        var input = Math.Max(0, inputTokens ?? 0) * price.InputPerMTokUsd;
-        var output = (Math.Max(0, outputTokens ?? 0) + Math.Max(0, thinkingTokens ?? 0)) * price.OutputPerMTokUsd;
+        var inputPrice = price.InputPerMTokUsd;
+        var outputPrice = price.OutputPerMTokUsd;
+        if (price.Changes is { Count: > 0 } changes)
+        {
+            var now = timeProvider.GetUtcNow();
+            var applicable = changes
+                .Where(c => c.EffectiveFrom <= now)
+                .OrderByDescending(c => c.EffectiveFrom)
+                .FirstOrDefault();
+            if (applicable is not null)
+            {
+                inputPrice = applicable.InputPerMTokUsd ?? inputPrice;
+                outputPrice = applicable.OutputPerMTokUsd ?? outputPrice;
+            }
+        }
+
+        var input = Math.Max(0, inputTokens ?? 0) * inputPrice;
+        var output = (Math.Max(0, outputTokens ?? 0) + Math.Max(0, thinkingTokens ?? 0)) * outputPrice;
         return Math.Round((input + output) / TokensPerUnit, 6, MidpointRounding.AwayFromZero);
     }
 }

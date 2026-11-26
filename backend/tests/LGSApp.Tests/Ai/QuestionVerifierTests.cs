@@ -52,7 +52,7 @@ public class QuestionVerifierTests
         options.Provider = provider;
         options.Question.VerifyEnabled = verifyEnabled;
         options.Pricing["gemini-3.8-flash"] = new AiPricingOptions { InputPerMTokUsd = 1m, OutputPerMTokUsd = 2m };
-        return new QuestionVerifier(solver, new StubSettings(setting), Options.Create(options), new AiCostCalculator(Options.Create(options)),
+        return new QuestionVerifier(solver, new StubSettings(setting), Options.Create(options), new AiCostCalculator(Options.Create(options), TimeProvider.System),
             gate ?? new AiProviderGate(TimeProvider.System, Options.Create(options)));
     }
 

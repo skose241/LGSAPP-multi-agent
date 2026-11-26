@@ -17,6 +17,7 @@ public sealed class SchedulerWorker(
     ILogger<SchedulerWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan FailureDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan NotDueDelay = TimeSpan.FromSeconds(2);
     private readonly ConcurrentDictionary<int, Task> manualTasks = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -78,6 +79,12 @@ public sealed class SchedulerWorker(
                 var kind = plan.Due[0];
                 var scheduler = scope.ServiceProvider.GetRequiredService<ISchedulerService>();
                 var claim = await scheduler.ClaimAsync(kind, GenerationTrigger.Timer, null, stoppingToken);
+                if (claim.Claim is null && claim.ConflictMessage == SchedulerMessages.NotDue)
+                {
+                    logger.LogInformation("Zamanlayıcı görevi bu gün için gerekli değil ({Kind}); plan yeniden hesaplanacak.", kind);
+                    return NotDueDelay;
+                }
+
                 if (claim.Claim is null)
                 {
                     logger.LogInformation("Zamanlayıcı görevi devralınamadı ({Kind}): {Message}", kind, claim.ConflictMessage);

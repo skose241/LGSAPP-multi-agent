@@ -210,6 +210,82 @@ public class AiOptionsTests
     }
 
     [Fact]
+    public void Price_changes_bind_from_configuration()
+    {
+        var options = Load(Gemini(v =>
+        {
+            v["Ai:Pricing:gemini-3.8-flash:InputPerMTokUsd"] = "0.75";
+            v["Ai:Pricing:gemini-3.8-flash:OutputPerMTokUsd"] = "3.75";
+            v["Ai:Pricing:gemini-3.8-flash:Changes:0:EffectiveFrom"] = "2027-01-01T00:00:00Z";
+            v["Ai:Pricing:gemini-3.8-flash:Changes:0:InputPerMTokUsd"] = "1.50";
+            v["Ai:Pricing:gemini-3.8-flash:Changes:0:OutputPerMTokUsd"] = "7.50";
+        }), out var error);
+
+        Assert.Null(error);
+        var change = Assert.Single(options.Pricing["gemini-3.8-flash"].Changes);
+        Assert.Equal(new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero), change.EffectiveFrom);
+        Assert.Equal(1.5m, change.InputPerMTokUsd);
+        Assert.Equal(7.5m, change.OutputPerMTokUsd);
+    }
+
+    [Fact]
+    public void Price_change_without_effective_date_is_rejected()
+    {
+        Load(Gemini(v =>
+        {
+            v["Ai:Pricing:m:Changes:0:InputPerMTokUsd"] = "1";
+            v["Ai:Pricing:m:Changes:0:OutputPerMTokUsd"] = "2";
+        }), out var error);
+
+        Assert.NotNull(error);
+    }
+
+    [Fact]
+    public void Negative_price_change_is_rejected()
+    {
+        Load(Gemini(v =>
+        {
+            v["Ai:Pricing:m:Changes:0:EffectiveFrom"] = "2027-01-01T00:00:00Z";
+            v["Ai:Pricing:m:Changes:0:InputPerMTokUsd"] = "-1";
+            v["Ai:Pricing:m:Changes:0:OutputPerMTokUsd"] = "2";
+        }), out var error);
+
+        Assert.NotNull(error);
+    }
+
+    [Fact]
+    public void Duplicate_effective_dates_are_rejected()
+    {
+        Load(Gemini(v =>
+        {
+            v["Ai:Pricing:m:Changes:0:EffectiveFrom"] = "2027-01-01T00:00:00Z";
+            v["Ai:Pricing:m:Changes:0:InputPerMTokUsd"] = "1";
+            v["Ai:Pricing:m:Changes:0:OutputPerMTokUsd"] = "2";
+            v["Ai:Pricing:m:Changes:1:EffectiveFrom"] = "2027-01-01T03:00:00+03:00";
+            v["Ai:Pricing:m:Changes:1:InputPerMTokUsd"] = "3";
+            v["Ai:Pricing:m:Changes:1:OutputPerMTokUsd"] = "4";
+        }), out var error);
+
+        Assert.NotNull(error);
+        Assert.Contains("aynı EffectiveFrom", error);
+    }
+
+    [Theory]
+    [InlineData("Input")]
+    [InlineData("Output")]
+    public void Price_change_missing_a_price_is_rejected(string present)
+    {
+        Load(Gemini(v =>
+        {
+            v["Ai:Pricing:m:Changes:0:EffectiveFrom"] = "2027-01-01T00:00:00Z";
+            v[$"Ai:Pricing:m:Changes:0:{present}PerMTokUsd"] = "1";
+        }), out var error);
+
+        Assert.NotNull(error);
+        Assert.Contains("belirtilmeli", error);
+    }
+
+    [Fact]
     public void Shipped_appsettings_are_valid_in_production_and_development()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -240,6 +316,10 @@ public class AiOptionsTests
             Assert.Equal("gemini-3.8-flash", options.Solution.Model);
             Assert.Equal(0.75m, options.Pricing["gemini-3.8-flash"].InputPerMTokUsd);
             Assert.Equal(3.75m, options.Pricing["gemini-3.8-flash"].OutputPerMTokUsd);
+            var change = Assert.Single(options.Pricing["gemini-3.8-flash"].Changes);
+            Assert.Equal(new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero), change.EffectiveFrom);
+            Assert.Equal(1.5m, change.InputPerMTokUsd);
+            Assert.Equal(7.5m, change.OutputPerMTokUsd);
             Assert.Empty(options.Gemini.QuestionApiKey);
             Assert.Empty(options.Gemini.SolutionApiKey);
         }

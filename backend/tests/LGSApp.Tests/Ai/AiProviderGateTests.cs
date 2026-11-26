@@ -169,7 +169,7 @@ public class AiGateIntegrationTests
         var gate = new AiProviderGate(clock, Options.Create(options));
         var solver = new GeminiAiSolver(client, Options.Create(options), gate);
         var generator = new GeminiQuestionGenerator(
-            client, Options.Create(options), new AiCostCalculator(Options.Create(options)), gate, clock, NullLogger<GeminiQuestionGenerator>.Instance);
+            client, Options.Create(options), new AiCostCalculator(Options.Create(options), clock), gate, clock, NullLogger<GeminiQuestionGenerator>.Instance);
         return (solver, generator, gate, handler, clock);
     }
 
@@ -269,7 +269,7 @@ public class AiGateIntegrationTests
         var (_, _, gate, _, _) = Create();
         var options = AiTestData.GeminiOptions();
         var solver = new CountingSolver();
-        var verifier = new QuestionVerifier(solver, new FixedSettings(), Options.Create(options), new AiCostCalculator(Options.Create(options)), gate);
+        var verifier = new QuestionVerifier(solver, new FixedSettings(), Options.Create(options), new AiCostCalculator(Options.Create(options), TimeProvider.System), gate);
         gate.Observe(AiKeyPurpose.Solution, AiErrorKind.QuotaExhausted);
 
         var result = await verifier.VerifyAsync(
@@ -288,7 +288,7 @@ public class AiGateIntegrationTests
         var (_, _, gate, _, _) = Create();
         var options = AiTestData.GeminiOptions();
         var solver = new CountingSolver();
-        var verifier = new QuestionVerifier(solver, new FixedSettings(), Options.Create(options), new AiCostCalculator(Options.Create(options)), gate);
+        var verifier = new QuestionVerifier(solver, new FixedSettings(), Options.Create(options), new AiCostCalculator(Options.Create(options), TimeProvider.System), gate);
         gate.Observe(AiKeyPurpose.Question, AiErrorKind.QuotaExhausted);
 
         await verifier.VerifyAsync(

@@ -142,6 +142,7 @@ public static class SchedulerMessages
     public const string GenerationDisabled = "Soru üretimi kapalı.";
     public const string GenerationDisabledManual = "Soru üretimi ayarlardan kapatılmış.";
     public const string AlreadyRunning = "Bu görev şu anda çalışıyor.";
+    public const string NotDue = "Görev bu gün için zaten tamamlandı veya henüz zamanı gelmedi.";
     public const string LeaseExpired = "Kira süresi doldu, devralındı.";
     public const string AiAccountMissing = "Yapay zekâ sistem hesabı bulunamadı.";
     public const string AiNotConfiguredManual = "Yapay zekâ sağlayıcısı yapılandırılmadığı için bu görevi başlatamazsınız. Lütfen yapay zekâ ayarlarını kontrol edin.";
@@ -153,15 +154,20 @@ public static class SchedulerMessages
         GenerationKind.Generate => "Günlük soru üretimi",
         GenerationKind.Complete => "Günlük soru tamamlama",
         GenerationKind.Publish => "Günlük soru yayınlama",
-        GenerationKind.CloseAssignments => "Ödev kapatma",
+        GenerationKind.CloseAssignments => "Ödev açma/kapatma",
         _ => "Zamanlayıcı"
     };
 
     public static string RunFailureNotice(GenerationKind kind) =>
         $"{KindName(kind)} görevi beklenmeyen bir hata nedeniyle tamamlanamadı.";
 
-    public static string RunInterruptedNotice(GenerationKind kind, bool shutdown) =>
-        $"{KindName(kind)} görevi yarıda kesildi{(shutdown ? " (uygulama yeniden başlatıldı)" : string.Empty)}. Zamanlayıcı görevi yeniden deneyecektir; gerekirse zamanlayıcı ekranından elle de başlatabilirsiniz.";
+    public static string RunInterruptedNotice(GenerationKind kind, bool shutdown, GenerationTrigger trigger)
+    {
+        var head = $"{KindName(kind)} görevi yarıda kesildi{(shutdown ? " (uygulama yeniden başlatıldı)" : string.Empty)}.";
+        return trigger == GenerationTrigger.Manual
+            ? $"{head} Görevi zamanlayıcı ekranından yeniden başlatabilirsiniz."
+            : $"{head} Zamanlayıcı görevi yeniden deneyecektir; gerekirse zamanlayıcı ekranından elle de başlatabilirsiniz.";
+    }
 
     public static string RunTakenOverNotice(GenerationKind kind) =>
         $"{KindName(kind)} görevi yarıda kalmıştı; kira süresi dolduğu için yeni bir çalıştırma devraldı. Sonucu zamanlayıcı ekranından izleyebilirsiniz.";

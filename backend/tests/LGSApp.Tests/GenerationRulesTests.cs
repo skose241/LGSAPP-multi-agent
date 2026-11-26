@@ -155,6 +155,49 @@ public class TurkeyTimeTests
     }
 
     [Fact]
+    public void Resolve_uses_first_id_when_available()
+    {
+        var calls = new List<string>();
+        var zone = TurkeyTime.Resolve(id =>
+        {
+            calls.Add(id);
+            return TimeZoneInfo.CreateCustomTimeZone(id, TimeSpan.FromHours(5), id, id);
+        });
+
+        Assert.Equal(["Europe/Istanbul"], calls);
+        Assert.Equal("Europe/Istanbul", zone.Id);
+    }
+
+    [Fact]
+    public void Resolve_falls_back_to_second_id()
+    {
+        var calls = new List<string>();
+        var zone = TurkeyTime.Resolve(id =>
+        {
+            calls.Add(id);
+            return id == "Europe/Istanbul"
+                ? throw new InvalidTimeZoneException()
+                : TimeZoneInfo.CreateCustomTimeZone(id, TimeSpan.FromHours(3), id, id);
+        });
+
+        Assert.Equal(["Europe/Istanbul", "Turkey Standard Time"], calls);
+        Assert.Equal("Turkey Standard Time", zone.Id);
+    }
+
+    [Fact]
+    public void Resolve_falls_back_to_fixed_offset_when_lookup_always_fails()
+    {
+        var zone = TurkeyTime.Resolve(id => throw new TimeZoneNotFoundException(id));
+
+        Assert.Equal(TimeSpan.FromHours(3), zone.BaseUtcOffset);
+        Assert.False(zone.SupportsDaylightSavingTime);
+        var utc = new DateTime(2026, 11, 12, 21, 0, 0, DateTimeKind.Utc);
+        Assert.Equal(new DateOnly(2026, 11, 13), DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(utc, zone)));
+        var local = DateTime.SpecifyKind(new DateTime(2026, 7, 1, 17, 30, 0), DateTimeKind.Unspecified);
+        Assert.Equal(new DateTime(2026, 7, 1, 14, 30, 0, DateTimeKind.Utc), TimeZoneInfo.ConvertTimeToUtc(local, zone));
+    }
+
+    [Fact]
     public void Fake_time_provider_drives_clock()
     {
         var provider = new Microsoft.Extensions.Time.Testing.FakeTimeProvider(new DateTimeOffset(2026, 11, 12, 21, 30, 0, TimeSpan.Zero));
