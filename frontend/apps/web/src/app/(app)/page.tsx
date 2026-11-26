@@ -2,6 +2,7 @@
 
 import { CloudOff } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { InstallHint } from "@/components/install-hint";
 import { Button } from "@/components/ui/button";
 import { MudurDashboard } from "@/features/admin/mudur-dashboard";
 import { useMe } from "@/features/auth/use-me";
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl">Merhaba {me.data?.firstName ?? ""}</h1>
+      <InstallHint />
       {me.isError ? (
         <EmptyState
           icon={CloudOff}

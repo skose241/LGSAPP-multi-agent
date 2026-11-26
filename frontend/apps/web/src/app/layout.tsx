@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
+import { PwaSetup } from "@/components/pwa-setup";
 import { Providers } from "@/components/providers";
 import { bodyLatin, bodyLatinExt, displayLatin, displayLatinExt } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,17 @@ export const metadata: Metadata = {
   title: { default: "LGS Hazırlık", template: "%s | LGS Hazırlık" },
   description: "LGS sürecindeki öğrenciler için soru çözme ve ödev takip uygulaması.",
   robots: { index: false, follow: false },
+  applicationName: "LGS Hazırlık",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icons/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: { capable: true, title: "LGS Hazırlık", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -33,6 +45,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <body>
         <Providers>{children}</Providers>
+        <PwaSetup />
       </body>
     </html>
   );
