@@ -116,7 +116,7 @@ test.describe("kullanıcı oluşturma", () => {
   test("rezerve ad alan hatası verir", async ({ page }) => {
     await mudurSession(page);
     await page.goto("/yonetim/kullanicilar/yeni");
-    await fillCreateForm(page, { userName: "sistem", firstName: "Rezerve", lastName: "Ad" });
+    await fillCreateForm(page, { userName: "system", firstName: "Rezerve", lastName: "Ad" });
     await page.getByRole("button", { name: "Hesap Oluştur" }).click();
     await expect(page.getByLabel(/^Kullanıcı Adı\*?$/)).toHaveAttribute("aria-invalid", "true");
     await expect(page.getByText(/ayrılmıştır/).first()).toBeVisible();

@@ -11,7 +11,7 @@ public static class UserNameRules
     public const string ReservedMessage = "Bu kullanıcı adı sistem hesapları için ayrılmıştır.";
     public const string InvalidMessage = "harf (Türkçe harfler dahil), rakam, '.', '_' ve '-' içermelidir.";
 
-    private static readonly HashSet<string> ReservedKeys = new(StringComparer.Ordinal) { "YAPAYZEKA", "AI", "SISTEM", "SYSTEM" };
+    private static readonly HashSet<string> ReservedKeys = new(StringComparer.Ordinal) { "YAPAYZEKA", "AI", "SYSTEM" };
 
     public static string Canonicalize(string? userName) =>
         string.IsNullOrEmpty(userName) ? string.Empty : userName.Trim().Normalize(NormalizationForm.FormC);
