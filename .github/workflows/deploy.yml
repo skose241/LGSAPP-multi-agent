@@ -35,17 +35,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: frontend/package.json
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -68,7 +68,7 @@ jobs:
             --configuration Release -r linux-x64 --self-contained --force \
             -o "${RUNNER_TEMP}/artifacts/efbundle"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release
           path: |
@@ -91,12 +91,12 @@ jobs:
       RESOURCE_GROUP: ${{ inputs.resource_group }}
       DEPLOYMENT_NAME: ${{ inputs.deployment_name }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release
           path: release
 
-      - uses: azure/login@v2
+      - uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -127,8 +127,8 @@ jobs:
           fi
           rule="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           cleanup() {
-            az sql server firewall-rule delete --resource-group "${RESOURCE_GROUP}" --server "${SQL_SERVER}" --name "${rule}" --yes \
-              || echo "::warning::Güvenlik duvarı kuralı silinemedi: ${rule}"
+            az sql server firewall-rule delete --resource-group "${RESOURCE_GROUP}" --server "${SQL_SERVER}" --name "${rule}" \
+              || { echo "::error::Güvenlik duvarı kuralı silinemedi: ${rule}"; exit 1; }
           }
           trap cleanup EXIT
           az sql server firewall-rule create --resource-group "${RESOURCE_GROUP}" --server "${SQL_SERVER}" \

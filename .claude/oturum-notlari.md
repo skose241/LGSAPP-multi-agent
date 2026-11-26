@@ -643,3 +643,48 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
   - L4: sütunda tek sola taşan satır tüm sütun kutularını genişletiyor (eskiden beri).
   - L5: `answer-key-detect.ts:136-138` başlıkla aynı hizada başka sütun metni varsa başlık tanınmayabilir/o hizadaki cevaplar kaybolabilir.
 - Sıradaki: F9c (F8e sonrası) / Azure F8e; yayınevi denemeleriyle F9b eşik sınaması.
+
+## Oturum 12 — 2026-11-25
+
+### Bu oturumda yapılanlar
+- F9b commit + push: `2b09ae2` (sağ sütun şerit düzeltmesi dahil; reviewer: kritik/orta yok; vitest 433/433 gerçek PDF ile, E2E 137 geçti).
+- Canlı (Azure, `lgsapp-rg`, Germany West Central): müdür girişi, öğretmen/öğrenci hesapları, ilk akşam soru üretimi oluşmuştu. Web paketi F9 öncesindendi → `publish-web.ps1` + `deploy-apps.ps1 -Target web` ile yeniden dağıtıldı; "Sayfadan Ayır"/PDF canlıda çalışıyor.
+- Kullanıcı v2 için ayrı 2 Gemini anahtarı oluşturup yükledi; maliyet dert değil (hafızada).
+- Günlük: web ve API'de `--docker-container-logging filesystem` açıldı. Kayıtlar Kudu'dan: `az account get-access-token` ile `https://<app>.scm.azurewebsites.net/api/logs/docker` ve `/api/vfs/LogFiles/<dosya>` (az webapp log download takılabiliyor).
+- CSP zorlayıcı moda alındı (`CSP_REPORT_ONLY=false`; `/giris` başlığı doğrulandı; `/login` 307 olduğu için başlık taşımaz). Yerel `infra/main.parameters.json` `cspReportOnly=false`. Tek canlı rapor: `/sifre-degistir` media-src data: (tarayıcı eklentisi, zararsız).
+- Çöküş (~10.20–13.30): B1'de bellek %80+ iken art arda ayar değişikliği yeniden başlatmaları → API 230 sn açılış denetimini geçemedi, başka VM'e taşındı. Plan B2'ye yükseltildi (yerel `main.parameters.json` `appServiceSku=B2`). B2'de API açılışı ~48 sn.
+- Zamanlayıcı reviewer turu (ilk kez) → backend-agent düzeltmeleri → kısa reviewer → `97fb942` commit + push + API canlıya dağıtıldı (14.30):
+  - K1: kira süresi dolmuş Running kaydı planlayıcıyı kilitlemiyor (ölü sayılır, ClaimAsync devralır).
+  - O2: Interrupted deneme sayacından muaf, 2 dk sabit bekleme, günde 9 üst sınır; Generate tükenirse Complete devreye girer.
+  - AI yapılandırılmamışken manuel Generate/Complete 409.
+  - Kesinti/devralma/AI hesabı yok için müdür bildirimi (mevcut `GenerationReport` türü; migration yok).
+  - `WEBSITES_CONTAINER_STOP_TIME_LIMIT=90` (bicep + canlı API ayarı).
+  - Yeni testler: SchedulerRunStoreTests (6), SchedulerServiceTests; backend 881/881.
+- GitHub Actions dağıtım kurulumu:
+  - Entra uygulaması `lgsapp-github-deploy` (appId `93e56851-4b82-456c-80ed-6a79f3badff8`), federated credential `repo:skose241/LGSAPP-multi-agent:environment:production`.
+  - Roller: `lgsapp-rg` Contributor; Key Vault Secrets User yalnız `Sql-ConnectionString` sırrında.
+  - GitHub `production` ortamı: onaylayıcı skose241, yalnız `main` dalı; ortam sırları AZURE_CLIENT_ID/TENANT_ID/SUBSCRIPTION_ID.
+  - Depo PUBLIC (koruma kuralları bu yüzden ücretsiz).
+
+### Kararlar
+- Barındırma: bu ay Azure 200$ deneme kredisi (öğrenci kampanyası açılamadı), B2. ~2026-12-09'da kullanım/maliyet verisiyle Hetzner Cloud VPS geçişine karar (CLAUDE.md barındırma kararını değiştirir). Kullanıcı bellek/log kısıtı istemedi.
+- Canlıda ayar değişiklikleri tek seferde, sakin saatte; 17.30–19.00 arası dağıtım/ayar yok.
+- Yayına alma: 2026-11-25 16.00. Alan adı sonra netpesinde.com'a bağlanacak (kullanıcı yapacak).
+
+### Açık kalanlar
+- GitHub Actions ilk deneme koşusu YAPILMADI (20.04'e kurulan zamanlama oturum kapanınca iptal). Yapılacak: akşam görevlerinin bittiğini ve sağlığı kontrol et → `gh workflow run deploy.yml -R skose241/LGSAPP-multi-agent -f resource_group=lgsapp-rg` → kullanıcı "Review deployments" ile onaylar → sağlık denetimi. Görev saatlerinde (17.30–19.00) tetikleme. Onaydan sonra yerel betikler yerine Actions kullanılacak.
+- Bu akşamki görev sonuçları (17.30/18.15/19.00) ve B2 bellek/CPU kontrol edilmedi.
+- iPhone gerçek cihaz testi (HEIC, 10+ toplu yükleme, PDF Sayfadan Ayır/Otomatik Bul, parmakla çizim; zorlayıcı CSP altında, iOS ≤15 `'wasm-unsafe-eval'` riski) — kullanıcı gün içinde yapacaktı, sonucu sorulmalı.
+- Zamanlayıcı düşük bulguları: D2 (iki örnek kısa işte çift kayıt), D3 (gece yarısı sonrası yayın ertesi güne), D4, D5, D6 (TurkeyTime yalnız TimeZoneNotFound yakalar), D7 (GetStatusAsync ~10 sorgu), saat kayması >135 sn devralma riski, bulgu 3 (boş Publish kaydı) ve 5 (RunId'siz ödev bildirimi); kesinti bildirimi Publish/ödev için de "Soru Üretim Raporu" etiketiyle görünüyor.
+- F9b düşük bulgular L1–L5 (Oturum 11 eki).
+- EF Core SQL sorguları Production'da Information seviyesinde günlüğe yazılıyor (kullanıcı kısıt istemedi; günlük hacmi izlenmeli).
+- Depo public: okul sistemi için private yapılması kullanıcıya önerildi (private'ta ortam koruması GitHub Pro ister).
+- Yayın sonrası güvenlik: SQL managed identity + contained user, web Key Vault rol kapsamı daraltma.
+- CLAUDE.md "yetkisiz erişim" zamanlayıcı sorunu v2'de geçersiz — kullanıcı onayıyla çıkarılabilir.
+- Önceki listeden: Gemini tarihe bağlı fiyat (2027-01-01 öncesi), F9c, mobil uygulama, demo betiği, küçük UI açıkları.
+
+### Sıradaki adımlar
+1. Oturum açılınca: akşam görev sonuçları + B2 metrikleri → GitHub Actions deneme koşusu (kullanıcı onaylı).
+2. iPhone test sonucunu sor; sorun varsa Kudu günlükleri.
+3. Gemini fiyat güncellemesi; zamanlayıcı düşük bulguları; F9c.
+4. ~2026-12-09: Azure kullanım/maliyet raporu → Hetzner kararı.
