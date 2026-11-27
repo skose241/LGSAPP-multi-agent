@@ -722,3 +722,34 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 2. Ders programı/ayarlar girildi mi; ertesi gün akşam görev sonuçlarını kontrol.
 3. Slayt geri bildirimi; gerekirse düzeltme.
 4. ~2026-12-09 Azure maliyet raporu → Hetzner kararı.
+
+## Oturum 14 — 2026-11-27
+
+### Bu oturumda yapılanlar
+- Kullanıcı `1744657`'yi 26.11'de dağıtmıştı (GitHub'da doğrulandı). Öğretmen/öğrenci hesapları açıldı, ders programı ve ayarlar girildi, slaytlar küçük düzeltmeyle gönderildi.
+- `0e7e509` (canlıda, kullanıcı dağıttı ve kontrol etti):
+  - Öğrenci profili (`/ogretmen/ogrenciler/[id]`) sekmeleri: İstatistikler / Yüklediği Sorular (tam boy görsel, takıldığı yer, yayın/gizli) / Cevapları (seçilen-doğru şık, ödev, öğrenci açıklaması, açıklamalı-açıklamasız özeti, ders süzgeci). URL: `?sekme=sorular|cevaplar&ders=&sayfa=`.
+  - Salt okunur uç noktalar: `GET /api/students/{id}/questions`, `GET /api/students/{id}/answers` (`StudentActivityService`); `GET /api/questions` için `authorId` süzgeci (yalnız moderatör).
+  - Müdür menüsüne Öğrenciler, Ödevler, Soru Havuzu; öğretmen menüsüne Soru Havuzu. Moderatör Soru Havuzu: Yayında/Planlanmış, Gizlileri de göster, müdüre özel Ekleyen (`adminUsersQuery("ogretmen")`), URL `yayin=planlanmis&gizli=1&ekleyen=`. Sekme başlığı role göre (document.title).
+  - Soru detayında Cevapla kartı öğretmen/müdürde (ve `useMe` beklerken) gizli. Liderlikte moderatör satırları öğrenci profiline bağlantı.
+  - Migration/şema değişikliği yok. Backend 938 test.
+- `371e361`: CI `1744657`'den beri lint adımında düşüyordu (`demo/seed-demo.mjs` kullanılmayan değişkenler). Düzeltildi, CI yeşil. Dağıtım iş akışı CI'dan bağımsız.
+- Yerel demo kuruldu ve kullanıcı inceledi. `d1b8305`: yapay zekâ üretim+yayın demoda varsayılan (`--no-ai-daily` ile kapatılır); üretilen AI soruları `ai-polish.mjs` içindeki ders sıralı hazır LGS sorularıyla değiştiriliyor (metin, şık, doğru şık, konu, AI çözümü; yalnız LGSApp_Demo); `demo.ogretmen` (Deniz Yılmaz, İngilizce, `Demo-Ogretmen-2026!`) eklendi. Uçtan uca doğrulandı (14 AI sorusu, yer tutucu kalmadı).
+- Teknoloji kararları ile mevcut yapı karşılaştırıldı: backend (.NET 10), Next.js 16/React 19, Azure SQL Basic, IGeminiClient REST (gemini-3.8-flash), Azure App Service B2 + Blob + Key Vault + App Insights, roller 1-4 hepsi uygun; tek sapma mobil (React Native yerine PWA, bilinçli karar).
+
+### Kararlar
+- Liderlikte kullanıcı adı görünmesi sorun değil (kapandı). Fen "Basınç" alt konu teyidine gerek yok (kapandı).
+- CLAUDE.md güncellenmeyecek (kullanıcı istemedi): mobil satırı hâlâ "React Native", "Şimdiki Sorunlar"daki zamanlayıcı maddesi eski CFML'e ait.
+
+### Açık kalanlar
+- Profil sayfası sekme başlığında sayfa adı eksik.
+- Soru çöz listesinde küçük görseller ortadan kırpılıyor (önceki listeden).
+- Yeni öğrenci inceleme sekmeleri, moderatör havuz süzgeçleri ve liderlik bağlantıları için e2e testi yok.
+- `StudentActivityService` cevap sorgusunda soru alanları ayrı alt sorgularla çekiliyor (düşük öncelikli performans iyileştirmesi: join/navigation).
+- iPhone toplu fotoğraf yükleme sorunu yeni sistemde kontrol edilmedi.
+- Önceki listeden: F9c, F9b L1–L5, zamanlayıcı kalan düşükler, EF SQL Information log hacmi, depo public (private önerildi), SQL managed identity.
+
+### Sıradaki adımlar
+1. Öğretmen/müdür geri bildirimi: öğrenci inceleme ekranları canlı kullanımda.
+2. Akşam görev sonuçlarının (17.30/18.15/19.00) gerçek ders programıyla kontrolü.
+3. ~2026-12-09 Azure maliyet raporu → Hetzner kararı.
