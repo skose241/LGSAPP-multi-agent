@@ -4,10 +4,31 @@ Bu proje, LGS sürecindeki öğrencilerin soru çözümünü teşvik etmek ve ge
 
 Proje şu anda [netpesinde.com](https://netpesinde.com) adresi üzerinden yayındadır.
 
+## Ekran Görüntüleri
+
+Görüntüler, kurgusal verilerle hazırlanan yerel demo ortamından alınmıştır.
+
+<p align="center">
+  <img src="docs/ekran-goruntuleri/ogrenci-soru-detayi.png" alt="Öğrenci soru detayı ve yapay zekâ çözümü" width="100%">
+</p>
+<p align="center"><em>Öğrenci: soru detayı, cevap sonucu ve yapay zekâ çözümü</em></p>
+
+<table>
+  <tr>
+    <td align="center" width="35%"><img src="docs/ekran-goruntuleri/ogrenci-pano-mobil.png" alt="Öğrenci panosu, iPhone görünümü"></td>
+    <td align="center" width="65%"><img src="docs/ekran-goruntuleri/ogretmen-pdf-kirpma.png" alt="Öğretmen PDF sayfasından soru kırpma"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Öğrenci panosu (iPhone)</em></td>
+    <td align="center"><em>Öğretmen: PDF sayfasından soru kırpma</em></td>
+  </tr>
+</table>
+
 ---
 
 ## İçindekiler
 
+- [Ekran Görüntüleri](#ekran-görüntüleri)
 - [Projenin Özelliği](#projenin-özelliği)
 - [Roller](#roller)
 - [Projenin İşleyişi](#projenin-i̇şleyişi)
