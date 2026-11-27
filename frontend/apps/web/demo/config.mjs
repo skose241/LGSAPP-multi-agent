@@ -33,6 +33,7 @@ export const teachers = [
   { key: "mat", userName: "selin.aydin", firstName: "Selin", lastName: "Aydın", branch: "Matematik" },
   { key: "fen", userName: "murat.demir", firstName: "Murat", lastName: "Demir", branch: "Fen Bilimleri" },
   { key: "tur", userName: "elif.celik", firstName: "Elif", lastName: "Çelik", branch: "Türkçe" },
+  { key: "ing", userName: "demo.ogretmen", firstName: "Deniz", lastName: "Yılmaz", branch: "İngilizce" },
 ];
 
 export const students = [

@@ -17,7 +17,7 @@ const keep = flag("--keep");
 const noShots = flag("--no-shots");
 const useDev = flag("--dev");
 const skipBuild = flag("--skip-build");
-const aiDaily = flag("--ai-daily");
+const aiDaily = !flag("--no-ai-daily");
 const seedOnly = flag("--seed-only");
 
 if (!/LGSApp_Demo/i.test(connection) || !/\(localdb\)/i.test(connection) || /windows\.net|database\.azure/i.test(connection)) {
@@ -205,7 +205,7 @@ async function main() {
   await startBackend(0);
 
   const seedArgs = ["demo/seed-demo.mjs", "--phase=main"];
-  if (aiDaily) seedArgs.push("--ai-daily");
+  if (!aiDaily) seedArgs.push("--no-ai-daily");
   code = await runAsync("node", seedArgs, { cwd: webDir, env: demoEnv });
   if (code !== 0) throw new Error("Demo verisi üretilemedi.");
 

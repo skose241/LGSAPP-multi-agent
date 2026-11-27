@@ -2,11 +2,11 @@ import fs from "node:fs";
 import { activate, adminSession, call, must, session, sleep, uploadFile } from "./api.mjs";
 import { demoDir, stateFile, studentPassword, students, teacherPassword, teachers } from "./config.mjs";
 import { assignments, commentBodies, likedBy, poolQuestions, solutionComments, solutionPhoto, teacherSolutions } from "./content.mjs";
-import { polishAiSolutions } from "./ai-polish.mjs";
+import { polishAiQuestions, polishAiSolutions } from "./ai-polish.mjs";
 import { closeRenderer, renderNotebook, renderQuestionCard, renderSolution } from "./render.mjs";
 
 const phase = (process.argv.find((a) => a.startsWith("--phase=")) ?? "--phase=main").split("=")[1];
-const aiDaily = process.argv.includes("--ai-daily");
+const aiDaily = !process.argv.includes("--no-ai-daily");
 
 const log = (message) => console.log(`[seed] ${message}`);
 
@@ -481,6 +481,7 @@ async function phaseMain() {
   if (aiDaily) {
     await runScheduler(adminUser, "generate");
     await runScheduler(adminUser, "publish");
+    polishAiQuestions();
   }
 
   saveState(state);
