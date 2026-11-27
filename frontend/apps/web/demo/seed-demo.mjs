@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import { activate, adminSession, call, must, session, sleep, uploadFile } from "./api.mjs";
-import { admin, demoDir, stateFile, studentPassword, students, teacherPassword, teachers } from "./config.mjs";
-import { assignments, commentBodies, extraImages, likedBy, poolQuestions, solutionComments, solutionPhoto, teacherSolutions } from "./content.mjs";
+import { demoDir, stateFile, studentPassword, students, teacherPassword, teachers } from "./config.mjs";
+import { assignments, commentBodies, likedBy, poolQuestions, solutionComments, solutionPhoto, teacherSolutions } from "./content.mjs";
 import { polishAiSolutions } from "./ai-polish.mjs";
-import { closeRenderer, m, renderNotebook, renderQuestionCard, renderSolution } from "./render.mjs";
+import { closeRenderer, renderNotebook, renderQuestionCard, renderSolution } from "./render.mjs";
 
 const phase = (process.argv.find((a) => a.startsWith("--phase=")) ?? "--phase=main").split("=")[1];
 const aiDaily = process.argv.includes("--ai-daily");
@@ -375,14 +375,12 @@ async function openAssignmentWork() {
     "Eksi işaretini dağıtmayı atladım ve orta terimin işaretini yanlış yazdım.",
     "Karesini alırken ikili çarpımı hesaba katmadım, yalnızca terimlerin karelerini topladım.",
   ];
-  let studentIndex = 0;
   for (const [key, results] of Object.entries(plan)) {
     for (let q = 0; q < results.length; q += 1) {
       const ok = results[q] === 1;
       const correct = spec.questions[q].correct;
       await answer(people[key], ids[q], ok ? correct : wrongOption(correct, 1 + q), ok ? right[q] : wrong[q]);
     }
-    studentIndex += 1;
   }
   log(`Açık ödev oluşturuldu (id ${id})`);
 
