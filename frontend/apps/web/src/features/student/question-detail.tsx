@@ -26,6 +26,7 @@ import { CommentSection } from "@/features/student/comment-section";
 import { ReportDialog } from "@/features/student/report-dialog";
 import { SolutionsSection } from "@/features/student/solutions-section";
 import { TeacherSolutionSection } from "@/features/teacher/teacher-solution-section";
+import { useMe } from "@/features/auth/use-me";
 import { usePublicSettings } from "@/features/student/use-settings";
 import { api } from "@/lib/api/client";
 import { parseAssignmentBack } from "@/lib/student/assignments";
@@ -112,6 +113,8 @@ export function QuestionDetail({ id }: { id: number }) {
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [reporting, setReporting] = useState(false);
   const settings = usePublicSettings();
+  const me = useMe();
+  const moderator = me.data?.role === "mudur" || me.data?.role === "ogretmen";
   const searchParams = useSearchParams();
   const backAssignment = parseAssignmentBack(searchParams.get("odev"));
 
@@ -245,27 +248,29 @@ export function QuestionDetail({ id }: { id: number }) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="flex flex-col gap-4">
-              <h2 className="text-xl">{q.myAnswer ? "Cevabınız" : "Cevapla"}</h2>
-              {q.permissions.canAnswer ? (
-                <AnswerForm question={q} onAnswered={setResult} />
-              ) : q.myAnswer ? (
-                <>
-                  <OptionPicker
-                    value={optionToLetter(q.myAnswer.selectedOption) ?? undefined}
-                    correct={q.correctOption ? (optionToLetter(q.correctOption) ?? undefined) : undefined}
-                    revealed={q.correctOption !== null}
-                    disabled
-                    label="Verdiğiniz Cevap"
-                  />
-                  <ResultCard question={q} result={result} />
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">Bu soruyu şu an cevaplayamazsınız.</p>
-              )}
-            </CardContent>
-          </Card>
+          {moderator || me.isPending ? null : (
+            <Card>
+              <CardContent className="flex flex-col gap-4">
+                <h2 className="text-xl">{q.myAnswer ? "Cevabınız" : "Cevapla"}</h2>
+                {q.permissions.canAnswer ? (
+                  <AnswerForm question={q} onAnswered={setResult} />
+                ) : q.myAnswer ? (
+                  <>
+                    <OptionPicker
+                      value={optionToLetter(q.myAnswer.selectedOption) ?? undefined}
+                      correct={q.correctOption ? (optionToLetter(q.correctOption) ?? undefined) : undefined}
+                      revealed={q.correctOption !== null}
+                      disabled
+                      label="Verdiğiniz Cevap"
+                    />
+                    <ResultCard question={q} result={result} />
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Bu soruyu şu an cevaplayamazsınız.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="flex flex-col gap-4">

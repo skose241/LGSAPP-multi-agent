@@ -39,7 +39,8 @@ public sealed record QuestionPoolQuery(
     bool IncludeHidden,
     bool Scheduled,
     int Page,
-    int PageSize);
+    int PageSize,
+    int? AuthorId = null);
 
 public interface IQuestionPoolService
 {
@@ -72,7 +73,7 @@ public sealed class QuestionPoolService(AppDbContext db, UserLookupService users
 
     public async Task<ServiceResult<QuestionPoolListView>> ListAsync(Actor actor, QuestionPoolQuery query, CancellationToken cancellationToken = default)
     {
-        var errors = QuestionPoolRules.ValidateFilters(actor.IsStudent, query.Source, query.Answered, query.Since, query.IncludeHidden, query.Scheduled);
+        var errors = QuestionPoolRules.ValidateFilters(actor.IsStudent, query.Source, query.Answered, query.Since, query.IncludeHidden, query.Scheduled, query.AuthorId);
         if (errors.Count > 0)
         {
             return Fail.Validation("Filtre değerleri geçersiz.", errors);
@@ -107,6 +108,11 @@ public sealed class QuestionPoolService(AppDbContext db, UserLookupService users
         if (query.TopicId is int topicId)
         {
             source = source.Where(q => q.TopicId == topicId);
+        }
+
+        if (query.AuthorId is int authorId)
+        {
+            source = source.Where(q => q.AuthorUserId == authorId);
         }
 
         if (query.Source is QuestionSource questionSource)

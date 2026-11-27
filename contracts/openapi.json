@@ -5862,6 +5862,14 @@
               "format": "int32",
               "default": 20
             }
+          },
+          {
+            "name": "authorId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         ],
         "responses": {
@@ -7919,6 +7927,210 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StudentProfileStatsView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/questions": {
+      "get": {
+        "tags": [
+          "Students"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentUploadsView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/answers": {
+      "get": {
+        "tags": [
+          "Students"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "lessonId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentAnswersView"
                 }
               }
             }
@@ -13911,6 +14123,234 @@
           }
         }
       },
+      "StudentAnswerAssignmentView": {
+        "required": [
+          "id",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "StudentAnswerItemView": {
+        "required": [
+          "answerId",
+          "answeredAt",
+          "selectedOption",
+          "isCorrect",
+          "assignment",
+          "question",
+          "explanation"
+        ],
+        "type": "object",
+        "properties": {
+          "answerId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "answeredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "selectedOption": {
+            "type": "integer",
+            "format": "uint8"
+          },
+          "isCorrect": {
+            "type": "boolean"
+          },
+          "assignment": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StudentAnswerAssignmentView"
+              }
+            ]
+          },
+          "question": {
+            "$ref": "#/components/schemas/StudentAnswerQuestionView"
+          },
+          "explanation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StudentExplanationView"
+              }
+            ]
+          }
+        }
+      },
+      "StudentAnswerQuestionView": {
+        "required": [
+          "id",
+          "source",
+          "lesson",
+          "topic",
+          "previewText",
+          "image",
+          "correctOption"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "source": {
+            "$ref": "#/components/schemas/QuestionSource"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/LessonRefView"
+          },
+          "topic": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TopicRefView"
+              }
+            ]
+          },
+          "previewText": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "image": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImageView"
+              }
+            ]
+          },
+          "correctOption": {
+            "type": "integer",
+            "format": "uint8"
+          }
+        }
+      },
+      "StudentAnswersSummaryView": {
+        "required": [
+          "totalAnswers",
+          "withExplanation",
+          "withoutExplanation"
+        ],
+        "type": "object",
+        "properties": {
+          "totalAnswers": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withExplanation": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutExplanation": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "StudentAnswersView": {
+        "required": [
+          "page",
+          "pageSize",
+          "totalCount",
+          "summary",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/StudentAnswersSummaryView"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StudentAnswerItemView"
+            }
+          }
+        }
+      },
+      "StudentExplanationView": {
+        "required": [
+          "id",
+          "text",
+          "image",
+          "isHidden",
+          "isDeleted",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "image": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImageView"
+              }
+            ]
+          },
+          "isHidden": {
+            "type": "boolean"
+          },
+          "isDeleted": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "StudentHeaderView": {
         "required": [
           "id",
@@ -14084,6 +14524,119 @@
           },
           "uploadToday": {
             "$ref": "#/components/schemas/UploadTodayView"
+          }
+        }
+      },
+      "StudentUploadItemView": {
+        "required": [
+          "id",
+          "lesson",
+          "topic",
+          "image",
+          "description",
+          "previewText",
+          "createdAt",
+          "publishedAt",
+          "isHidden",
+          "correctOption",
+          "answerCount",
+          "solutionCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/LessonRefView"
+          },
+          "topic": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TopicRefView"
+              }
+            ]
+          },
+          "image": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImageView"
+              }
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "previewText": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "isHidden": {
+            "type": "boolean"
+          },
+          "correctOption": {
+            "type": "integer",
+            "format": "uint8"
+          },
+          "answerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "solutionCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "StudentUploadsView": {
+        "required": [
+          "page",
+          "pageSize",
+          "totalCount",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StudentUploadItemView"
+            }
           }
         }
       },

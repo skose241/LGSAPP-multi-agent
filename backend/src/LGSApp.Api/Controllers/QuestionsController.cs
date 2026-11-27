@@ -30,9 +30,10 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
         [FromQuery] bool scheduled = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = QuestionPoolRules.DefaultPageSize,
+        [FromQuery] int? authorId = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new QuestionPoolQuery(lessonId, topicId, source, answered, since, includeHidden, scheduled, page, pageSize);
+        var query = new QuestionPoolQuery(lessonId, topicId, source, answered, since, includeHidden, scheduled, page, pageSize, authorId);
         return (await pool.ListAsync(User.ToActor(), query, cancellationToken)).ToActionResult(this);
     }
 

@@ -5562,6 +5562,7 @@ export interface paths {
                     scheduled?: boolean;
                     page?: number;
                     pageSize?: number;
+                    authorId?: number;
                 };
                 header?: never;
                 path?: never;
@@ -7600,6 +7601,177 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/students/{id}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StudentUploadsView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/students/{id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    lessonId?: number;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StudentAnswersView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/topic-plans": {
         parameters: {
             query?: never;
@@ -9365,6 +9537,64 @@ export interface components {
         StartSchedulerRunRequest: {
             kind: null | string;
         };
+        StudentAnswerAssignmentView: {
+            /** Format: int32 */
+            id: number;
+            title: string;
+        };
+        StudentAnswerItemView: {
+            /** Format: int32 */
+            answerId: number;
+            /** Format: date-time */
+            answeredAt: string;
+            /** Format: uint8 */
+            selectedOption: number;
+            isCorrect: boolean;
+            assignment: null | components["schemas"]["StudentAnswerAssignmentView"];
+            question: components["schemas"]["StudentAnswerQuestionView"];
+            explanation: null | components["schemas"]["StudentExplanationView"];
+        };
+        StudentAnswerQuestionView: {
+            /** Format: int32 */
+            id: number;
+            source: components["schemas"]["QuestionSource"];
+            lesson: components["schemas"]["LessonRefView"];
+            topic: null | components["schemas"]["TopicRefView"];
+            previewText: null | string;
+            image: null | components["schemas"]["ImageView"];
+            /** Format: uint8 */
+            correctOption: number;
+        };
+        StudentAnswersSummaryView: {
+            /** Format: int32 */
+            totalAnswers: number;
+            /** Format: int32 */
+            withExplanation: number;
+            /** Format: int32 */
+            withoutExplanation: number;
+        };
+        StudentAnswersView: {
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            summary: components["schemas"]["StudentAnswersSummaryView"];
+            items: components["schemas"]["StudentAnswerItemView"][];
+        };
+        StudentExplanationView: {
+            /** Format: int32 */
+            id: number;
+            text: null | string;
+            image: null | components["schemas"]["ImageView"];
+            isHidden: boolean;
+            isDeleted: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: null | string;
+        };
         StudentHeaderView: {
             /** Format: int32 */
             id: number;
@@ -9416,6 +9646,35 @@ export interface components {
             points: components["schemas"]["PointsStatsView"];
             contributions: components["schemas"]["ContributionStatsView"];
             uploadToday: components["schemas"]["UploadTodayView"];
+        };
+        StudentUploadItemView: {
+            /** Format: int32 */
+            id: number;
+            lesson: components["schemas"]["LessonRefView"];
+            topic: null | components["schemas"]["TopicRefView"];
+            image: null | components["schemas"]["ImageView"];
+            description: null | string;
+            previewText: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            publishedAt: null | string;
+            isHidden: boolean;
+            /** Format: uint8 */
+            correctOption: number;
+            /** Format: int32 */
+            answerCount: number;
+            /** Format: int32 */
+            solutionCount: number;
+        };
+        StudentUploadsView: {
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            items: components["schemas"]["StudentUploadItemView"][];
         };
         SubmitAnswerRequest: {
             /** Format: uint8 */

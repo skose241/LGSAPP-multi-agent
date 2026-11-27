@@ -109,6 +109,27 @@ public class QuestionPoolRulesTests
     }
 
     [Fact]
+    public void Students_cannot_use_the_author_filter()
+    {
+        Assert.Contains("authorId", QuestionPoolRules.ValidateFilters(true, null, null, null, false, false, 5).Keys);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-3)]
+    public void Author_filter_must_be_positive(int authorId)
+    {
+        Assert.Contains("authorId", QuestionPoolRules.ValidateFilters(false, null, null, null, false, false, authorId).Keys);
+    }
+
+    [Fact]
+    public void Moderators_can_use_a_positive_author_filter()
+    {
+        Assert.Empty(QuestionPoolRules.ValidateFilters(false, null, null, null, true, false, 5));
+        Assert.Empty(QuestionPoolRules.ValidateFilters(false, null, null, null, false, true, 5));
+    }
+
+    [Fact]
     public void Moderators_cannot_use_the_answered_filter_but_can_use_the_others()
     {
         Assert.Contains("answered", QuestionPoolRules.ValidateFilters(false, null, false, null, false, false).Keys);

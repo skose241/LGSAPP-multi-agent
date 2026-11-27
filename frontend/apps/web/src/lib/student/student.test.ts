@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import katex from "katex";
 import { tokenizeMath, tokenizeMathPreview } from "./math";
-import { filtersToSearch, parseFilters } from "./url-state";
+import { filtersToSearch, parseFilters, parseModeratorFilters } from "./url-state";
 
 describe("tokenizeMath", () => {
   it("düz metni değiştirmez", () => {
@@ -64,6 +64,21 @@ describe("soru filtreleri URL durumu", () => {
   it("filtreleri yeniden yazar", () => {
     const search = filtersToSearch({ lessonId: 3, topicId: 7, source: "teacher", answered: "answered", page: 2 });
     expect(search).toBe("?ders=3&konu=7&kaynak=teacher&durum=cozuldu&sayfa=2");
+    expect(filtersToSearch({ answered: "unanswered", page: 1 })).toBe("");
+  });
+
+  it("yönetici süzgeçlerini okur ve öğretmen süzgecini yalnız müdüre verir", () => {
+    const params = new URLSearchParams("yayin=planlanmis&gizli=1&ekleyen=5");
+    expect(parseModeratorFilters(params, true)).toEqual({ scheduled: true, includeHidden: false, authorId: 5 });
+    expect(parseModeratorFilters(params, false).authorId).toBeUndefined();
+    expect(parseModeratorFilters(new URLSearchParams("gizli=1"))).toEqual({ scheduled: false, includeHidden: true, authorId: undefined });
+    expect(parseModeratorFilters(new URLSearchParams("ekleyen=abc&yayin=x"), true)).toEqual({ scheduled: false, includeHidden: false, authorId: undefined });
+  });
+
+  it("yönetici süzgeçlerini adrese yazar, öğrenci adresi değişmez", () => {
+    const base = { answered: "all", page: 1 } as const;
+    expect(filtersToSearch(base, { scheduled: true, includeHidden: false, authorId: 5 })).toBe("?durum=tumu&yayin=planlanmis&ekleyen=5");
+    expect(filtersToSearch(base, { scheduled: false, includeHidden: true })).toBe("?durum=tumu&gizli=1");
     expect(filtersToSearch({ answered: "unanswered", page: 1 })).toBe("");
   });
 });

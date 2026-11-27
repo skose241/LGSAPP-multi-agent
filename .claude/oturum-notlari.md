@@ -688,3 +688,37 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 2. iPhone test sonucunu sor; sorun varsa Kudu günlükleri.
 3. Gemini fiyat güncellemesi; zamanlayıcı düşük bulguları; F9c.
 4. ~2026-12-09: Azure kullanım/maliyet raporu → Hetzner kararı.
+
+## Oturum 13 — 2026-11-26
+
+### Bu oturumda yapılanlar
+- Akşam görevleri (25.11) kontrol edildi: 17.30'da 5 soru üretildi, 18.15'te tamamlama çalıştı, 19.00'da 5 soru yayınlandı, 00.05'te ödev işi koştu. B2'de bellek %60–66, CPU ort. %6.
+- GitHub Actions ilk dağıtım: Entra'ya ikinci federated credential eklendi (`github-production-immutable`, subject `repo:skose241@192023701/LGSAPP-multi-agent@1452621668:environment:production`; GitHub artık kimlik numaralı subject gönderiyor). `694f83c`: tüm aksiyonlar Node 24 sürümlerine yükseltildi, deploy.yml'de `az sql server firewall-rule delete --yes` hatası (kural silinmiyordu) düzeltildi; artık silme başarısızsa iş hata verir. Bundan sonra dağıtım yalnız `gh workflow run deploy.yml ... -f resource_group=lgsapp-rg` + Review deployments.
+- `ad314db`: Gemini fiyatı tarihe bağlı (`Ai:Pricing:<model>:Changes`, 2027-01-01T00:00Z'den itibaren 1.50/7.50 USD/MTok; Google sayfasından doğrulandı). Fiyat yalnız raporlamada; kullanım sınırları adet bazlı. Zamanlayıcı: D6 (TurkeyTime sabit UTC+3 yedeği), D2 (timer claim kilit içinde Plan ile yeniden doğrulanır, NotDue 2 sn), D3 ("N yeni soru yayında"), "Ödev açma/kapatma", elle tetiklenen kesinti bildirimi, bildirim etiketi "Zamanlayıcı Raporu". Bırakılanlar: boş Publish kaydı, RunId'siz ödev bildirimi, D7, saat kayması, MARS. D4/D5'in ayrıntısı kayıptı.
+- Alan adı: web uygulaması `https://netpesinde.com`'da (eski CFML sunucusu kullanıcı tarafından kapatıldı). `7d38dbc`: bicep `webCustomDomainStage` none/bind/certify/secured, yönetilen sertifika (2027-05-26'ya kadar, Azure yeniler), `CANONICAL_HOST` ile www ve azurewebsites → 308 netpesinde.com (/healthz, /api muaf). DNS Cloudflare'de gri bulut: `@` A 20.79.106.31, `www` CNAME lgsapp-web-b4okhw.azurewebsites.net, `asuid`/`asuid.www` TXT. API azurewebsites'te kaldı. Yerel `infra/main.parameters.json` (gitignored) `secured` + `webCanonicalHost=netpesinde.com` — altyapı dağıtımlarında böyle kalmalı (hafızada). Bicep tüm app settings'i yeniden yazdığı için altyapı dağıtımından sonra `az webapp log config --docker-container-logging filesystem` (api, web) tekrar çalıştırılmalı.
+- Öğrenci testi (canlı, `ai-öğrenci`) ve öğretmen testi (canlı): tüm modüller çalıştı; CSP ihlali yok. Bulunanlar: AI çözümü iki kez görünüyordu (düzeltildi), profil sekme başlığında sayfa adı eksik (açık). Kullanıcı "pdf-deneme" ödevinin anahtarını bilerek yanlış girmişti.
+- Veritabanı sıfırlandı (`26f1070`): 6 ders / 73 konu (8. sınıf 2018 programı; 2026-27'de 8. sınıf Maarif Modeli'ne geçmiyor), `SISTEM` ayrılmış adlardan çıkarıldı, `reset-database` sunucu komutu (dry-run, ad doğrulaması, tek transaction), `scripts/deploy/reset-data.ps1` (`-BlobsOnly` dahil), `set-seed.ps1 -AdminFirstName/-AdminLastName`. Kullanıcı sıfırlamayı ve `sistem` (Semih Köse) müdür hesabını kendisi kurdu, seed ayarlarını sildi; gerçek müdür hesabı arayüzden ("Yeni Müdür") oluşturuldu. Blob kabı boş, konular 73/73 doğrulandı.
+- `8799686` PWA: manifest, ikonlar (192/512/maskable/apple 180), yalnız çevrimdışı sayfası sunan sw.js, panoda "Ana ekrana ekle" ipucu. Canlıya alındı, kullanıcı mobil görünümü onayladı.
+- `1744657`: AI çözümü artık yalnız üst panelde (Yorumlar/Şikâyet Et panelde). Yerel demo ortamı `frontend/apps/web/demo` (`npx pnpm@10 demo:run [--keep] [--no-shots]`): LocalDB `LGSApp_Demo`, Azurite, Fake AI, kurgusal veri, 71 ekran görüntüsü `.demo/shots` (gitignored).
+- Tanıtım slaytları (Artifact, şu an yalnız kullanıcıya açık): Öğrenci https://claude.ai/artifact/R93ocbMtEUqD4wdFY1qhbC (14 slayt), Öğretmen https://claude.ai/artifact/9ddwmMQVpqbfDueSmVp6VA (15 slayt).
+
+### Kararlar
+- Konu listesi MEB programının konu düzeyinde (Fen alt konuları, Türkçe LGS başlıkları; Yazma/Dinleme alınmadı).
+- Sahibin müdür hesabı kullanıcı adı `sistem`; gerçek müdür ayrı hesap.
+- Mobil uygulama: React Native yerine şimdilik PWA. Push bildirimleri kapsam dışı.
+- Demo verisi yalnız yerelde; canlıya demo verisi girmez.
+
+### Açık kalanlar
+- `1744657` (AI çözümü tek görünüm) canlıya dağıtılmadı.
+- Sıfırlamadan sonra Ders Programı tüm günler 0 → 17.30 üretimi soru üretmez; müdür ders programını ve Ayarlar'ı (AI hakları vb.) girmeli. Öğretmen/öğrenci hesapları açılacak, kurtarma kodları oluşturulacak.
+- Fen "Basınç" alt konuları (Katı/Sıvı/Gaz) kaynakla teyit edilmedi; Fen öğretmenine gösterilmeli.
+- Slaytlar paylaşılmadı (Share menüsü); kullanıcı inceleyecek.
+- Profil sayfası sekme başlığı; soru çöz listesinde küçük görseller ortadan kırpılıyor; liderlikte kullanıcı adı görünüyor (ad soyad değil).
+- Test hesabı `ai-öğrenci` silindi (DB sıfırlandı); kullanıcıya verdiği şifre artık geçersiz.
+- Önceki listeden: F9c, F9b L1–L5, zamanlayıcı kalan düşükler, EF SQL Information log hacmi, depo public (private önerildi), SQL managed identity, Hetzner kararı (~2026-12-09), CLAUDE.md "yetkisiz erişim" maddesi.
+
+### Sıradaki adımlar
+1. `1744657` dağıtımı (17.30–19.00 dışında) ve canlıda AI çözümünün tek göründüğünü kontrol.
+2. Ders programı/ayarlar girildi mi; ertesi gün akşam görev sonuçlarını kontrol.
+3. Slayt geri bildirimi; gerekirse düzeltme.
+4. ~2026-12-09 Azure maliyet raporu → Hetzner kararı.

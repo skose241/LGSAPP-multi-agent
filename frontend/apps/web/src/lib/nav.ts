@@ -46,6 +46,8 @@ const studentItems: NavItem[] = [
   profil,
 ];
 
+const poolReview = item("havuz-inceleme", "Soru Havuzu", "/sorular", ListChecks);
+
 const teacherItems: NavItem[] = [
   pano,
   item("odevler", "Ödev Yönetimi", "/ogretmen/odevler", ClipboardList),
@@ -54,6 +56,7 @@ const teacherItems: NavItem[] = [
   item("supheli", "Şüpheli Anahtarlar", "/ogretmen/supheli-anahtarlar", ShieldQuestion),
   item("konu-plani", "Konu Planı", "/ogretmen/konu-plani", CalendarClock),
   item("ogrenciler", "Öğrenciler", "/ogretmen/ogrenciler", GraduationCap),
+  poolReview,
   item("cozum-bekleyen", "Çözüm Bekleyenler", "/ogretmen/cozum-bekleyenler", BookOpenCheck),
   liderlik,
   profil,
@@ -67,6 +70,9 @@ const mudurItems: NavItem[] = [
   item("ders-programi", "Ders Programı", "/yonetim/ders-programi", CalendarClock),
   item("yapay-zeka", "Yapay Zekâ", "/yonetim/yapay-zeka", Sparkles),
   item("ayarlar", "Ayarlar", "/yonetim/ayarlar", Settings),
+  item("ogrenciler", "Öğrenciler", "/ogretmen/ogrenciler", GraduationCap),
+  item("odevler", "Ödevler", "/ogretmen/odevler", ClipboardList),
+  poolReview,
   item("sikayetler", "Şikâyetler", "/ogretmen/sikayetler", Flag),
   item("supheli", "Şüpheli Anahtarlar", "/ogretmen/supheli-anahtarlar", ShieldQuestion),
   liderlik,
@@ -109,8 +115,9 @@ export function roleLabel(role: string | undefined): string {
   return "";
 }
 
-export function pageTitleFor(pathname: string): string | null {
-  const known = [...studentItems, ...teacherItems, ...mudurItems].find((entry) => entry.href === pathname);
+export function pageTitleFor(pathname: string, role?: string): string | null {
+  const pool = role === "mudur" ? mudurItems : role === "ogretmen" ? teacherItems : role === "ogrenci" ? studentItems : [...studentItems, ...teacherItems, ...mudurItems];
+  const known = pool.find((entry) => entry.href === pathname);
   return known?.label ?? extraTitles[pathname] ?? null;
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { questionSourceLabel } from "@lgs/api";
+import { formatDateOnly, questionSourceLabel } from "@lgs/api";
 import type { QuestionPoolItem } from "@lgs/api/queries";
 import { CheckCircle2, ImageIcon, MessageSquare, ThumbsUp, XCircle } from "lucide-react";
 import Link from "next/link";
@@ -9,7 +9,15 @@ import { MathText } from "@/components/math-text";
 import { QuestionImage } from "@/components/question-image";
 import { cn } from "@/lib/utils";
 
-export function PoolQuestionCard({ item, onImageExpired }: { item: QuestionPoolItem; onImageExpired?: () => void | Promise<unknown> }) {
+export function PoolQuestionCard({
+  item,
+  onImageExpired,
+  moderator = false,
+}: {
+  item: QuestionPoolItem;
+  onImageExpired?: () => void | Promise<unknown>;
+  moderator?: boolean;
+}) {
   const answered = item.myAnswer !== null;
 
   return (
@@ -25,6 +33,8 @@ export function PoolQuestionCard({ item, onImageExpired }: { item: QuestionPoolI
           {questionSourceLabel(item.source)}
         </Badge>
         {item.isMine ? <Badge tone="success">Sizin</Badge> : null}
+        {item.isHidden ? <Badge tone="warning">Gizli</Badge> : null}
+        {moderator && item.scheduledPublishDate ? <Badge tone="info">Yayın: {formatDateOnly(item.scheduledPublishDate)}</Badge> : null}
       </span>
 
       {item.image ? (
@@ -38,7 +48,12 @@ export function PoolQuestionCard({ item, onImageExpired }: { item: QuestionPoolI
       {item.previewText ? <MathText text={item.previewText} compact className="line-clamp-4 max-w-prose overflow-hidden text-base" /> : null}
 
       <span className="mt-auto flex items-center justify-between gap-2 text-sm">
-        {answered ? (
+        {moderator ? (
+          <span className="font-semibold text-primary-soft-foreground">
+            İncele
+            {item.correctOption ? ` · Doğru Şık ${String.fromCharCode(64 + item.correctOption)}` : ""}
+          </span>
+        ) : answered ? (
           <span
             className={cn(
               "inline-flex items-center gap-1.5 font-semibold",

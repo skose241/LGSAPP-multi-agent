@@ -20,6 +20,9 @@ export interface QuestionListParams {
   source?: "teacher" | "student" | "ai";
   answered: AnsweredFilter;
   since?: number;
+  scheduled?: boolean;
+  includeHidden?: boolean;
+  authorId?: number;
   page: number;
   pageSize: number;
 }
@@ -56,6 +59,9 @@ export function questionsQuery(client: ApiClient, params: QuestionListParams) {
               source: params.source,
               answered: params.answered === "all" ? undefined : params.answered === "answered",
               since: params.since,
+              scheduled: params.scheduled || undefined,
+              includeHidden: params.includeHidden || undefined,
+              authorId: params.authorId,
               page: params.page,
               pageSize: params.pageSize,
             },

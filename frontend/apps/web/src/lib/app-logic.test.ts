@@ -57,6 +57,8 @@ describe("route guard", () => {
     expect(decideRoute({ ...base, pathname: "/yonetim/ayarlar", info: { ...student, roles: ["ogretmen"] } })).toEqual({ type: "redirect", to: "/" });
     expect(decideRoute({ ...base, pathname: "/yonetim/ayarlar", info: { ...student, roles: ["mudur"] } })).toEqual({ type: "next" });
     expect(decideRoute({ ...base, pathname: "/ogretmen/odevler", info: { ...student, roles: ["mudur"] } })).toEqual({ type: "next" });
+    expect(decideRoute({ ...base, pathname: "/ogretmen/ogrenciler/12", search: "?sekme=cevaplar", info: { ...student, roles: ["mudur"] } })).toEqual({ type: "next" });
+    expect(decideRoute({ ...base, pathname: "/sorular/5", info: { ...student, roles: ["mudur"] } })).toEqual({ type: "next" });
   });
 
   it("girişli kullanıcıyı /giris yerine ana sayfaya alır, oturum nedeni hariç", () => {

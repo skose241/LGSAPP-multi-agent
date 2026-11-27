@@ -72,7 +72,8 @@ public static class QuestionPoolRules
         bool? answered,
         int? since,
         bool includeHidden,
-        bool scheduled)
+        bool scheduled,
+        int? authorId = null)
     {
         var errors = new Dictionary<string, string[]>();
 
@@ -99,6 +100,18 @@ public static class QuestionPoolRules
         if (isStudent && scheduled)
         {
             errors["scheduled"] = ["Bu filtre yalnızca öğretmen ve müdür için kullanılabilir."];
+        }
+
+        if (authorId is not null)
+        {
+            if (isStudent)
+            {
+                errors["authorId"] = ["Bu filtre yalnızca öğretmen ve müdür için kullanılabilir."];
+            }
+            else if (authorId <= 0)
+            {
+                errors["authorId"] = ["Yazar kimliği 0'dan büyük olmalıdır."];
+            }
         }
 
         return errors;

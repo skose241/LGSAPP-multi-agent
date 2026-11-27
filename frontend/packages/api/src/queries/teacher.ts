@@ -20,11 +20,27 @@ export type ReportResolveActionValue = components["schemas"]["ReportResolveActio
 export type TopicPlanRange = components["schemas"]["TopicPlanRangeView"];
 export type AssignmentManageList = components["schemas"]["AssignmentManageListView"];
 export type AssignmentManageItem = components["schemas"]["AssignmentManageItemView"];
+export type StudentUploads = components["schemas"]["StudentUploadsView"];
+export type StudentUploadItem = components["schemas"]["StudentUploadItemView"];
+export type StudentAnswers = components["schemas"]["StudentAnswersView"];
+export type StudentAnswerItem = components["schemas"]["StudentAnswerItemView"];
+export type StudentAnswersSummary = components["schemas"]["StudentAnswersSummaryView"];
 export type TeacherSolutionResult = components["schemas"]["SolutionView"];
 
 export interface StudentListParams {
   search: string;
   sort: StudentSort;
+  page: number;
+  pageSize: number;
+}
+
+export interface StudentUploadsParams {
+  page: number;
+  pageSize: number;
+}
+
+export interface StudentAnswersParams {
+  lessonId?: number;
   page: number;
   pageSize: number;
 }
@@ -58,6 +74,8 @@ export const teacherKeys = {
   students: ["teacher", "students"] as const,
   studentList: (params: StudentListParams) => ["teacher", "students", "list", params] as const,
   student: (id: number) => ["teacher", "students", "detail", id] as const,
+  studentUploads: (id: number, params: StudentUploadsParams) => ["teacher", "students", "uploads", id, params] as const,
+  studentAnswers: (id: number, params: StudentAnswersParams) => ["teacher", "students", "answers", id, params] as const,
   needsAll: ["teacher", "needs-solution"] as const,
   needs: (params: NeedsSolutionParams) => ["teacher", "needs-solution", params] as const,
   reportsAll: ["teacher", "reports"] as const,
@@ -94,6 +112,36 @@ export function studentProfileQuery(client: ApiClient, id: number) {
     queryKey: teacherKeys.student(id),
     queryFn: () => unwrap(client.GET("/api/students/{id}/stats", { params: { path: { id } } })),
     staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function studentUploadsQuery(client: ApiClient, id: number, params: StudentUploadsParams) {
+  return queryOptions({
+    queryKey: teacherKeys.studentUploads(id, params),
+    queryFn: () =>
+      unwrap(
+        client.GET("/api/students/{id}/questions", {
+          params: { path: { id }, query: { page: params.page, pageSize: params.pageSize } },
+        }),
+      ),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+export function studentAnswersQuery(client: ApiClient, id: number, params: StudentAnswersParams) {
+  return queryOptions({
+    queryKey: teacherKeys.studentAnswers(id, params),
+    queryFn: () =>
+      unwrap(
+        client.GET("/api/students/{id}/answers", {
+          params: { path: { id }, query: { lessonId: params.lessonId, page: params.page, pageSize: params.pageSize } },
+        }),
+      ),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
     retry: false,
   });
 }

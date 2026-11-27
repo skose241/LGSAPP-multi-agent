@@ -23,6 +23,7 @@ export function LeaderboardPage() {
   const board = useQuery(leaderboardQuery(api(), period, offset));
   const data = board.data;
   const myId = me.data?.id;
+  const moderator = me.data?.role === "mudur" || me.data?.role === "ogretmen";
   const inList = data?.items.some((item) => item.userId === myId) ?? false;
 
   return (
@@ -104,6 +105,7 @@ export function LeaderboardPage() {
                 detail={`@${item.userName}`}
                 points={item.points}
                 isMe={item.userId === myId}
+                href={moderator ? `/ogretmen/ogrenciler/${item.userId}` : undefined}
               />
             ))}
           </ol>

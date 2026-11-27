@@ -262,7 +262,7 @@ public class OpenApiContractTests
     {
         var parameters = Paths["/api/questions"]!["get"]!["parameters"]!.AsArray().ToDictionary(p => p!["name"]!.GetValue<string>(), p => p!.AsObject());
 
-        foreach (var name in new[] { "lessonId", "topicId", "source", "answered", "since", "includeHidden", "scheduled", "page", "pageSize" })
+        foreach (var name in new[] { "lessonId", "topicId", "source", "answered", "since", "includeHidden", "scheduled", "page", "pageSize", "authorId" })
         {
             Assert.True(parameters.ContainsKey(name), name);
         }
