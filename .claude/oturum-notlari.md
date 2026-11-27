@@ -753,3 +753,23 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 1. Öğretmen/müdür geri bildirimi: öğrenci inceleme ekranları canlı kullanımda.
 2. Akşam görev sonuçlarının (17.30/18.15/19.00) gerçek ders programıyla kontrolü.
 3. ~2026-12-09 Azure maliyet raporu → Hetzner kararı.
+
+## Oturum 15 — 2026-11-27
+
+### Bu oturumda yapılanlar
+- Kullanıcının `C:\Proje\netpesindecom.txt` taslağı incelendi; aynı dil ve anlatım sırası korunarak kodla doğrulanmış ayrıntılarla genişletilmiş README hazırlandı.
+- `2a14560`: depo kökünde `README.md`. Bölümler: Projenin Özelliği, Roller (1–4), Projenin İşleyişi (Öğrenci/Öğretmen/Müdür), Puan Sistemi ve Liderlik (varsayılanlar `SettingKeys.cs`: yükleme 3, doğru cevap 5, çözüm açıklaması 5, puanlı yükleme günde 5), Günlük Görevler (`SchedulerOptions`: 16.45 konu seçimi, 17.30 üretim, 18.15 tamamlama, 19.00 yayın, 00.05 ödev), v1/v2 farkları, Proje Süreci (agent'lar), Yararlanılan Teknolojiler, Klasör Yapısı, Yerelde Çalıştırma, Lisanslar. Kullanıcı metnindeki küçük yazım düzeltmeleri yapıldı. markdownlint'te yalnız MD013 (satır uzunluğu) kaldı.
+- `2285806`: README'ye "Ekran Görüntüleri" bölümü; `docs/ekran-goruntuleri/` altında yerel demodan (kurgusal veri) öğrenci soru detayı + AI çözümü (masaüstü), öğrenci panosu (iPhone), öğretmen PDF sayfasından soru kırpma. Toplam ~1,3 MB.
+- Her iki commit `origin/main`'e push edildi. Kod/migration değişikliği yok.
+
+### Kararlar
+- README yalnız GitHub depo sayfası içindir; netpesinde.com'u etkilemez.
+- README'deki görseller yalnız kurgusal demo verisinden alınır (gerçek öğrenci verisi kullanılmaz).
+
+### Açık kalanlar
+- Puan değerlerinin müdür tarafından arayüzden değiştirilebildiği README'de belirtilmedi ("varsayılan" yazıldı); teyit edilirse eklenebilir.
+- `backend/README.md` ve `infra/README.md` kök README ile tutarlılık açısından gözden geçirilmedi.
+- Oturum 14'ün açık kalanları aynen geçerli (depo public olduğu için README ve görseller herkese açık).
+
+### Sıradaki adımlar
+1. Oturum 14'teki sıradaki adımlar (öğretmen/müdür geri bildirimi, akşam görev sonuçları kontrolü, ~2026-12-09 maliyet raporu → Hetzner kararı).
