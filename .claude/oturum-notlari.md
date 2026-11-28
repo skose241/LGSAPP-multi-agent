@@ -773,3 +773,29 @@ Test betikleri (Python, kullan-at): `C:\Users\koses\AppData\Local\Temp\claude\9b
 
 ### Sıradaki adımlar
 1. Oturum 14'teki sıradaki adımlar (öğretmen/müdür geri bildirimi, akşam görev sonuçları kontrolü, ~2026-12-09 maliyet raporu → Hetzner kararı).
+
+## Oturum 16 — 2026-11-27/28
+
+### Bu oturumda yapılanlar
+- Müdürün ödevlerinin "görünmemesi" sorusu incelendi: Ödev Yönetimi ve öğrenci Ödevlerim branş/ekleyen süzmüyor; Soru Havuzu'nda görünmemesi bilinçli kural (`QuestionPoolService` silinmemiş ödeve bağlı soruları havuzdan çıkarır; havuzdan ödeve eklenen sorular da ödev durdukça havuzda görünmez). Kod değişikliği yok.
+- `1f7d932` (canlıda, kullanıcı dağıttı; CI + Deploy başarılı, `/api/questions/daily` girişsiz 401):
+  - Backend `GET /api/questions/daily` → `DailyQuestionsView { date, items: QuestionPoolItemView[] }`. Havuz kurallarına uyan `Source==Ai` sorularda en son `PublishedAt`'in Türkiye günü seçilir, o günün tüm AI soruları (ders adı, Id; en fazla 100). `ListAsync` projeksiyonu ortak `ProjectAsync`'e çıkarıldı. `DailyQuestionsTests` (7 test). Backend 945 test.
+  - Öğrenci panosu: Açık Ödevler'in üstünde "Günün Soruları" (Bugün / "… tarihli sorular" etiketi, "X sorudan Y tanesini çözdünüz", `PoolQuestionCard` listesi, "Hepsini Gör" → `/sorular?kaynak=ai&durum=tumu`). "Son 7 Günün Soruları" altta duruyor. `dailyQuestionsQuery` `questionKeys.all` altında.
+  - "Bugünün soruları 19.00'da yayınlanacak." notu yalnız önceki gün gösterilirken ve İstanbul saati < 19 iken (`hourInIstanbul`, `@lgs/api` time.ts).
+  - ESLint ignores'a `**/.next-demo/**` (yerel demo derlemesi lint'i 26 bin hatayla düşürüyordu; CI etkilenmiyordu).
+- Migration yok.
+
+### Kararlar
+- Günün Soruları 19.00'dan önce son yayın gününü gösterir; Son 7 Gün bölümü kalır.
+- Ödev soruları havuzda görünmez (bilinçli, teyit edildi).
+
+### Açık kalanlar
+- Günün sorularının "Son 7 Günün Soruları"nda da tekrar görünmesi (kullanıcı şimdilik istemedi).
+- 19.00 notu ve 19.00 saati frontend'de sabit; `SchedulerOptions` yayın saati değişirse elle güncellenmeli. Hafta sonu/görev çalışmayan günlerde 19.00 öncesi not yine çıkar.
+- Günün Soruları canlıda öğrenci hesabıyla görsel olarak doğrulanmadı; e2e yalnız başlığı kontrol ediyor. WebKit/iPhone e2e çalıştırılmadı.
+- Havuzdan ödeve eklenen soruların havuzdan düşmesi daraltılabilir (yalnız ödev için yazılanlar) — kullanıcı karar vermedi.
+- Oturum 14/15 açık kalanları aynen geçerli.
+
+### Sıradaki adımlar
+1. Öğrenci hesabıyla ana sayfa kontrolü (19.00 öncesi/sonrası).
+2. Oturum 14'teki sıradaki adımlar (öğretmen/müdür geri bildirimi, akşam görev sonuçları, ~2026-12-09 maliyet raporu → Hetzner kararı).
