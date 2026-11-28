@@ -37,6 +37,11 @@ public class QuestionsController(IQuestionService questions, IQuestionAuthoringS
         return (await pool.ListAsync(User.ToActor(), query, cancellationToken)).ToActionResult(this);
     }
 
+    [HttpGet("daily")]
+    [ProducesResponseType<DailyQuestionsView>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Daily(CancellationToken cancellationToken) =>
+        (await pool.DailyAsync(User.ToActor(), cancellationToken)).ToActionResult(this);
+
     [HttpPost]
     [EnableRateLimiting(RateLimitingExtensions.QuestionCreatePolicy)]
     [ProducesResponseType<QuestionDetailView>(StatusCodes.Status201Created)]

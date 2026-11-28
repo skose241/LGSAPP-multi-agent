@@ -57,6 +57,7 @@ test.describe("pano", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Açık Ödevler" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Son 7 Günün Soruları" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Günün Soruları", exact: true })).toBeVisible();
     await expect(page.getByTestId("pool-question").first()).toBeVisible();
     await expect(page.getByTestId("weekly-points")).toBeVisible();
     await expect(page.getByTestId("unread-summary")).toContainText(/bildirim/);

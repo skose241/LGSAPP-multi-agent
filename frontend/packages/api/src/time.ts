@@ -88,6 +88,11 @@ export function todayInIstanbul(now: Date = new Date()): string {
   return `${pick("year")}-${pick("month")}-${pick("day")}`;
 }
 
+export function hourInIstanbul(now: Date = new Date()): number {
+  const value = new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(now);
+  return Number(value);
+}
+
 export function addDaysToDateOnly(value: string, days: number): string {
   if (!isDateOnly(value)) return "";
   const [y, m, d] = splitDateOnly(value);

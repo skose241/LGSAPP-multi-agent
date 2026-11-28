@@ -1,7 +1,7 @@
 "use client";
 
-import { formatDateOnly } from "@lgs/api";
-import { meStatsQuery, openAssignmentsQuery, questionKeys, questionsQuery, unreadCountQuery } from "@lgs/api/queries";
+import { formatDateOnly, hourInIstanbul, todayInIstanbul } from "@lgs/api";
+import { dailyQuestionsQuery, meStatsQuery, openAssignmentsQuery, questionKeys, questionsQuery, unreadCountQuery } from "@lgs/api/queries";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, ClipboardList, ImagePlus, Trophy } from "lucide-react";
 import Link from "next/link";
@@ -17,11 +17,54 @@ export function StudentDashboard() {
   const assignments = useQuery(openAssignmentsQuery(api()));
   const stats = useQuery(meStatsQuery(api()));
   const unread = useQuery(unreadCountQuery(api()));
+  const daily = useQuery(dailyQuestionsQuery(api()));
   const recent = useQuery(questionsQuery(api(), { answered: "all", since: 7, page: 1, pageSize: 6 }));
+
+  const dailyDate = daily.data?.date ?? null;
+  const dailyIsToday = dailyDate !== null && dailyDate === todayInIstanbul();
+  const dailyItems = daily.data?.items ?? [];
+  const dailyAnswered = dailyItems.filter((item) => item.myAnswer).length;
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-5">
+        <section aria-label="Günün Soruları" className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-xl">
+              Günün Soruları
+              {dailyDate ? (
+                <span className="ml-2 text-sm font-normal text-muted-foreground" data-testid="daily-date">
+                  {dailyIsToday ? "Bugün" : `${formatDateOnly(dailyDate)} tarihli sorular`}
+                </span>
+              ) : null}
+            </h2>
+            <Button asChild variant="ghost">
+              <Link href="/sorular?kaynak=ai&durum=tumu">Hepsini Gör</Link>
+            </Button>
+          </div>
+          {daily.isPending ? (
+            <div role="status" aria-label="Günün soruları yükleniyor" className="h-48 animate-pulse rounded-lg bg-surface-muted" />
+          ) : daily.isError ? (
+            <p className="text-sm text-danger">Günün soruları yüklenemedi.</p>
+          ) : dailyItems.length === 0 ? (
+            <EmptyState icon={ClipboardList} as="h3" title="Henüz Yapay Zekâ Sorusu Yok" description="Yapay zekâ soruları yayınlandığında burada görünecek." />
+          ) : (
+            <>
+              {dailyDate && !dailyIsToday && hourInIstanbul() < 19 ? <p className="text-sm text-muted-foreground">Bugünün soruları 19.00&apos;da yayınlanacak.</p> : null}
+              <p className="text-sm" data-testid="daily-summary">
+                {dailyItems.length} sorudan {dailyAnswered} tanesini çözdünüz.
+              </p>
+              <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3" aria-label="Günün soruları listesi">
+                {dailyItems.map((item) => (
+                  <li key={item.id}>
+                    <PoolQuestionCard item={item} onImageExpired={() => queryClient.invalidateQueries({ queryKey: questionKeys.all })} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+
         <section aria-label="Açık Ödevler" className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-xl">Açık Ödevler</h2>

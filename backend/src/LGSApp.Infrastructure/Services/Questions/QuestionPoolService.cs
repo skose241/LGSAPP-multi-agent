@@ -42,13 +42,19 @@ public sealed record QuestionPoolQuery(
     int PageSize,
     int? AuthorId = null);
 
+public sealed record DailyQuestionsView(DateOnly? Date, IReadOnlyList<QuestionPoolItemView> Items);
+
 public interface IQuestionPoolService
 {
+    Task<ServiceResult<DailyQuestionsView>> DailyAsync(Actor actor, CancellationToken cancellationToken = default);
+
     Task<ServiceResult<QuestionPoolListView>> ListAsync(Actor actor, QuestionPoolQuery query, CancellationToken cancellationToken = default);
 }
 
 public sealed class QuestionPoolService(AppDbContext db, UserLookupService users, IFileUrlService urls, TurkeyTime clock) : IQuestionPoolService
 {
+    private const int DailyLimit = 100;
+
     private sealed record Row(
         int Id,
         QuestionSource Source,
@@ -138,9 +144,42 @@ public sealed class QuestionPoolService(AppDbContext db, UserLookupService users
             ? source.OrderByDescending(q => q.ScheduledPublishDate).ThenByDescending(q => q.Id)
             : source.OrderByDescending(q => q.PublishedAt).ThenByDescending(q => q.Id);
 
-        var rows = await ordered
-            .Skip((int)offset)
-            .Take(pageSize)
+        var items = await ProjectAsync(actor, ordered.Skip((int)offset).Take(pageSize), cancellationToken);
+
+        return ServiceResult<QuestionPoolListView>.Ok(new QuestionPoolListView(page, pageSize, total, items));
+    }
+
+    public async Task<ServiceResult<DailyQuestionsView>> DailyAsync(Actor actor, CancellationToken cancellationToken = default)
+    {
+        var pool = db.Questions.AsNoTracking()
+            .Where(q => !db.AssignmentQuestions.Any(aq => aq.QuestionId == q.Id
+                && db.Assignments.Any(a => a.Id == aq.AssignmentId && !a.IsDeleted)))
+            .Where(q => q.PublishedAt != null && !q.IsHidden && q.Source == QuestionSource.Ai);
+
+        var latest = await pool.MaxAsync(q => q.PublishedAt, cancellationToken);
+        if (latest is not DateTime latestUtc)
+        {
+            return ServiceResult<DailyQuestionsView>.Ok(new DailyQuestionsView(null, []));
+        }
+
+        var date = TurkeyTime.ToLocalDate(latestUtc);
+        var from = TurkeyTime.ToUtc(date, TimeOnly.MinValue);
+        var to = TurkeyTime.ToUtc(date.AddDays(1), TimeOnly.MinValue);
+
+        var ordered = pool
+            .Where(q => q.PublishedAt >= from && q.PublishedAt < to)
+            .OrderBy(q => q.Lesson.Name)
+            .ThenBy(q => q.Id)
+            .Take(DailyLimit);
+
+        var items = await ProjectAsync(actor, ordered, cancellationToken);
+        return ServiceResult<DailyQuestionsView>.Ok(new DailyQuestionsView(date, items));
+    }
+
+    private async Task<List<QuestionPoolItemView>> ProjectAsync(Actor actor, IQueryable<Question> page, CancellationToken cancellationToken)
+    {
+        var userId = actor.UserId;
+        var rows = await page
             .Select(q => new Row(
                 q.Id,
                 q.Source,
@@ -192,6 +231,6 @@ public sealed class QuestionPoolService(AppDbContext db, UserLookupService users
                 QuestionPoolRules.ShowDiscussionStats(actor.IsModerator, isOwner, hasAnswered) ? r.CommentCount : null);
         }).ToList();
 
-        return ServiceResult<QuestionPoolListView>.Ok(new QuestionPoolListView(page, pageSize, total, items));
+        return items;
     }
 }

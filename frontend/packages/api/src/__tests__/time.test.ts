@@ -3,6 +3,7 @@ import {
   addDaysToDateOnly,
   compareDateOnly,
   formatDateOnly,
+  hourInIstanbul,
   formatDateTime,
   formatDateTimeShort,
   formatRelativeTime,
@@ -37,6 +38,12 @@ describe("saat dilimi", () => {
   it("bugünü İstanbul saatine göre bulur", () => {
     expect(todayInIstanbul(new Date("2026-11-14T21:30:00Z"))).toBe("2026-11-15");
     expect(todayInIstanbul(new Date("2026-11-14T20:59:00Z"))).toBe("2026-11-14");
+  });
+
+  it("İstanbul saatini 0-23 aralığında verir", () => {
+    expect(hourInIstanbul(new Date("2026-11-14T15:59:00Z"))).toBe(18);
+    expect(hourInIstanbul(new Date("2026-11-14T16:00:00Z"))).toBe(19);
+    expect(hourInIstanbul(new Date("2026-11-14T21:30:00Z"))).toBe(0);
   });
 });
 

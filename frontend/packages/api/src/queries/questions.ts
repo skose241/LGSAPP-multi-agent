@@ -5,6 +5,7 @@ import type { components } from "../generated/schema";
 
 export type QuestionPoolItem = components["schemas"]["QuestionPoolItemView"];
 export type QuestionPoolList = components["schemas"]["QuestionPoolListView"];
+export type DailyQuestionList = components["schemas"]["DailyQuestionsView"];
 export type QuestionDetail = components["schemas"]["QuestionDetailView"];
 export type AnswerResult = components["schemas"]["AnswerResultView"];
 export type ImageInfo = components["schemas"]["ImageView"];
@@ -30,6 +31,7 @@ export interface QuestionListParams {
 export const questionKeys = {
   all: ["questions"] as const,
   list: (params: QuestionListParams) => [...questionKeys.all, "list", params] as const,
+  daily: () => [...questionKeys.all, "daily"] as const,
   detail: (id: number) => [...questionKeys.all, "detail", id] as const,
   mine: (page: number, pageSize: number) => [...questionKeys.all, "mine", page, pageSize] as const,
 };
@@ -70,6 +72,14 @@ export function questionsQuery(client: ApiClient, params: QuestionListParams) {
       ),
     staleTime: 20 * 60_000,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function dailyQuestionsQuery(client: ApiClient) {
+  return queryOptions({
+    queryKey: questionKeys.daily(),
+    queryFn: () => unwrap(client.GET("/api/questions/daily")),
+    staleTime: 5 * 60_000,
   });
 }
 

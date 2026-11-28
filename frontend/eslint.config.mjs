@@ -25,6 +25,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/.next/**",
       "**/.next-e2e/**",
+      "**/.next-demo/**",
       "**/.e2e/**",
       "**/generated/**",
       "**/test-results/**",
